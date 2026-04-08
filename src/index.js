@@ -1,1 +1,1 @@
-export { ApproachRetreat } from './approach-retreat.js';
+export { ApproachRetreat, Outcome } from './approach-retreat.js';

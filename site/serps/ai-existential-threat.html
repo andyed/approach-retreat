@@ -10,50 +10,13 @@
   <header class="serp-header">
     <div class="serp-query">Will AI be an existential threat to humanity?</div>
     <div class="serp-info">
-      Answers from Quora, 2011&ndash;2025 &middot; sorted by date &middot;
+      10 answers, 2011&ndash;2025 &middot; sorted by date &middot;
       <a href="../index.html">&larr; All questions</a>
     </div>
   </header>
 
   <div class="serp-results" id="serp">
-    <!-- Results will be populated from data/ai-existential-threat.json -->
-    <div class="result" data-result data-position="0">
-      <div class="result-title">Sample: Early optimism (2012)</div>
-      <div class="result-url">quora.com/user &middot; answered 2012</div>
-      <div class="result-snippet">
-        Placeholder — this will be replaced with real Quora answer data.
-        The full dataset will include ~50-100 answers spanning 2011-2025,
-        showing how the community's consensus shifted from dismissive to
-        genuinely concerned as capabilities advanced.
-      </div>
-      <div class="result-meta">42 upvotes &middot; 2012</div>
-      <div class="result-full-text">Full answer text goes here.</div>
-    </div>
-
-    <div class="result" data-result data-position="1">
-      <div class="result-title">Sample: The Bostrom inflection (2014)</div>
-      <div class="result-url">quora.com/user &middot; answered 2014</div>
-      <div class="result-snippet">
-        After Superintelligence was published, the tone shifted. Answers
-        started citing alignment problems, instrumental convergence,
-        orthogonality thesis. The question stopped being hypothetical.
-      </div>
-      <div class="result-meta">128 upvotes &middot; 2014</div>
-      <div class="result-full-text">Full answer text goes here.</div>
-    </div>
-
-    <div class="result" data-result data-position="2">
-      <div class="result-title">Sample: Post-GPT recalibration (2023)</div>
-      <div class="result-url">quora.com/user &middot; answered 2023</div>
-      <div class="result-snippet">
-        By 2023 the answers split: practitioners who saw the limitations
-        up close became less worried about existential risk, while people
-        watching from the outside became more worried. The expertise
-        gradient inverted.
-      </div>
-      <div class="result-meta">87 upvotes &middot; 2023</div>
-      <div class="result-full-text">Full answer text goes here.</div>
-    </div>
+    <!-- Populated from JSON -->
   </div>
 
   <!-- Debug overlay -->
@@ -61,6 +24,8 @@
     <div>Episodes: <span id="debug-episodes">0</span></div>
     <div>Active: <span id="debug-active">-</span></div>
     <div>Retreats: <span id="debug-retreats">0</span></div>
+    <div>Classification:</div>
+    <div id="debug-classes" style="font-size: 0.7rem;"></div>
   </div>
 
   <footer class="site-footer">
@@ -73,38 +38,60 @@
   </footer>
 
   <script type="module">
-    import { ApproachRetreat } from '../../dist/approach-retreat.esm.js';
+    import { ApproachRetreat, Outcome } from '../../dist/approach-retreat.esm.js';
 
+    // Load answer data and render SERP
+    const resp = await fetch('../data/ai-existential-threat.json');
+    const answers = await resp.json();
+    const serp = document.getElementById('serp');
+
+    for (const a of answers) {
+      const div = document.createElement('div');
+      div.className = 'result';
+      div.dataset.result = '';
+      div.dataset.position = a.position;
+      div.innerHTML = `
+        <div class="result-title">${a.title}</div>
+        <div class="result-url">${a.author} &middot; ${a.author_bio}</div>
+        <div class="result-snippet">${a.snippet}</div>
+        <div class="result-meta">${a.upvotes} upvotes &middot; ${a.year}</div>
+        <div class="result-full-text">${a.full_text}</div>
+      `;
+      serp.appendChild(div);
+    }
+
+    // Initialize approach-retreat tracking
     const ar = new ApproachRetreat({
       resultSelector: '[data-result]',
       onEpisode(episode) {
-        // Update debug overlay
         const el = document.getElementById('debug-episodes');
         if (el) el.textContent = ar.getEpisodes().length;
 
         const retreats = ar.getEpisodes().filter(e => e.retreated).length;
         document.getElementById('debug-retreats').textContent = retreats;
+
+        // Update classification display
+        const classes = ar.classify();
+        const classEl = document.getElementById('debug-classes');
+        if (classEl) {
+          classEl.innerHTML = Object.entries(classes)
+            .map(([k, v]) => `${k}: ${v.map(s => s.position).join(',') || '-'}`)
+            .join('<br>');
+        }
       },
       onClick({ position, episode, target }) {
-        // Expand/collapse the result to show full answer
         target.classList.toggle('expanded');
       },
     });
+
+    // Refresh after dynamic render
+    ar.refresh();
 
     // Debug mode: press 'd' to toggle
     document.addEventListener('keydown', (e) => {
       if (e.key === 'd' && !e.metaKey && !e.ctrlKey) {
         document.body.classList.toggle('ar-debug-on');
       }
-    });
-
-    // Track active result in debug
-    const observer = new MutationObserver(() => {
-      const active = document.querySelector('[data-result]:hover');
-      const el = document.getElementById('debug-active');
-      if (el) el.textContent = active
-        ? `pos ${active.dataset.position}`
-        : '-';
     });
   </script>
 </body>

@@ -9,9 +9,16 @@
  * Core signals:
  * - Approach velocity: fast = scanning, slow = evaluating
  * - Dwell time per result: time cursor spends in a result's AOI
- * - Retreat: cursor leaves a result without clicking (rejection/deferral)
+ * - Retreat distance: how far cursor moves after leaving — encodes rejection
+ *   confidence (self-imposed re-acquisition cost, epistemic action)
  * - Re-approach: cursor returns to a previously visited result (reconsideration)
  * - Commitment depth: how far down the SERP before first click
+ *
+ * Four-class taxonomy (splits the non-click class):
+ * - CLICKED: cursor entered, evaluated, committed
+ * - DEFERRED: cursor entered, retreated, but re-approached (still considering)
+ * - EVALUATED_REJECTED: cursor entered, evaluated, retreated — no return
+ * - NOT_APPROACHED: result was visible but cursor never entered the AOI
  *
  * Each result element is an AOI (area of interest). The library tracks
  * cursor enter/dwell/exit episodes and builds an approach-retreat timeline.
@@ -24,6 +31,17 @@
  * - Guo & Agichtein (2012) — cursor trail features predict result relevance
  * - Arapakis & Leiva (2016) — predicting search satisfaction from cursor
  */
+
+/**
+ * Four-class outcome taxonomy.
+ * The practical contribution: splitting non-clicks into actionable classes.
+ */
+export const Outcome = Object.freeze({
+  CLICKED: 'clicked',
+  DEFERRED: 'deferred',
+  EVALUATED_REJECTED: 'evaluated_rejected',
+  NOT_APPROACHED: 'not_approached',
+});
 
 const DEFAULTS = {
   // AOI selector: which elements are SERP results?
@@ -78,8 +96,14 @@ class Episode {
     this.approachVelocity = null;
     this.approachAngle = null;
 
+    // Retreat tracking
+    this.retreatDistance = 0;  // px from AOI center at max retreat
+
     // Visit count (1 = first visit, 2+ = re-approach)
     this.visitNumber = 1;
+
+    // Whether this result was later re-approached after this episode
+    this.reapproached = false;
   }
 
   get dwellMs() {
@@ -89,6 +113,19 @@ class Episode {
 
   get retreated() {
     return this.exitedAt !== null && !this.clicked;
+  }
+
+  /**
+   * Classify this episode into the four-class taxonomy.
+   * Call after the session is complete (or after reapproach window expires)
+   * so that deferred vs rejected is resolved.
+   */
+  get outcome() {
+    if (this.clicked) return Outcome.CLICKED;
+    if (this.reapproached) return Outcome.DEFERRED;
+    if (this.exitedAt !== null) return Outcome.EVALUATED_REJECTED;
+    // Still active — no classification yet
+    return null;
   }
 
   addSample(x, y, t, vx, vy) {
@@ -101,10 +138,12 @@ class Episode {
   toJSON() {
     return {
       position: this.position,
+      outcome: this.outcome,
       dwell_ms: Math.round(this.dwellMs),
       visited: true,
       clicked: this.clicked,
       retreated: this.retreated,
+      retreat_distance: Math.round(this.retreatDistance),
       visit_number: this.visitNumber,
       approach_velocity: this.approachVelocity,
       approach_angle: this.approachAngle,
@@ -246,6 +285,15 @@ export class ApproachRetreat {
     );
     episode.approachAngle = Math.atan2(this._velocity.vy, this._velocity.vx);
 
+    // Mark prior episodes on this element as deferred (re-approached)
+    if (visits > 1) {
+      for (const prev of this._episodes) {
+        if (prev.resultEl === el && prev.retreated && !prev.reapproached) {
+          prev.reapproached = true;
+        }
+      }
+    }
+
     this._active.set(el, episode);
   }
 
@@ -254,6 +302,18 @@ export class ApproachRetreat {
     this._active.delete(el);
 
     if (episode.dwellMs >= this.config.minDwellMs) {
+      // Compute retreat distance: track cursor distance from AOI center
+      // over subsequent mousemove events. For now, snapshot the distance
+      // at exit using the last known mouse position vs AOI center.
+      const rect = el.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      if (this._lastMouse) {
+        episode.retreatDistance = Math.sqrt(
+          (this._lastMouse.x - cx) ** 2 + (this._lastMouse.y - cy) ** 2
+        );
+      }
+
       this._episodes.push(episode);
       if (this.config.onEpisode) {
         this.config.onEpisode(episode.toJSON());
@@ -288,6 +348,7 @@ export class ApproachRetreat {
   /**
    * Get approach-retreat summary for all results.
    * Returns an array of relevance signals suitable for reranking.
+   * Includes four-class taxonomy counts per position.
    */
   getSignals() {
     const byPosition = new Map();
@@ -296,7 +357,58 @@ export class ApproachRetreat {
       if (!byPosition.has(ep.position)) {
         byPosition.set(ep.position, {
           position: ep.position,
+          outcome: null,  // resolved below
           total_dwell_ms: 0,
+          mean_retreat_distance: 0,
+          visit_count: 0,
+          retreat_count: 0,
+          reapproach_count: 0,
+          clicked: false,
+          max_visit_number: 0,
+          _retreat_distances: [],
+        });
+      }
+      const s = byPosition.get(ep.position);
+      s.total_dwell_ms += ep.dwellMs;
+      s.visit_count++;
+      if (ep.retreated) {
+        s.retreat_count++;
+        s._retreat_distances.push(ep.retreatDistance);
+      }
+      if (ep.visitNumber > 1) s.reapproach_count++;
+      if (ep.clicked) s.clicked = true;
+      if (ep.visitNumber > s.max_visit_number) s.max_visit_number = ep.visitNumber;
+    }
+
+    const results = Array.from(byPosition.values()).map((s) => {
+      // Resolve outcome: use the latest episode's outcome for this position
+      s.outcome = s.clicked
+        ? Outcome.CLICKED
+        : s.reapproach_count > 0
+          ? Outcome.DEFERRED
+          : Outcome.EVALUATED_REJECTED;
+
+      // Mean retreat distance
+      if (s._retreat_distances.length > 0) {
+        s.mean_retreat_distance = Math.round(
+          s._retreat_distances.reduce((a, b) => a + b, 0) / s._retreat_distances.length
+        );
+      }
+      delete s._retreat_distances;
+      return s;
+    });
+
+    // Add NOT_APPROACHED for visible results with no episodes
+    const allResults = document.querySelectorAll(this.config.resultSelector);
+    const approachedPositions = new Set(results.map((r) => r.position));
+    for (const el of allResults) {
+      const pos = parseInt(el.getAttribute(this.config.positionAttr) || '0', 10);
+      if (!approachedPositions.has(pos) && this._visibleResults.has(el)) {
+        results.push({
+          position: pos,
+          outcome: Outcome.NOT_APPROACHED,
+          total_dwell_ms: 0,
+          mean_retreat_distance: 0,
           visit_count: 0,
           retreat_count: 0,
           reapproach_count: 0,
@@ -304,16 +416,29 @@ export class ApproachRetreat {
           max_visit_number: 0,
         });
       }
-      const s = byPosition.get(ep.position);
-      s.total_dwell_ms += ep.dwellMs;
-      s.visit_count++;
-      if (ep.retreated) s.retreat_count++;
-      if (ep.visitNumber > 1) s.reapproach_count++;
-      if (ep.clicked) s.clicked = true;
-      if (ep.visitNumber > s.max_visit_number) s.max_visit_number = ep.visitNumber;
     }
 
-    return Array.from(byPosition.values()).sort((a, b) => a.position - b.position);
+    return results.sort((a, b) => a.position - b.position);
+  }
+
+  /**
+   * Classify all results into the four-class taxonomy.
+   * Returns { clicked: [], deferred: [], evaluated_rejected: [], not_approached: [] }
+   */
+  classify() {
+    const signals = this.getSignals();
+    const classes = {
+      [Outcome.CLICKED]: [],
+      [Outcome.DEFERRED]: [],
+      [Outcome.EVALUATED_REJECTED]: [],
+      [Outcome.NOT_APPROACHED]: [],
+    };
+    for (const s of signals) {
+      if (s.outcome && classes[s.outcome]) {
+        classes[s.outcome].push(s);
+      }
+    }
+    return classes;
   }
 
   /**
