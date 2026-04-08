@@ -40,11 +40,35 @@ We initially proposed an "epistemic action" interpretation (Kirsh & Maglio, 1994
 
 What survives: retreat geometry as a *correlate* of the deliberation/commitment state, not as a *mechanism* of it. The cursor narrates the decision; it does not implement it.
 
-## Why this matters for click models and ranking
+## Why this matters: better negatives for ML ranking
 
-The four-class taxonomy splits the "not clicked" outcome that conventional click models collapse. The deferred class is the one that matters for adaptive ranking: a user who almost-clicked a result is providing information about its relevance that a binary click model discards. Retreat geometry gives a continuous signal within the deferred-vs-rejected boundary that adaptive systems can use.
+The practical payoff is training-data quality for learning-to-rank models. Click logs treat every non-clicked result as an undifferentiated negative — both the result the user looked at and rejected, and the result the user never even saw. A binary `clicked / not_clicked` label sends both to 0, and the ranker learns from the noise.
+
+Episode segmentation gives a four-class label that distinguishes them:
+
+| Class | Cursor signature | Use as label |
+|---|---|---|
+| **clicked** | enter → dwell → click | positive |
+| **evaluated-rejected** | enter → dwell → straight-far retreat → no return | strong negative (the user looked and said no) |
+| **deferred** | enter → dwell → curved-close retreat → re-approach | weak negative or hold-out (the user is still considering) |
+| **not-approached** | cursor never entered the AOI | unknown (not a negative — the user never looked) |
+
+A learning-to-rank model trained on this taxonomy gets cleaner gradients than one trained on binary clicks. Retreat geometry is what splits *evaluated-rejected* from *deferred* when the user has not yet committed to either: arc ratio, max retreat distance, and Fitts ID at max retreat are continuous within-class signals at that boundary.
+
+This is not about adaptive reranking on the deployed page. The library does not ship a ranker. The contribution is the labels — what the upstream training pipeline gets to consume.
 
 Discrimination cost is also invisible to position-only models. Top-of-page sponsored results have a distinctive cursor signature — 2× approach rate, 2.3× longer dwell, highest pupil dilation — driven by the user spending cognitive effort on type identification ("is this an ad?"), not on reading. The economic SERP utility framework C/W/L (Azzopardi, Thomas & Craswell, SIGIR '18) [2] predicts ads cost less than organic results; the data show top ads cost more, by every cursor and pupil metric. A discrimination cost term is needed for elements requiring category resolution before evaluation.
+
+## How this differs from ClickSense
+
+ClickSense [1] is the companion library for click commitment. The two are deliberately complementary, but the architectural difference is the unit of analysis, not the timing:
+
+- **ClickSense is element-agnostic.** It instruments any clickable target on any page. Its approach features (`approach_linearity`, `approach_max_deviation`, `approach_trajectory_type`) are geometric invariants of the cursor trajectory itself, computed against the implicit point target of the eventual mousedown. It works in a vacuum: no markup, no AOIs, no list structure required.
+- **approach-retreat is list-aware.** It requires the host page to mark vertical SERP-list items with `data-result` and `data-position` attributes. The library uses those AOIs as the unit of analysis: enter/dwell/exit episodes per result, four-class outcome per result, retreat geometry against a known result rectangle.
+
+Without the marked cells you cannot do episode segmentation, you cannot identify the deferred class, and you cannot compute retreat geometry against a meaningful AOI. The list structure is what gives this library its leverage. ClickSense answers "how was this click made?" approach-retreat answers "what was the user doing across this list?"
+
+The two libraries can run on the same page. ClickSense captures the moment of commitment; approach-retreat captures the episode structure that led there.
 
 ## Theoretical lineage
 
@@ -60,7 +84,7 @@ The relationship between bag-of-features and task-model approaches is complement
 
 It captures cursor-AOI episodes and computes their geometry. It does *not* require an eye tracker, server-side processing, or a trained model at inference time. The classification is rule-based (using the geometry features above) and runs in the browser.
 
-It does not (yet) implement adaptive reranking — the relevance scoring is exposed via `computeRelevance()` and is left for the host application to wire into a ranker. The roadmap includes a reference reranker and a worked example on the gh-pages site.
+A `computeRelevance()` method is exposed for host applications that want to use the collected episode data — for example, to feed a downstream ranker. No ranker ships with the library.
 
 ---
 

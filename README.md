@@ -20,10 +20,6 @@ ClickSense captures the moment of commitment (mousedown to mouseup). Approach/Re
 | **Re-approach** | Cursor returns to a previously visited result — reconsideration |
 | **Commitment depth** | How far down the SERP before first click |
 
-### Adaptive reranking
-
-Collected approach-retreat signals drive relevance scoring. Over time, results rerank themselves based on how visitors actually evaluate them — not just what they click.
-
 ## Install
 
 ```bash
