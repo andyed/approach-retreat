@@ -73,6 +73,12 @@ const DEFAULTS = {
 
   // Callback for reranking signals (batch of episodes → relevance scores)
   onSignal: null,
+
+  // Forward vs regressive classification tolerance. An episode is classified
+  // at entry time: forward iff scrollY >= scrollHwm - directionTolPx. This
+  // mirrors data_loader.classify_fixations in the attentional-foraging
+  // notebooks (tol=50 px, parity-verified at 4,036/4,036 fixations).
+  directionTolPx: 50,
 };
 
 /**
@@ -104,6 +110,13 @@ class Episode {
 
     // Whether this result was later re-approached after this episode
     this.reapproached = false;
+
+    // Forward vs regressive at entry time. 'forward' = user was at or near
+    // the scroll high-water mark when entering. 'regressive' = user scrolled
+    // back up to re-examine. Null until classified in _enterResult.
+    this.direction = null;
+    this.entryScroll = null;
+    this.hwmAtEntry = null;
   }
 
   get dwellMs() {
@@ -150,6 +163,9 @@ class Episode {
       peak_velocity: this.peakVelocity,
       min_velocity: this.minVelocity === Infinity ? 0 : this.minVelocity,
       sample_count: this.samples.length,
+      direction: this.direction,
+      entry_scroll: this.entryScroll,
+      hwm_at_entry: this.hwmAtEntry,
       entered_at: this.enteredAt,
       exited_at: this.exitedAt,
       clicked_at: this.clickedAt,
@@ -167,6 +183,9 @@ export class ApproachRetreat {
     this._lastMouse = null;    // {x, y, t}
     this._velocity = { vx: 0, vy: 0 };
     this._scrollY = window.scrollY;
+    // Scroll high-water mark — running max of scrollY. Used to classify
+    // each entry as forward (at/near HWM) or regressive (below HWM).
+    this._scrollHwm = window.scrollY;
     this._observer = null;
     this._visibleResults = new Set();
 
@@ -295,6 +314,18 @@ export class ApproachRetreat {
     );
     episode.approachAngle = Math.atan2(this._velocity.vy, this._velocity.vx);
 
+    // Forward vs regressive classification at entry time. Mirrors the
+    // Python episode_classifier.classify_episode rule: forward iff the
+    // current scrollY sits at or within directionTolPx of the running
+    // scroll HWM. Include the entry scroll in the HWM comparison so that
+    // an entry at a fresh peak is always classified forward.
+    const entryScroll = this._scrollY;
+    const hwmAtEntry = Math.max(this._scrollHwm, entryScroll);
+    const tolPx = this.config.directionTolPx;
+    episode.entryScroll = entryScroll;
+    episode.hwmAtEntry = hwmAtEntry;
+    episode.direction = entryScroll >= hwmAtEntry - tolPx ? 'forward' : 'regressive';
+
     // Mark prior episodes on this element as deferred (re-approached)
     if (visits > 1) {
       for (const prev of this._episodes) {
@@ -397,6 +428,9 @@ export class ApproachRetreat {
 
   _onScroll() {
     this._scrollY = window.scrollY;
+    if (this._scrollY > this._scrollHwm) {
+      this._scrollHwm = this._scrollY;
+    }
   }
 
   _onClick(e) {
