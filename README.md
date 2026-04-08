@@ -4,7 +4,7 @@ Cursor approach-retreat dynamics on search result pages. SERP-specific companion
 
 ## The idea
 
-Before you click a search result, your cursor tells a story. It approaches a result (interest), dwells over it (evaluation), then either commits (click) or retreats (rejection). The retreat distance encodes confidence: moving far away raises the motor cost of returning — a self-imposed penalty that externalizes uncertainty into physical space.
+Before you click a search result, your cursor tells a story. It approaches a result (interest), dwells over it (evaluation), then either commits (click) or retreats. The geometry of that retreat — how curved, how far, how directly — distinguishes results the user is done with from results they may come back to. Curved + close retreats predict re-approach; straight + far retreats predict commitment to rejection.
 
 ClickSense captures the moment of commitment (mousedown to mouseup). Approach/Retreat captures everything before: the evaluation phase where most of the cognitive work happens.
 
@@ -15,7 +15,8 @@ ClickSense captures the moment of commitment (mousedown to mouseup). Approach/Re
 | **Approach velocity** | Fast = scanning. Slow = evaluating. |
 | **Dwell time** | Time cursor spends over a result's bounding box |
 | **Retreat** | Cursor leaves without clicking — rejection or deferral |
-| **Retreat distance** | How far the cursor moves away — encodes rejection confidence |
+| **Retreat distance** | How far the cursor moves away — far retreats predict commitment to rejection (no return), close retreats predict re-approach |
+| **Arc ratio** | Path length / direct distance — curved retreats (arc ratio > 1.5) predict re-approach |
 | **Re-approach** | Cursor returns to a previously visited result — reconsideration |
 | **Commitment depth** | How far down the SERP before first click |
 
@@ -116,6 +117,11 @@ Starting with: **"Will AI be an existential threat to humanity?"** — synthetic
 - `approach-retreat/adapters/posthog` — PostHog event flattening
 - `approach-retreat/adapters/callback` — Buffer + flush (sendBeacon, etc.)
 
+## Background reading
+
+- **[`docs/theory.md`](docs/theory.md)** — Concise theoretical writeup. What the library measures, what the signals mean, the lineage of cursor-on-SERP work, and what we initially proposed but rejected after the data didn't support it.
+- **[`docs/one-pager.md`](docs/one-pager.md)** — Why a task model beats a 638-feature bag for SERP cursor analysis. The four-class taxonomy, discrimination cost, retreat geometry as deliberation indicator. Citations to prior work.
+
 ## Related work
 
 This library is the instrumentation half of an ongoing research program. The analysis half lives in [attentional-foraging](https://github.com/andyed/attentional-foraging), which reanalyzes the AdSERP dataset (Latifzadeh, Gwizdka & Leiva, SIGIR '25 — 2,776 trials, 47 participants, simultaneous eye + mouse + pupil tracking) to validate the approach-retreat framework against ground-truth gaze data.
@@ -133,7 +139,6 @@ This library is the deployable form of that research: you get the signal without
 - Guo & Agichtein (2012). ["Beyond dwell time"](https://dl.acm.org/doi/10.1145/2187836.2187914) — post-click cursor movements for document relevance (WWW '12)
 - Arapakis & Leiva (2016). ["Predicting user engagement with direct displays"](https://dl.acm.org/doi/10.1145/2911451.2911505) — 638 cursor features, AUC 0.86 for attention prediction (SIGIR '16)
 - Leiva & Arapakis (2020). ["The Attentive Cursor Dataset"](https://doi.org/10.3389/fnhum.2020.565664) — 2,737 users, cursor + attention labels + SERP HTML (Frontiers)
-- Kirsh & Maglio (1994). "On distinguishing epistemic from pragmatic action" — retreat as epistemic action framework
 - Edmonds (2016). ["Learning from Complex Online Behavior"](https://youtu.be/j38fm48gTgg?t=1348) — click hold duration as cognitive signal
 
 ## License

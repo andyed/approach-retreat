@@ -9,8 +9,8 @@
  * Core signals:
  * - Approach velocity: fast = scanning, slow = evaluating
  * - Dwell time per result: time cursor spends in a result's AOI
- * - Retreat distance: how far cursor moves after leaving — encodes rejection
- *   confidence (self-imposed re-acquisition cost, epistemic action)
+ * - Retreat distance: how far cursor moves after leaving — far retreats predict
+ *   commitment to rejection; close retreats predict re-approach
  * - Re-approach: cursor returns to a previously visited result (reconsideration)
  * - Commitment depth: how far down the SERP before first click
  *
