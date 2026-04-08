@@ -1,0 +1,41 @@
+{
+  "name": "approach-retreat",
+  "version": "0.1.0",
+  "description": "Cursor approach-retreat dynamics on search result pages. SERP-specific companion to ClickSense.",
+  "type": "module",
+  "main": "dist/approach-retreat.js",
+  "module": "dist/approach-retreat.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/approach-retreat.esm.js",
+      "require": "./dist/approach-retreat.cjs.js"
+    },
+    "./adapters/posthog": "./src/adapters/posthog.js",
+    "./adapters/callback": "./src/adapters/callback.js"
+  },
+  "files": [
+    "dist/",
+    "src/"
+  ],
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js --watch",
+    "site": "cd site && python3 -m http.server 8080"
+  },
+  "keywords": [
+    "serp",
+    "search",
+    "cursor",
+    "approach-retreat",
+    "cognitive-load",
+    "analytics",
+    "ux",
+    "hci",
+    "reranking"
+  ],
+  "author": "Andy Edmonds <andyed@alum.cmu.edu>",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
