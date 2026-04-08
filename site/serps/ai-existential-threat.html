@@ -10,7 +10,7 @@
   <header class="serp-header">
     <div class="serp-query">Will AI be an existential threat to humanity?</div>
     <div class="serp-info">
-      10 answers, 2011&ndash;2025 &middot; sorted by date &middot;
+      10 answers + 1 ad, 2011&ndash;2025 &middot; sorted by date &middot;
       <a href="../index.html">&larr; All questions</a>
     </div>
   </header>
@@ -46,17 +46,26 @@
     const serp = document.getElementById('serp');
 
     for (const a of answers) {
+      const isAd = a.type === 'ad';
       const div = document.createElement('div');
-      div.className = 'result';
+      div.className = isAd ? 'result result-ad' : 'result';
       div.dataset.result = '';
       div.dataset.position = a.position;
-      div.innerHTML = `
-        <div class="result-title">${a.title}</div>
-        <div class="result-url">${a.author} &middot; ${a.author_bio}</div>
-        <div class="result-snippet">${a.snippet}</div>
-        <div class="result-meta">${a.upvotes} upvotes &middot; ${a.year}</div>
-        <div class="result-full-text">${a.full_text}</div>
-      `;
+      if (isAd) div.dataset.etype = 'ad';
+      div.innerHTML = isAd
+        ? `
+          <div class="result-title"><span class="result-sponsored">Sponsored</span>${a.title}</div>
+          <div class="result-url">${a.author_bio}</div>
+          <div class="result-snippet">${a.snippet}</div>
+          <div class="result-full-text">${a.full_text}</div>
+        `
+        : `
+          <div class="result-title">${a.title}</div>
+          <div class="result-url">${a.author} &middot; ${a.author_bio}</div>
+          <div class="result-snippet">${a.snippet}</div>
+          <div class="result-meta">${a.upvotes.toLocaleString()} upvotes &middot; ${a.year}</div>
+          <div class="result-full-text">${a.full_text}</div>
+        `;
       serp.appendChild(div);
     }
 

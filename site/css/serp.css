@@ -158,6 +158,37 @@ body {
   margin-top: 0.35rem;
 }
 
+/* --- Ad result --- */
+
+.result.result-ad {
+  background: #121218;
+  border: 1px solid #2a2a3a;
+  border-radius: 6px;
+  margin: 0.5rem 0;
+  padding: 1.25rem 1.5rem;
+}
+
+.result-ad .result-title {
+  color: var(--accent);
+}
+
+.result-ad .result-url {
+  color: #8888cc; /* on #121218 = 8.2:1 */
+}
+
+.result-sponsored {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #b0b0b0; /* on #121218 = 9.4:1 */
+  border: 1px solid #444;
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  letter-spacing: 0.03em;
+}
+
 /* --- Expanded result (reading view) --- */
 
 .result.expanded {

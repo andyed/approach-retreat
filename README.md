@@ -26,7 +26,7 @@ Collected approach-retreat signals drive relevance scoring. Over time, results r
 ## Install
 
 ```bash
-npm install approach-retreat
+npm install andyed/approach-retreat
 ```
 
 Or via script tag:
@@ -105,9 +105,9 @@ const ar = new ApproachRetreat({ resultSelector: '[data-result]', onEpisode: ...
 
 ## Live experiment
 
-The [gh-pages site](https://andyed.github.io/approach-retreat/) presents real questions with real answers spanning years, displayed as search results. Browse them. Your cursor behavior is captured anonymously to study how people evaluate ranked information.
+The [gh-pages site](https://andyed.github.io/approach-retreat/) presents real questions displayed as search results with synthetic answers that represent the discourse arc over time. An injected ad tests discrimination cost (the approach-retreat signature when users identify sponsored content). Your cursor behavior is captured anonymously to study how people evaluate ranked information.
 
-Starting with: **"Will AI be an existential threat to humanity?"** — ~15 years of Quora answers showing how community consensus shifted over time.
+Starting with: **"Will AI be an existential threat to humanity?"** — synthetic answers representing ~15 years of shifting consensus, from early dismissal through the Bostrom inflection to post-GPT recalibration.
 
 ## Adapters
 
@@ -116,9 +116,11 @@ Starting with: **"Will AI be an existential threat to humanity?"** — ~15 years
 
 ## References
 
-- Huang, White, Dumais (2012). "User see, user point" — cursor as gaze proxy on SERPs
-- Guo & Agichtein (2012). Cursor trail features predict result relevance
-- Arapakis & Leiva (2016). Predicting search satisfaction from cursor behavior
+- Huang, White & Buscher (2012). ["User see, user point"](https://jeffhuang.com/papers/GazeCursor_CHI12.pdf) — gaze-cursor alignment on SERPs, 700 ms lag, behavior-dependent (CHI '12)
+- Guo & Agichtein (2012). ["Beyond dwell time"](https://dl.acm.org/doi/10.1145/2187836.2187914) — post-click cursor movements for document relevance (WWW '12)
+- Arapakis & Leiva (2016). ["Predicting user engagement with direct displays"](https://dl.acm.org/doi/10.1145/2911451.2911505) — 638 cursor features, AUC 0.86 for attention prediction (SIGIR '16)
+- Leiva & Arapakis (2020). ["The Attentive Cursor Dataset"](https://doi.org/10.3389/fnhum.2020.565664) — 2,737 users, cursor + attention labels + SERP HTML (Frontiers)
+- Kirsh & Maglio (1994). "On distinguishing epistemic from pragmatic action" — retreat as epistemic action framework
 - Edmonds (2016). ["Learning from Complex Online Behavior"](https://youtu.be/j38fm48gTgg?t=1348) — click hold duration as cognitive signal
 
 ## License
