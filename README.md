@@ -124,6 +124,7 @@ Starting with: **"Will AI be an existential threat to humanity?"** — synthetic
 - **[`docs/theory.md`](docs/theory.md)** — Concise theoretical writeup. What the library measures, what the signals mean, the lineage of cursor-on-SERP work, and what we initially proposed but rejected after the data didn't support it.
 - **[`docs/one-pager.md`](docs/one-pager.md)** — Why a task model beats a 638-feature bag for SERP cursor analysis. The four-class taxonomy, discrimination cost, retreat geometry as deliberation indicator. Citations to prior work.
 - **[`docs/validation/attcur-bruckner.md`](docs/validation/attcur-bruckner.md)** — Public head-to-head validation against Brückner, Arapakis & Leiva (SIGIR '21) on their own benchmark. Approach-retreat features beat a scalar mouse-length baseline by +12.5 AUC on ad click prediction (0.821 vs 0.696) with a non-learned 11-feature logistic regression. Reproduction pipeline at [`analysis/attcur-validation/`](analysis/attcur-validation/).
+- **[`docs/history.md`](docs/history.md)** — How we got here. A personal history of cursor instrumentation from 2001 (Lucidity + the Optimoz gesture extension's real-time cursor-vector compression, Slashdotted and installed by millions) through Uzilla 2003 ("mouse miles" path length + the DOM-path signature) to ClickSense and approach-retreat. Complements the Leiva/Arapakis lineage table below with the other side of the story.
 
 ## Related work
 
