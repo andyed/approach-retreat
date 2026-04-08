@@ -1,12 +1,18 @@
 # Approach/Retreat
 
-Cursor approach-retreat dynamics on search result pages. SERP-specific companion to [ClickSense](https://github.com/andyed/clicksense).
+Cursor approach-retreat dynamics on **ranked list layouts** (search result pages, recommendation feeds, comparison tables). Sister library to [ClickSense](https://github.com/andyed/clicksense).
 
 ## The idea
 
 Before you click a search result, your cursor tells a story. It approaches a result (interest), dwells over it (evaluation), then either commits (click) or retreats. The geometry of that retreat — how curved, how far, how directly — distinguishes results the user is done with from results they may come back to. Curved + close retreats predict re-approach; straight + far retreats predict commitment to rejection.
 
-ClickSense captures the moment of commitment (mousedown to mouseup). Approach/Retreat captures everything before: the evaluation phase where most of the cognitive work happens.
+### How this differs from ClickSense
+
+**ClickSense** instruments approach + click dynamics on arbitrary clickable elements (buttons, cards, links) — vendor-agnostic motor confidence across any layout. The signal is per-click: approach velocity, hold duration, trajectory shape.
+
+**Approach/Retreat** is SERP-specific. It models the evaluation phase across a *list* of ranked candidates, tracking enter/dwell/exit episodes at each position and classifying them into a four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached). The signal is per-SERP: which results were considered, which were skipped, and which were kept in reserve.
+
+Both libraries compose — a page can run both. ClickSense sees each click as a moment; approach-retreat sees the whole page of decisions leading up to it.
 
 ### Signals
 
@@ -117,17 +123,53 @@ Starting with: **"Will AI be an existential threat to humanity?"** — synthetic
 
 - **[`docs/theory.md`](docs/theory.md)** — Concise theoretical writeup. What the library measures, what the signals mean, the lineage of cursor-on-SERP work, and what we initially proposed but rejected after the data didn't support it.
 - **[`docs/one-pager.md`](docs/one-pager.md)** — Why a task model beats a 638-feature bag for SERP cursor analysis. The four-class taxonomy, discrimination cost, retreat geometry as deliberation indicator. Citations to prior work.
+- **[`docs/validation/attcur-bruckner.md`](docs/validation/attcur-bruckner.md)** — Public head-to-head validation against Brückner, Arapakis & Leiva (SIGIR '21) on their own benchmark. Approach-retreat features beat a scalar mouse-length baseline by +12.5 AUC on ad click prediction (0.821 vs 0.696) with a non-learned 11-feature logistic regression. Reproduction pipeline at [`analysis/attcur-validation/`](analysis/attcur-validation/).
 
 ## Related work
 
-This library is the instrumentation half of an ongoing research program. The analysis half lives in [attentional-foraging](https://github.com/andyed/attentional-foraging), which reanalyzes the AdSERP dataset (Latifzadeh, Gwizdka & Leiva, SIGIR '25 — 2,776 trials, 47 participants, simultaneous eye + mouse + pupil tracking) to validate the approach-retreat framework against ground-truth gaze data.
+This library is the instrumentation half of a two-part research program:
 
-Key findings from that work motivate this library:
-- **Four-class taxonomy** — clicked / deferred / evaluated-rejected / not-approached — is recoverable from cursor trajectories alone (NB22, click prediction AUC 0.821)
-- **Discrimination cost signature** — top ads produce distinctive cursor hesitation compared to organic results (NB20: 2× approach rate, 2.3× dwell, higher pupil dilation)
-- **C/W/L framework extension** — Azzopardi, Thomas & Craswell (SIGIR '18) predicted ads evaluate cheaper than organic; the data shows the opposite for top ads (discrimination, not reading difficulty), suggesting a missing variable in the cost model
+- **Analysis:** [attentional-foraging](https://github.com/andyed/attentional-foraging) — a reanalysis of the AdSERP dataset (Latifzadeh, Gwizdka & Leiva, SIGIR '25; 2,776 trials, 47 participants, simultaneous eye + mouse + scroll + pupil tracking) that produces the OSEC task model and the four-class taxonomy.
+- **Deployment:** this library — the task model in runnable form. You get the signal without the eye tracker.
 
-This library is the deployable form of that research: you get the signal without the eye tracker.
+### The Leiva/Arapakis research program
+
+The cursor-on-SERP lineage this work builds on runs through a single sustained collaboration — Luis Leiva and Ioannis Arapakis have been producing the foundational datasets, features, and baselines for more than a decade. Approach/retreat is best understood as a task-model layer on top of their instrument.
+
+| Year | Paper | What it contributed |
+|---|---|---|
+| 2016 | Arapakis & Leiva. ["Predicting user engagement with direct displays"](https://dl.acm.org/doi/10.1145/2911451.2911505) (SIGIR) | 638 cursor features → 0.86 AUC attention prediction on Yahoo Knowledge Modules. Established that cursor telemetry alone is strong signal. |
+| 2020 | Arapakis, Penta, Joho & Leiva. "A Price-per-attention Auction Scheme Using Mouse Cursor Information" (ACM TOIS) | Cursor-derived attention as an auction-scheme currency — the economic framing that motivates the rest of the program. |
+| 2020 | Arapakis & Leiva. "Learning Efficient Representations of Mouse Movements to Predict User Attention" (SIGIR) | Neural-embedding precursor to AdSight — learned representations of cursor trajectories. |
+| 2020 | Leiva & Arapakis. ["The Attentive Cursor Dataset"](https://doi.org/10.3389/fnhum.2020.565664) (Frontiers) | 2,737 users, cursor + self-reported attention labels + SERP HTML. Largest public cursor-on-SERP dataset. |
+| 2021 | Leiva, Arapakis & Iordanou. "My Mouse, My Rules" (CHIIR) | Privacy analysis of the same telemetry primitives — important context for any deployment. |
+| 2021 | **Brückner, Arapakis & Leiva.** ["When Choice Happens: A Systematic Examination of Mouse Movement Length for Decision Making in Web Search"](https://dl.acm.org/doi/10.1145/3404835.3463011) (SIGIR) | Scalar "mouse movement length" as a relevance signal. **This is the closest published work to approach/retreat — a single-feature version of what the four-class taxonomy decomposes.** |
+| 2025 | Latifzadeh, Gwizdka & Leiva. "A Versatile Dataset of Mouse and Eye Movements on Search Engine Results Pages" (SIGIR) | AdSERP: eye + mouse + pupil + ad boundaries on 2,776 trials. The dataset this work is built on. |
+| 2025 | Arapakis et al. "AdSight" (SIGIR) | Transformer-based click prediction from cursor + layout. The modern black-box counterpart to the task-model approach here. |
+
+### What approach/retreat adds
+
+Each of the papers above treats cursor behavior as a *signal to decode*. None of them adopt a **task model** for the evaluation phase. The contribution here is specifically the OSEC → four-class decomposition, which turns a 638-feature brute-force problem into a ~6-feature parsimonious one and recovers an interpretable taxonomy (clicked / deferred / evaluated-rejected / not-approached) instead of a scalar score.
+
+### Validation against AdSERP (attentional-foraging)
+
+The four-class taxonomy and retreat geometry claims are validated in the attentional-foraging notebooks:
+
+- **Click prediction (NB21, NB22):** Episode-level features (dwell, retreat distance, arc ratio, visit count) → AUC 0.821 for click prediction. With element-type interactions → 0.838. Competitive with Arapakis & Leiva 2016 (0.86 AUC, 638 features) using ~6 features because the task model tells you which features matter.
+- **Retreat arc geometry (NB24):** Top ads show 2.36× arc ratio (curved retreats) vs 1.08 for organic (near-straight). Re-approached retreats have both higher arc ratio (2.09 vs 1.18) and lower Fitts ID (2.21 vs 2.31 bits) — the DEFERRED signature is curved + close.
+- **Discrimination cost (NB20):** Top ads produce 2× the approach rate of organic results, 2.3× the dwell, 17× the lateral drift during retreat, and the highest pupil dilation (+0.41%). This is the C/W/L violation: top ads evaluate *more* expensively than organic, not less.
+- **Public head-to-head against Brückner et al. 2021:** See [`docs/validation/attcur-bruckner.md`](docs/validation/attcur-bruckner.md). Approach-retreat features beat the Brückner scalar mouse-movement-length baseline by +12.5 AUC (0.821 vs 0.696) on their own ad-click-prediction benchmark, using an 11-feature logistic regression — no neural network, no embeddings. The task model is the whole reason for the gap.
+
+### Framework extensions
+
+- **C/W/L (Azzopardi, Thomas & Craswell, SIGIR '18)** predicts user evaluation cost decreases with position — ads should be cheaper than organic because they demand less reading. The AdSERP data shows the opposite for top ads: discrimination ("is this ad or result?") is a cost C/W/L doesn't model. Adding a retreat × is_top_ad interaction lifts click-prediction AUC from 0.884 to 0.914. A CIKM 2026 paper draft formalizes this as a missing variable in the framework.
+- **Information Foraging Theory (Pirolli & Card, 1999)** provides the patch-leaving vocabulary, but operates at the session level. OSEC applies the same foraging lens at the per-result evaluation level — each result is a mini-patch with its own cost and reward. Retreat geometry is the motor trace of the patch-leaving decision.
+
+### Datasets used for validation
+
+- [AdSERP](https://github.com/kayhan-latifzadeh/AdSERP) — primary, via attentional-foraging
+- [The Attentive Cursor Dataset](https://gitlab.com/iarapakis/the-attentive-cursor-dataset) — public (no permission required), 2,737 users, self-reported attention labels, for scale replication. Cloning and taxonomy validation pending.
+- [Brückner et al. 2021 artifacts](https://dl.acm.org/doi/10.1145/3404835.3463011) — head-to-head beat documented in [`docs/validation/attcur-bruckner.md`](docs/validation/attcur-bruckner.md).
 
 ## References
 

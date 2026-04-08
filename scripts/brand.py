@@ -35,8 +35,10 @@ DEFERRED = (220, 170, 50)      # amber — minor retreat (coming back)
 REJECTED = (255, 140, 130)     # coral — major retreat (gone)
 APPROACH = (180, 180, 175)     # neutral — the incoming approach
 HOME_ZONE = (60, 60, 70)       # subtle — cursor parking indicator
-TEXT = (228, 228, 216)
-SUBTEXT = (170, 170, 165)
+TEXT = (228, 228, 216)       # primary — 15.4:1
+BRIGHT = (210, 210, 200)     # tagline and other explanatory text — ~13:1
+BRIGHT_DIM = (188, 188, 178) # secondary explanatory (attribution etc) — ~10:1
+SUBTEXT = (170, 170, 165)    # UI chrome only (search box border, dividers) — 8.5:1
 
 
 def luminance(rgb):
@@ -62,6 +64,8 @@ for name, color in [
     ("REJECTED", REJECTED),
     ("APPROACH", APPROACH),
     ("TEXT", TEXT),
+    ("BRIGHT", BRIGHT),
+    ("BRIGHT_DIM", BRIGHT_DIM),
     ("SUBTEXT", SUBTEXT),
 ]:
     r = contrast_ratio(color, BG)
@@ -364,23 +368,31 @@ W, H = 1200, 630
 social = Image.new('RGB', (W, H), BG)
 draw = ImageDraw.Draw(social)
 
-# Input box at top — query + hourglass, positioned above the AOI
-# The AOI in the glyph (scale 2.0) sits at cy=250, box_l = 250-240=10 from cx
-# AOI width at scale 2.0 is 280, so we center the input box over the AOI's cx
+# Layout strategy: everything (input box, AOI, title, tagline, attribution)
+# shares a single vertical axis — the AOI's center x. The glyph's home zone
+# and labels extend right as visual annotations, not shifting the axis.
 GLYPH_SCALE = 2.0
-GLYPH_CX = W // 2 - int(40 * GLYPH_SCALE)  # shift glyph slightly left so labels have room
+# Choose an anchor_x that leaves room for glyph extension to the right
+# At scale 2.0: AOI extends 120 left, home zone extends ~140 right of AOI center,
+# plus ~90px for the rejected label → total composition width ~580, visual
+# weight right of the AOI by ~50-70px. Place anchor_x slightly left of W/2
+# so the composition looks balanced in the frame.
+anchor_x = W // 2 - 50
+
+# AOI center = anchor_x. In draw_brand_glyph, box_l = cx - 120*scale, so the
+# AOI center (box_l + box_w/2) is at cx - 50*scale. Solve: cx = anchor_x + 50*scale
+GLYPH_CX = anchor_x + int(50 * GLYPH_SCALE)
 GLYPH_CY = 270
 
-# Compute AOI center within the glyph
-aoi_cx = GLYPH_CX - int(50 * GLYPH_SCALE)  # box_l offset from cx is -120*scale, box center is -50*scale
-aoi_top_y = GLYPH_CY - int(23 * GLYPH_SCALE)  # box_h/2 = 23*scale
+aoi_cx = anchor_x  # by construction
+aoi_top_y = GLYPH_CY - int(23 * GLYPH_SCALE)
 
-# Input box centered on the AOI's x, above it
+# Input box centered on anchor_x, above the AOI
 input_width = int(360 * GLYPH_SCALE)
 input_top = 100
 draw_input_box(draw, aoi_cx, input_top, input_width, scale=1.4, query_text="cognac glasses set of 2")
 
-# Connector line from input box down to the AOI (suggests query → result flow)
+# Connector line from input box down to the AOI
 input_bottom = input_top + int(44 * 1.4)
 conn_gap = 10
 draw.line(
@@ -388,7 +400,6 @@ draw.line(
     fill=(80, 80, 85),
     width=2,
 )
-# Tiny arrowhead at the AOI
 draw_arrowhead(draw, (aoi_cx, aoi_top_y - conn_gap), math.pi / 2, 5, (80, 80, 85))
 
 # The brand glyph
@@ -409,15 +420,15 @@ attribution = "a task model for the evaluation phase  ·  github.com/andyed/appr
 
 bbox = draw.textbbox((0, 0), title, font=title_font)
 title_w = bbox[2] - bbox[0]
-draw.text(((W - title_w) // 2, 455), title, fill=TEXT, font=title_font)
+draw.text((anchor_x - title_w // 2, 455), title, fill=TEXT, font=title_font)
 
 bbox = draw.textbbox((0, 0), tagline, font=subtitle_font)
 tag_w = bbox[2] - bbox[0]
-draw.text(((W - tag_w) // 2, 553), tagline, fill=SUBTEXT, font=subtitle_font)
+draw.text((anchor_x - tag_w // 2, 553), tagline, fill=BRIGHT, font=subtitle_font)
 
 bbox = draw.textbbox((0, 0), attribution, font=attribution_font)
 attr_w = bbox[2] - bbox[0]
-draw.text(((W - attr_w) // 2, 597), attribution, fill=SUBTEXT, font=attribution_font)
+draw.text((anchor_x - attr_w // 2, 597), attribution, fill=BRIGHT_DIM, font=attribution_font)
 
 social.save(OUT_DIR / "social-header.png")
 print(f"  → social-header.png")
