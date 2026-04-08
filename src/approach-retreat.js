@@ -162,6 +162,7 @@ export class ApproachRetreat {
     this.config = { ...DEFAULTS, ...options };
     this._episodes = [];       // all completed episodes
     this._active = new Map();  // resultEl → current Episode
+    this._retreating = [];     // recently exited episodes still tracking retreat distance
     this._visitCounts = new Map(); // resultEl → visit count
     this._lastMouse = null;    // {x, y, t}
     this._velocity = { vx: 0, vy: 0 };
@@ -252,9 +253,18 @@ export class ApproachRetreat {
       }
     }
 
+    // Update retreat distances for recently exited episodes
+    this._updateRetreating(x, y, now);
+
     // Handle state transitions
     if (hitResult) {
       if (!this._active.has(hitResult)) {
+        // Entering a new result — graduate any retreating episodes for
+        // OTHER results (cursor committed to evaluating something new).
+        // Retreating episodes for THIS result are handled in _enterResult
+        // (they become reapproaches).
+        this._graduateRetreating(hitResult, now);
+
         // Enter new result
         this._enterResult(hitResult, now);
       }
@@ -301,23 +311,87 @@ export class ApproachRetreat {
     episode.exitedAt = now;
     this._active.delete(el);
 
-    if (episode.dwellMs >= this.config.minDwellMs) {
-      // Compute retreat distance: track cursor distance from AOI center
-      // over subsequent mousemove events. For now, snapshot the distance
-      // at exit using the last known mouse position vs AOI center.
-      const rect = el.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
-      if (this._lastMouse) {
-        episode.retreatDistance = Math.sqrt(
-          (this._lastMouse.x - cx) ** 2 + (this._lastMouse.y - cy) ** 2
-        );
+    if (episode.dwellMs < this.config.minDwellMs) return;
+
+    if (episode.clicked) {
+      // Clicked episodes don't retreat — finalize immediately
+      this._finalizeEpisode(episode);
+      return;
+    }
+
+    // Start tracking retreat distance: cache the AOI center at exit time
+    // (before scroll changes invalidate getBoundingClientRect)
+    const rect = el.getBoundingClientRect();
+    episode._aoiCenter = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+    episode._retreatStart = now;
+    episode.retreatDistance = 0;
+
+    this._retreating.push(episode);
+  }
+
+  /**
+   * Update retreat distances for recently exited episodes.
+   * Called on every mousemove. Tracks max distance from AOI center
+   * after exit — the actual retreat signal.
+   *
+   * Episodes graduate out of retreating state when:
+   * - The cursor re-enters the same result (→ reapproach, handled in _enterResult)
+   * - reapproachWindowMs expires
+   * - The cursor enters a different result (commit to new evaluation)
+   */
+  _updateRetreating(x, y, now) {
+    const windowMs = this.config.reapproachWindowMs;
+    let i = this._retreating.length;
+
+    while (i--) {
+      const ep = this._retreating[i];
+      const elapsed = now - ep._retreatStart;
+
+      // Compute distance from AOI center
+      const dx = x - ep._aoiCenter.x;
+      const dy = y - ep._aoiCenter.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Track maximum retreat distance
+      if (dist > ep.retreatDistance) {
+        ep.retreatDistance = dist;
       }
 
-      this._episodes.push(episode);
-      if (this.config.onEpisode) {
-        this.config.onEpisode(episode.toJSON());
+      // Graduate when window expires
+      if (elapsed >= windowMs) {
+        this._retreating.splice(i, 1);
+        this._finalizeEpisode(ep);
       }
+    }
+  }
+
+  /**
+   * Graduate retreating episodes when cursor enters a new result.
+   * Episodes for the entered result stay (they'll become reapproaches).
+   * All others finalize — the user has moved on.
+   */
+  _graduateRetreating(enteredEl, now) {
+    let i = this._retreating.length;
+    while (i--) {
+      const ep = this._retreating[i];
+      if (ep.resultEl !== enteredEl) {
+        this._retreating.splice(i, 1);
+        this._finalizeEpisode(ep);
+      }
+    }
+  }
+
+  _finalizeEpisode(episode) {
+    // Clean up transient tracking state
+    delete episode._aoiCenter;
+    delete episode._retreatStart;
+
+    this._episodes.push(episode);
+    if (this.config.onEpisode) {
+      this.config.onEpisode(episode.toJSON());
     }
   }
 
@@ -479,6 +553,11 @@ export class ApproachRetreat {
    * Reset all tracked state. Call after reranking.
    */
   reset() {
+    // Flush any retreating episodes before reset
+    for (const ep of this._retreating) {
+      this._finalizeEpisode(ep);
+    }
+    this._retreating = [];
     this._episodes = [];
     this._active.clear();
     this._visitCounts.clear();
@@ -490,5 +569,6 @@ export class ApproachRetreat {
     document.removeEventListener('scroll', this._onScroll);
     if (this._observer) this._observer.disconnect();
     this._active.clear();
+    this._retreating = [];
   }
 }
