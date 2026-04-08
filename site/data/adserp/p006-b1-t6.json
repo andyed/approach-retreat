@@ -1,0 +1,130 @@
+{
+  "trial_id": "p006-b1-t6",
+  "query": "buy starwest botanicals bee pollen granules",
+  "ad_layout_expected": {
+    "dd_top": 1,
+    "dd_right": 0,
+    "native_ad": 3
+  },
+  "extracted_counts": {
+    "dd_top": 3,
+    "organic": 8,
+    "native_ad": 3,
+    "dd_right": 0
+  },
+  "n_results": 14,
+  "results": [
+    {
+      "title": "Polen de flores 500 g",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwjI_vSkgaH4AhWgPq0GHUqtC10YABAJGgJwdg&sig=AOD64_3cGv97t5VZU10ZOmhbWr8brh4W2A&ctype=5&q=&ved=2ahUKEwiWleqkgaH4AhVnDkQIHbLlD6wQ5bgDKAB6BAgBEDk&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac12.50",
+      "etype": "dd_top",
+      "position": 0
+    },
+    {
+      "title": "Beekeeper's Naturals B. Combustible, Polen de abeja, 150 g (5,2 oz)",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwjI_vSkgaH4AhWgPq0GHUqtC10YABALGgJwdg&sig=AOD64_1g0K0N5UvyiPnHMzP-ZsxkfXLX8g&ctype=5&q=&ved=2ahUKEwiWleqkgaH4AhVnDkQIHbLlD6wQ5bgDKAB6BAgBEEc&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac28.44",
+      "etype": "dd_top",
+      "position": 1
+    },
+    {
+      "title": "Mielar - Polen Bio 450 g -",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwjI_vSkgaH4AhWgPq0GHUqtC10YABAGGgJwdg&sig=AOD64_2ZO4GEIIGeajYsAIz6HERntauCDQ&ctype=5&q=&ved=2ahUKEwiWleqkgaH4AhVnDkQIHbLlD6wQ5bgDKAB6BAgBEFk&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac18.00",
+      "etype": "dd_top",
+      "position": 2
+    },
+    {
+      "title": "Bee Pollen Granules & Powder - Starwest Botanicals",
+      "url": "https://www.starwest-botanicals.com/category/bee-pollen-granules-powder/",
+      "domain": "starwest-botanicals.com",
+      "snippet": "Bee Pollen Granules&Powder- - available fromStarwest- offering the finest quality spices and seasoning blends since 1975.",
+      "etype": "organic",
+      "position": 3
+    },
+    {
+      "title": "Bee Pollen Granules Domestic - 4 oz - Amazon.com",
+      "url": "https://www.amazon.com/Starwest-Botanicals-Pollen-Granules-Domestic/dp/B00DURJ0IS",
+      "domain": "amazon.com",
+      "snippet": "Buy Bee Pollen GranulesDomestic - 4 oz on Amazon.com \u2713 FREE SHIPPING on qualified orders. ... Visit theStarwest BotanicalsStore\u00a0...",
+      "etype": "organic",
+      "position": 4
+    },
+    {
+      "title": "Bee Pollen Granules | Other Products | Starwest Botanicals, Inc.",
+      "url": "https://www.starwestherb.com/Other-Products/Bee-Pollen-Granules.html",
+      "domain": "starwestherb.com",
+      "snippet": "Bee Pollen Granules.Bee Pollen Granules. SKU: 210035-40. Origin: China. Production: Cultivated. Pricing Information Bulk Pricing (50lbs or more)Contact us\u00a0...",
+      "etype": "organic",
+      "position": 5
+    },
+    {
+      "title": "Bee Pollen for Birds - Lady gouldian finch Supplies",
+      "url": "https://glamgouldians.com/product-avipollen.php",
+      "domain": "glamgouldians.com",
+      "snippet": "TheseBee Pollen Granuleshave never been heated or dried, so all its enzymes are kept intact, providing your bird with a rich source of quality nutrition,\u00a0...",
+      "etype": "organic",
+      "position": 6
+    },
+    {
+      "title": "Bee Pollen Granules Domestic - 4 oz - Oman | desertcart",
+      "url": "https://www.desertcart.com.om/products/42734993-bee-pollen-granules-domestic-4-oz",
+      "domain": "desertcart.com.om",
+      "snippet": "BuylatestBee Pollen GranulesDomestic - 4 oz online at best prices at desertcart. \u2713FREE Delivery Across OMAN. ... Brand :Starwest Botanicals.Bee Pollen...",
+      "etype": "organic",
+      "position": 7
+    },
+    {
+      "title": "The Modern Herbal Dispensatory: A Medicine-Making Guide",
+      "url": "https://books.google.es/books?id=NY2xCwAAQBAJ&pg=PT193&lpg=PT193&dq=buy+starwest+botanicals+bee+pollen+granules&source=bl&ots=Wk6_aSOLr-&sig=ACfU3U3OtC--lHxrHm_fZOwYOPKYORu08Q&hl=en&sa=X&ved=2ahUKEwiWleqkgaH4AhVnDkQIHbLlD6wQ6AF6BAgeEAM",
+      "domain": "books.google.es",
+      "snippet": "Thomas Easley, \u200eSteven Horne\u00b72016\u00b7 \u200eHealth & FitnessBee pollenhas been used to overcome allergies to pollen. ...Starwest Botanicals, Stony Mountain Botanicals DOSAGE FORMSPOWDER:Bee pollen granulesare\u00a0...",
+      "etype": "organic",
+      "position": 8
+    },
+    {
+      "title": "Organic Raw Bee Pollen Granules - 1lb, State of CA Certified",
+      "url": "https://www.ebay.com/itm/334105202563",
+      "domain": "ebay.com",
+      "snippet": "Com,bee pollencontains more than 96 nutrients needed for life, and it's made up of 40 percent protein. We consider our pollen to be organic because it is\u00a0...",
+      "etype": "organic",
+      "position": 9
+    },
+    {
+      "title": "High Desert Bee Pollen Fresh Raw Granules Bag - 1 Lb",
+      "url": "https://www.myotcstore.com/store/p/36925-High-Desert-Bee-Pollen-Fresh-Raw-Granules-Bag-1-Lb",
+      "domain": "myotcstore.com",
+      "snippet": "BuyHigh DesertBee PollenFresh RawGranulesBag - 1 Lb and enjoy 5% back in rewards on every order from MyOTCStore.com. Stock up on essentials.",
+      "etype": "organic",
+      "position": 10
+    },
+    {
+      "title": "Bee Pollen Granules - Env\u00edo gratis a partir de 40 \u20ac",
+      "url": "https://ar.iherb.com/c/bee-pollen",
+      "domain": "ar.iherb.com",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 11
+    },
+    {
+      "title": "Prop\u00f3lis en Amazon - Ofertas en las mejores marcas",
+      "url": "https://www.amazon.es/propolis/s?k=propolis",
+      "domain": "amazon.es",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 12
+    },
+    {
+      "title": "European Organic Chaga - European organic chaga chunks",
+      "url": "http://organicchaga.eu/",
+      "domain": "organicchaga.eu",
+      "snippet": "+372 5592 9479",
+      "etype": "native_ad",
+      "position": 13
+    }
+  ]
+}

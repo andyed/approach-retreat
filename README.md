@@ -105,7 +105,9 @@ const ar = new ApproachRetreat({ resultSelector: '[data-result]', onEpisode: ...
 
 ## Live experiment
 
-The [gh-pages site](https://andyed.github.io/approach-retreat/) presents real questions displayed as search results with synthetic answers that represent the discourse arc over time. An injected ad tests discrimination cost (the approach-retreat signature when users identify sponsored content). Your cursor behavior is captured anonymously to study how people evaluate ranked information.
+> **Status: work-in-progress.** Data collection is not yet wired up. The library runs in the browser and builds episode data, but nothing is being persisted or transmitted. Treat the current site as an instrumentation demo — your cursor behavior is visible in the on-page debug overlay (press `d`) but is not recorded anywhere.
+
+The [gh-pages site](https://andyed.github.io/approach-retreat/) presents real questions displayed as search results with synthetic answers that represent the discourse arc over time. An injected ad tests discrimination cost (the approach-retreat signature when users identify sponsored content).
 
 Starting with: **"Will AI be an existential threat to humanity?"** — synthetic answers representing ~15 years of shifting consensus, from early dismissal through the Bostrom inflection to post-GPT recalibration.
 
@@ -113,6 +115,17 @@ Starting with: **"Will AI be an existential threat to humanity?"** — synthetic
 
 - `approach-retreat/adapters/posthog` — PostHog event flattening
 - `approach-retreat/adapters/callback` — Buffer + flush (sendBeacon, etc.)
+
+## Related work
+
+This library is the instrumentation half of an ongoing research program. The analysis half lives in [attentional-foraging](https://github.com/andyed/attentional-foraging), which reanalyzes the AdSERP dataset (Latifzadeh, Gwizdka & Leiva, SIGIR '25 — 2,776 trials, 47 participants, simultaneous eye + mouse + pupil tracking) to validate the approach-retreat framework against ground-truth gaze data.
+
+Key findings from that work motivate this library:
+- **Four-class taxonomy** — clicked / deferred / evaluated-rejected / not-approached — is recoverable from cursor trajectories alone (NB22, click prediction AUC 0.821)
+- **Discrimination cost signature** — top ads produce distinctive cursor hesitation compared to organic results (NB20: 2× approach rate, 2.3× dwell, higher pupil dilation)
+- **C/W/L framework extension** — Azzopardi, Thomas & Craswell (SIGIR '18) predicted ads evaluate cheaper than organic; the data shows the opposite for top ads (discrimination, not reading difficulty), suggesting a missing variable in the cost model
+
+This library is the deployable form of that research: you get the signal without the eye tracker.
 
 ## References
 

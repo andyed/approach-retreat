@@ -1,0 +1,130 @@
+{
+  "trial_id": "p041-b1-t10",
+  "query": "buy lowrance lowrance 000 10027 001 bracket",
+  "ad_layout_expected": {
+    "dd_top": 1,
+    "dd_right": 0,
+    "native_ad": 1
+  },
+  "extracted_counts": {
+    "dd_top": 5,
+    "organic": 8,
+    "native_ad": 1,
+    "dd_right": 0
+  },
+  "n_results": 14,
+  "results": [
+    {
+      "title": "Soporte Montaje Lowrance Hook (3-4-5), Elite ti (5-7), Simrad GO5 QRB-5",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwj67LmYgKH4AhXjIK0GHVEeA3cYABAHGgJwdg&sig=AOD64_2yKaNqVc0ppWp4pGq9Ka5p-bVNuw&ctype=5&q=&ved=2ahUKEwjWhK-YgKH4AhWIEEQIHVeOBH8Q5bgDKAB6BAgBEDk&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac29.00",
+      "etype": "dd_top",
+      "position": 0
+    },
+    {
+      "title": "Soporte Montaje Lowrance Simrad Hook (3-4-5), Elite ti (5-7), GO5 QRB-5 - Lowrance",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwj67LmYgKH4AhXjIK0GHVEeA3cYABAIGgJwdg&sig=AOD64_3qGfU9Lv8XtMhtptH4iBwZzT_f-w&ctype=5&q=&ved=2ahUKEwjWhK-YgKH4AhWIEEQIHVeOBH8Q5bgDKAB6BAgBEEc&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac29.00",
+      "etype": "dd_top",
+      "position": 1
+    },
+    {
+      "title": "Lowrance Soporte Negro Elite-5 / Mark-5",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwj67LmYgKH4AhXjIK0GHVEeA3cYABALGgJwdg&sig=AOD64_1_6UZRyXvFMD4vZbpxZp7uTlT8TQ&ctype=5&q=&ved=2ahUKEwjWhK-YgKH4AhWIEEQIHVeOBH8Q5bgDKAB6BAgBEFU&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac28.99",
+      "etype": "dd_top",
+      "position": 2
+    },
+    {
+      "title": "Soporte Lowrance Elite-5/Mark-5",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwj67LmYgKH4AhXjIK0GHVEeA3cYABAGGgJwdg&sig=AOD64_1IPd-yFGS2U4jwZGq_EBvioMJwog&ctype=5&q=&ved=2ahUKEwjWhK-YgKH4AhWIEEQIHVeOBH8Q5bgDKAB6BAgBEGc&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac34.00",
+      "etype": "dd_top",
+      "position": 3
+    },
+    {
+      "title": "SOPORTE HDS-5",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwj67LmYgKH4AhXjIK0GHVEeA3cYABAJGgJwdg&sig=AOD64_0lWhvKMFMZ9HaG5EgQP24pggRKcQ&ctype=5&q=&ved=2ahUKEwjWhK-YgKH4AhWIEEQIHVeOBH8Q5bgDKAB6BAgBEHU&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac34.00",
+      "etype": "dd_top",
+      "position": 4
+    },
+    {
+      "title": "Lowrance 000-10027-001 Bracket (3005.7045)",
+      "url": "https://www.amazon.com/Lowrance-3005-7045-000-10027-001-Bracket/dp/B003TNSMQO",
+      "domain": "amazon.com",
+      "snippet": "Buy Lowrance 000-10027-001 Bracket(3005.7045): Fish Finders & Depth Finders - Amazon.com \u2713 FREE DELIVERY possible on eligible purchases.Product Dimensions:\u200e3 x 8 x 10 inchesPackage Dimensions:8.25 L x 13.25 H x 3 W ...Rating: 4.7\u00b7 \u200e383 reviews",
+      "etype": "organic",
+      "position": 5
+    },
+    {
+      "title": "Lowrance 000-10027-001 Bracket for Mark-5 & Elite-5 Models",
+      "url": "https://www.ebay.com/itm/Lowrance-000-10027-001-Bracket-for-Mark-5-Elite-5-Models/113795909305",
+      "domain": "ebay.com",
+      "snippet": "Holds the 7\" Elite Model. This works great with the Elite 7 Ti because of the stove bolt included with thebracket. I did add a split ring washer to make it\u00a0...",
+      "etype": "organic",
+      "position": 6
+    },
+    {
+      "title": "Lowrance Mounting Bracket Suits Mark Elite Hook 3 4 5 ...",
+      "url": "https://www.mrboats.com.au/lowrance-mounting-bracket-suits-mark-elite-hook-3",
+      "domain": "mrboats.com.au",
+      "snippet": "LowranceMountingBracketSuits Mark Elite Hook 3 4 5 TI5 TI7 Part#:000-10027-001. $39.95. $59.95. In Stock. or 4 payments of $9.99 with Info\u00a0...",
+      "etype": "organic",
+      "position": 7
+    },
+    {
+      "title": "Quick Release Bracket for Elite/Mark/Ti/GO/I3005 Models",
+      "url": "https://www.lowrance.com/lowrance/type/accessories/chartplotter-fishfinder-mounting-parts/markelite-4--5-quick-release-bracket/",
+      "domain": "lowrance.com",
+      "snippet": "The Quick ReleaseBracketFor Elite/Mark 5\" Models fromLowrance. ... SKU:000-10027-001... You can nowbuyand pay over time with Paypal Credit.",
+      "etype": "organic",
+      "position": 8
+    },
+    {
+      "title": "LOWRANCE Mounting Bracket for Elite and Mark Models",
+      "url": "https://www.westmarine.com/buy/lowrance--mounting-bracket-for-elite-and-mark-models--15169956",
+      "domain": "westmarine.com",
+      "snippet": "Shop, read reviews, or ask questions aboutLOWRANCEMountingBracketfor Elite and Mark Models at the official ... Model # 15169956 | Mfg #000-10027-001.",
+      "etype": "organic",
+      "position": 9
+    },
+    {
+      "title": "Lowrance Bracket for Elite-5 and Mark-5 Family - GPS City",
+      "url": "https://www.gpscity.com/lowrance-bracket-for-elite-5-and-mark-5-family",
+      "domain": "gpscity.com",
+      "snippet": "Manufacturer:Lowrance, Category: Accessories, Type: Covers. Model:000-10027-001, SKU: LM-ELITE5MNT, UPC: Announced: November 30, -0001, First Shipped:\u00a0...",
+      "etype": "organic",
+      "position": 10
+    },
+    {
+      "title": "Lowrance 000-10027-001; Qrb-5 Mounting Bracket - PartsPak ...",
+      "url": "https://www.partspak.com/productcart/pc/Lowrance-000-10027-001-Qrb-5-Mounting-Bracket-p308140.htm",
+      "domain": "partspak.com",
+      "snippet": "Lowrance 000-10027-001; Qrb-5 MountingBracket(GPS Units / Fish Finder Accessories). Qrb-5 MountingBracket LowranceTransducers & Accessories QRB-5\u00a0...",
+      "etype": "organic",
+      "position": 11
+    },
+    {
+      "title": "Lowrance 000-10027-001 QRB-5 Mounting Bracket for Mark/Elite ...",
+      "url": "https://www.groupon.com/deals/gg-cm-lowrance-000-10027-001-qrb-5-mounting-bracket-for-mark-elite",
+      "domain": "groupon.com",
+      "snippet": "Lowrance 000-10027-001QRB-5 MountingBracketfor Mark/Elite. Included Items:MountAccessory; Dimensions: 10.0 inches (H) x 8.0 inches (W) x 3.0 inches (L)\u00a0...",
+      "etype": "organic",
+      "position": 12
+    },
+    {
+      "title": "Lowrance 000-10027-001 On eBay - Free Shipping On Many Items",
+      "url": "https://www.ebay.com/sch/i.html?_nkw=Lowrance%20000-10027-001",
+      "domain": "ebay.com",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 13
+    }
+  ]
+}

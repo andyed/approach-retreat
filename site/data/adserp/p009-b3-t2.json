@@ -1,0 +1,186 @@
+{
+  "trial_id": "p009-b3-t2",
+  "query": "buy normann copenhagen normann copenhagen cognac glasses",
+  "ad_layout_expected": {
+    "dd_top": 1,
+    "dd_right": 0,
+    "native_ad": 3
+  },
+  "extracted_counts": {
+    "dd_top": 9,
+    "organic": 9,
+    "native_ad": 3,
+    "dd_right": 0
+  },
+  "n_results": 21,
+  "results": [
+    {
+      "title": "Normann Copenhagen 2 Vasos de licor Normann 15 cl",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwinp7CXp6H4AhVmmWYCHXPVCLkYABAEGgJzbQ&sig=AOD64_0yazh5fRRcEfDJFyq2buyb7c6c2g&ctype=5&q=&ved=2ahUKEwjY0qaXp6H4AhVu8jgGHc6jC2UQ5bgDKAB6BAgBEDs&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac35.00",
+      "etype": "dd_top",
+      "position": 0
+    },
+    {
+      "title": "Normann Copenhagen - Cognac snifter (set of 2)",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwinp7CXp6H4AhVmmWYCHXPVCLkYABAFGgJzbQ&sig=AOD64_3ydtiqry-rjRU7Cjho5rb9SCjj0w&ctype=5&q=&ved=2ahUKEwjY0qaXp6H4AhVu8jgGHc6jC2UQ5bgDKAB6BAgBEEw&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac31.99",
+      "etype": "dd_top",
+      "position": 1
+    },
+    {
+      "title": "Normann Copenhagen - set of two cognac glasses - unisex - glass - One Size - Neutrals",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwinp7CXp6H4AhVmmWYCHXPVCLkYABAOGgJzbQ&sig=AOD64_3V0W6kZM_guAWSINb9ua_YEIcvRw&ctype=5&q=&ved=2ahUKEwjY0qaXp6H4AhVu8jgGHc6jC2UQ5bgDKAB6BAgBEF4&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac47.00",
+      "etype": "dd_top",
+      "position": 2
+    },
+    {
+      "title": "Normann Copenhagen 2 vasos de brandy Normann Copenhagen set de 2",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwinp7CXp6H4AhVmmWYCHXPVCLkYABAPGgJzbQ&sig=AOD64_1_wFsigi6ApEF1drRiTkcMxd4R0w&ctype=5&q=&ved=2ahUKEwjY0qaXp6H4AhVu8jgGHc6jC2UQ5bgDKAB6BAgBEGw&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac40.00",
+      "etype": "dd_top",
+      "position": 3
+    },
+    {
+      "title": "Normann Copenhagen 4 Vasos Rocking 25 cl",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwinp7CXp6H4AhVmmWYCHXPVCLkYABAQGgJzbQ&sig=AOD64_08Mi-6qJRrevZY0tYzfJYVuQc_9g&ctype=5&q=&ved=2ahUKEwjY0qaXp6H4AhVu8jgGHc6jC2UQ5bgDKAB6BAgBEH0&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac20.00",
+      "etype": "dd_top",
+      "position": 4
+    },
+    {
+      "title": "Normann Copenhagen - Set of 2 Cognac Glasses",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwinp7CXp6H4AhVmmWYCHXPVCLkYABARGgJzbQ&sig=AOD64_0GAmu9mpsrWHf3UFHu-FX4XtFfhA&ctype=5&q=&ved=2ahUKEwjY0qaXp6H4AhVu8jgGHc6jC2UQ5bgDKAB6BQgBEI4B&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac57.00",
+      "etype": "dd_top",
+      "position": 5
+    },
+    {
+      "title": "Normann Copenhagen 2 vasos de whisky Normann Copenhagen 30 cl",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwinp7CXp6H4AhVmmWYCHXPVCLkYABALGgJzbQ&sig=AOD64_1zmOFI6Gq_Q40RNlFavm4sLP7PCw&ctype=5&q=&ved=2ahUKEwjY0qaXp6H4AhVu8jgGHc6jC2UQ5bgDKAB6BQgBEJwB&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac40.00",
+      "etype": "dd_top",
+      "position": 6
+    },
+    {
+      "title": "Normann Copenhagen - Liqueur Glass 15cl",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwinp7CXp6H4AhVmmWYCHXPVCLkYABAKGgJzbQ&sig=AOD64_0Vtur07_Sbb3je5JIv9anhByj02A&ctype=5&q=&ved=2ahUKEwjY0qaXp6H4AhVu8jgGHc6jC2UQ5bgDKAB6BQgBEK0B&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac39.99",
+      "etype": "dd_top",
+      "position": 7
+    },
+    {
+      "title": "Precis",
+      "url": "https://shopping.precisdigital.com/",
+      "domain": "shopping.precisdigital.com",
+      "snippet": "",
+      "etype": "dd_top",
+      "position": 8
+    },
+    {
+      "title": "Cognac Glass | A modern glass with an exclusive expression",
+      "url": "https://www.normann-copenhagen.com/en/Products/Accessories/Serving/Glasses/Cognac-Glass--2-pcs-25-cl-White-120900",
+      "domain": "normann-copenhagen.com",
+      "snippet": "TheCognac Glassis a beautiful combination of function and pure pleasure | It is a glass constructed with consideration to its content\u00eds aroma,\u00a0...",
+      "etype": "organic",
+      "position": 9
+    },
+    {
+      "title": "Normann Copenhagen Cognac Glass, Set of 2",
+      "url": "https://www.amazon.com/Normann-Copenhagen-Cognac-Glass-Set/dp/B00KDCX700",
+      "domain": "amazon.com",
+      "snippet": "Normann Copenhagen's Cognac glasscombines classic function with modern design. The glasses are constructed to highlight Cognac's aroma and their design\u00a0...",
+      "etype": "organic",
+      "position": 10
+    },
+    {
+      "title": "Cognac glasses, 2 pcs - Normann Copenhagen - Finnish ...",
+      "url": "https://www.finnishdesignshop.com/tableware-drinkware-other-drinkware-cognac-glasses-pcs-p-2813.html?region=es",
+      "domain": "finnishdesignshop.com",
+      "snippet": "Thecognac glassesbyNormann Copenhagenare a delight for anyone who enjoys good drinks and design. Thecognac glassesare designed to get the most out of\u00a0...Design:Rikke HagenDiameter:11 cm",
+      "etype": "organic",
+      "position": 11
+    },
+    {
+      "title": "Cognac Glasses 250ml | Set of 2 by Normann Copenhagen",
+      "url": "https://www.skandium.com/products/cognac-glass-2-pcs-25-cl",
+      "domain": "skandium.com",
+      "snippet": "Rikke Hagen has designed an exclusivecognac glassforNormann Copenhagenthat breaks with the classical convention of design besides being a beautiful\u00a0...",
+      "etype": "organic",
+      "position": 12
+    },
+    {
+      "title": "Cognac Glasses Normann Copenhagen | Design Is This",
+      "url": "https://www.designisthis.com/us/cognac-glasses-normann-copenhagen",
+      "domain": "designisthis.com",
+      "snippet": "TheCognac GlassesbyNormann Copenhagenis a set of two exclusive designcognac glassesthat combine function with pure pleasure.",
+      "etype": "organic",
+      "position": 13
+    },
+    {
+      "title": "Normann Copenhagen Cognac Glasses 2 pcs",
+      "url": "https://www.questodesign.com/jp/normann-cognac-glass.html",
+      "domain": "questodesign.com",
+      "snippet": "Normann Copenhagen Cognac Glassesby Rikke Hagen, TheCognac Glassis an exclusivecognac glassthat breaks with the classical convention of design,\u00a0...",
+      "etype": "organic",
+      "position": 14
+    },
+    {
+      "title": "Cognac glass 25 cl from Normann Copenhagen",
+      "url": "https://www.nordicnest.com/brands/normann-copenhagen/cognac-glass/",
+      "domain": "nordicnest.com",
+      "snippet": "BuyyourCognac glass25 cl fromNormann Copenhagenat Nordic Nest. \u2713 365 days return policy \u2713 World-wide shipping \u2713 Fast delivery.",
+      "etype": "organic",
+      "position": 15
+    },
+    {
+      "title": "Normann Copenhagen Cognac Glasses 250 ml (Set of 2)",
+      "url": "https://grshop.com/normann-copenhagen-cognac-glasses.html",
+      "domain": "grshop.com",
+      "snippet": "Canadas premier contemporary modern furniture lighting retailer since 1992,shoponline or call 1-866-207-1111. FREE SHIPPING!",
+      "etype": "organic",
+      "position": 16
+    },
+    {
+      "title": "Cognac Glass by Normann Copenhagen - The Modern Shop",
+      "url": "https://themodernshop.com/products/normann-copenhagen-cognac-glass",
+      "domain": "themodernshop.com",
+      "snippet": "Design by Rikke Hagen TheCognac Glassis an exclusivecognac glassthat breaks with the classical convention of design, and is a beautiful combination of\u00a0...",
+      "etype": "organic",
+      "position": 17
+    },
+    {
+      "title": "Normann Copenhagen - Mejor precio & Gran surtido",
+      "url": "https://www.nordicnest.es/marcas/normann-copenhagen/",
+      "domain": "nordicnest.es",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 18
+    },
+    {
+      "title": "Normann Copenhagen Smallable - Descubre las novedades",
+      "url": "https://www.smallable.com/es/marcas/normann-copenhagen",
+      "domain": "smallable.com",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 19
+    },
+    {
+      "title": "Normann Copenhagen - L\u00e1mparas y sillas",
+      "url": "https://piconto.com/muebles/marcas-de-muebles-e-iluminacion/normann-copenhagen/",
+      "domain": "piconto.com",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 20
+    }
+  ]
+}

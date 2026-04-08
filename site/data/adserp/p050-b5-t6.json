@@ -1,0 +1,122 @@
+{
+  "trial_id": "p050-b5-t6",
+  "query": "buy christian dior dior cocotte sunglasses",
+  "ad_layout_expected": {
+    "dd_top": 1,
+    "dd_right": 0,
+    "native_ad": 3
+  },
+  "extracted_counts": {
+    "dd_top": 3,
+    "organic": 7,
+    "native_ad": 3,
+    "dd_right": 0
+  },
+  "n_results": 13,
+  "results": [
+    {
+      "title": "Dior DIORCOQUETTE2 ACZ(HA)",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwjH4YP5hqH4AhUBrpYKHW__CawYABAHGgJ0bA&sig=AOD64_082Kh_5XR9CN4iM_Rn7C1ZC45xgQ&ctype=5&q=&ved=2ahUKEwiE9fr4hqH4AhXrw4sBHdX2C24Q5bgDKAB6BAgBEDk&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac184.80",
+      "etype": "dd_top",
+      "position": 0
+    },
+    {
+      "title": "DIOR Diorblacksuit Ri Gafas De Sol Pantos Negras - Hombre",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwjH4YP5hqH4AhUBrpYKHW__CawYABAGGgJ0bA&sig=AOD64_2dTJJXZMuS5ECiXhOgYk2wFXcALQ&ctype=5&q=&ved=2ahUKEwiE9fr4hqH4AhXrw4sBHdX2C24Q5bgDKAB6BAgBEEs&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac370.00",
+      "etype": "dd_top",
+      "position": 1
+    },
+    {
+      "title": "Dior, sunglasses Cd 3078 Negro, Mujer, Talla: One size",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwjH4YP5hqH4AhUBrpYKHW__CawYABAIGgJ0bA&sig=AOD64_2lfPIVWtv1AYx4ef1lZLRqWreOSw&ctype=5&q=&ved=2ahUKEwiE9fr4hqH4AhXrw4sBHdX2C24Q5bgDKAB6BAgBEFk&adurl=",
+      "domain": "google.com",
+      "snippet": "\u20ac297.00\u20ac330",
+      "etype": "dd_top",
+      "position": 2
+    },
+    {
+      "title": "SUNGLASSES Christian dior | Dior cocotte - best price | p1",
+      "url": "https://www.eye-shop.eu/sunglasses.asp?a_ccode=christian%20dior&b_model=dior%20cocotte&a_availab=2",
+      "domain": "eye-shop.eu",
+      "snippet": "SUNGLASSES CHRISTIAN DIOR|DIOR COCOTTE buyat best prices, authentic genuine designersunglasses, authenticity certificate from the manufacturing company.",
+      "etype": "organic",
+      "position": 3
+    },
+    {
+      "title": "Christian Dior - Cocotte Sunglasses - The Fifth Collection",
+      "url": "https://www.thefifthcollection.com/products/christian-dior-cocotte-sunglasses",
+      "domain": "thefifthcollection.com",
+      "snippet": "Authentic Second HandChristian Dior Cocotte Sunglasses(PSS-916-00157). Free international shipping, money-back guarantee and award-winning service from\u00a0...",
+      "etype": "organic",
+      "position": 4
+    },
+    {
+      "title": "Christian Dior COCOTTE Sunglasses DIORCOCOTTE ...",
+      "url": "https://www.amazon.co.uk/Christian-Dior-COCOTTE-Sunglasses-DIORCOCOTTE/dp/B003K1OVRO",
+      "domain": "amazon.co.uk",
+      "snippet": "Thesesunglassesare the ultimate in luxury fashion. All frames are made exclusively in Italy.Christian Dior Sunglassesfeature a fashion-forward and elegant\u00a0...",
+      "etype": "organic",
+      "position": 5
+    },
+    {
+      "title": "Christian Dior - Cocotte Sunglasses Black - Fashionphile",
+      "url": "https://www.fashionphile.com/p/christian-dior-cocotte-sunglasses-black-510525",
+      "domain": "fashionphile.com",
+      "snippet": "This is an authentic pair ofCHRISTIAN DIOR Cocotte Sunglassesin Black. These super chicsunglasseshave a black frame with oversized rims and lenses in a\u00a0...",
+      "etype": "organic",
+      "position": 6
+    },
+    {
+      "title": "Christian Dior Cocotte 63mm Replacement Lenses - Sunglass ...",
+      "url": "https://www.thesunglassfix.com/uk/christian-dior-cocotte-replacement-sunglass-lenses-63mm-wide",
+      "domain": "thesunglassfix.com",
+      "snippet": "Jul 16, 2019\u2014Bespoke Lenses bySunglassFix\u2122. From \u00a325.99 delivered. Fix your scratchedChristian Dior Cocotte63mmsunglasseswith easy to install\u00a0...Width:63 mmInstallation Difficulty:EasyRating: 5\u00b7 \u200e1 review",
+      "etype": "organic",
+      "position": 7
+    },
+    {
+      "title": "Christian Dior Dior Cocotte/S Sunglasses - coolframes.com",
+      "url": "https://www.coolframes.com/glasses/christian-dior-eyewear/dior-cocottes-womens-designer-sunglasses.html",
+      "domain": "coolframes.com",
+      "snippet": "Get FREE shipping when youbuy Christian Dior Dior Cocotte/SSunglassesfrom CoolFrames DesignerEyewearBoutique, an authorizedChristian Dioronline\u00a0...",
+      "etype": "organic",
+      "position": 8
+    },
+    {
+      "title": "SFx Replacement Sunglass Lenses fits Christian Dior Cocotte",
+      "url": "https://www.ebay.com/itm/124779476232",
+      "domain": "ebay.com",
+      "snippet": "MPN: \u00b7 Fits Brand:Christian Dior; Fits Model:Cocotte. Lens Color: ; Lens Technology: Award WinningSunglassFix Lenses. Protection: ; Country/Region of\u00a0...",
+      "etype": "organic",
+      "position": 9
+    },
+    {
+      "title": "Colecci\u00f3n Dior Eyewear - Env\u00edo R\u00e1pido y Cambio Gratuito",
+      "url": "https://www.mytheresa.com/euro_es/men/designers/dior-sunglasses.html",
+      "domain": "mytheresa.com",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 10
+    },
+    {
+      "title": "Designer Sunglasses - Ahorrar hasta un 50%",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwjH4YP5hqH4AhUBrpYKHW__CawYABAEGgJ0bA&sig=AOD64_2FwTLm4MfRCZXjMkycDZyE_XWS5w&adurl=&q=",
+      "domain": "google.com",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 11
+    },
+    {
+      "title": "Gafas de Sol Vintage - Get your Amulet",
+      "url": "https://www.wildewebstore.com/",
+      "domain": "wildewebstore.com",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 12
+    }
+  ]
+}

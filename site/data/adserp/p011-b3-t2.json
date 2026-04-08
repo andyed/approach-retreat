@@ -1,0 +1,146 @@
+{
+  "trial_id": "p011-b3-t2",
+  "query": "buy playmobil gymnast on balance beam",
+  "ad_layout_expected": {
+    "dd_top": 0,
+    "dd_right": 1,
+    "native_ad": 3
+  },
+  "extracted_counts": {
+    "dd_top": 0,
+    "organic": 8,
+    "native_ad": 3,
+    "dd_right": 5
+  },
+  "n_results": 16,
+  "results": [
+    {
+      "title": "Playmobil 5190 Gymnast on Balancing Beam - Amazon UK",
+      "url": "https://www.amazon.co.uk/Playmobil-5190-Gymnast-Balancing-Beam/dp/B006PHU85E",
+      "domain": "amazon.co.uk",
+      "snippet": "ThePlaymobil gymnast on balance beam; Includes onePlaymobilalthlete; Comes with abalance beam, ball and hula hoop; 15 sports to collect\u00a0...",
+      "etype": "organic",
+      "position": 0
+    },
+    {
+      "title": "Playmobil Gymnast on Balancing Beam 5190 The ... - eBay",
+      "url": "https://www.ebay.co.uk/itm/153716360832",
+      "domain": "ebay.co.uk",
+      "snippet": "Model: #5190.Gymnast on Balancing Beam. Condition: NIB (New in Box), Factory Sealed (Never Opened). 15 sports to collect.",
+      "etype": "organic",
+      "position": 1
+    },
+    {
+      "title": "PLAYMOBIL 5190 Gymnast on Balancing Beam - eBay",
+      "url": "https://www.ebay.com/p/1102773900",
+      "domain": "ebay.com",
+      "snippet": "Find many great new &usedoptions and get the best deals forPLAYMOBIL5190Gymnast on Balancing Beamat the best onlinepricesat eBay!",
+      "etype": "organic",
+      "position": 2
+    },
+    {
+      "title": "Playmobil Gymnast on Balance Beam \u203a Customer reviews",
+      "url": "https://www.amazon.com/PLAYMOBIL%C2%AE-5190-Gymnast-Balance-Beam/product-reviews/B006PHU85E",
+      "domain": "amazon.com",
+      "snippet": "Find helpful customer reviews and review ratings forPlaymobil Gymnast on Balance Beamat Amazon.com. Read honest and unbiased ... See AllBuyingOptions\u00a0...",
+      "etype": "organic",
+      "position": 3
+    },
+    {
+      "title": "Gymnast on Balance Beam - Playmobil - Pinterest",
+      "url": "https://www.pinterest.es/pin/615022892850361426/",
+      "domain": "pinterest.es",
+      "snippet": "Find best value and selection for your Fitness Room City Life Play Set byPlaymobil5578 search on eBay. World's leading marketplace. sunshine6205.",
+      "etype": "organic",
+      "position": 4
+    },
+    {
+      "title": "Playmobil Gymnast on Balancing Beam 5190 The Olympics ...",
+      "url": "https://picclick.co.uk/Playmobil-Gymnast-on-Balancing-Beam-5190-The-Olympics-153716360832.html",
+      "domain": "picclick.co.uk",
+      "snippet": "Playmobil Gymnast on Balancing Beam5190 The Olympics Olympic Games Acrobat RARE. \u00a346.68BuyIt Now or Best Offer, FREE Shipping, 60-Day Returns,\u00a0...",
+      "etype": "organic",
+      "position": 5
+    },
+    {
+      "title": "Playmobil 5190 Gymnast on Balancing Beam - Toys",
+      "url": "https://www.fishpond.com/Toys/Playmobil-5190-Gymnast-on-Balancing-Beam-Playmobil/4008789051905",
+      "domain": "fishpond.com",
+      "snippet": "Playmobil Gymnast on Balance Beam- Help theGymnastmaintain her balance on theBalance Beam. Set includes one figure andbalance beam.Dimensions:15 x 10.2 x 4.8 centimeters (0.06 ...Age Range:5-9Rating: 5\u00b7 \u200e1 vote",
+      "etype": "organic",
+      "position": 6
+    },
+    {
+      "title": "Browse - mundobil",
+      "url": "https://www.mundobil.com/index.php?option=com_virtuemart&page=shop.browse&WhereToLook=Catalogue&WhatToLookFor0=set&Mold_value_0_0=3213230&Mold_operator_0_0=1&AndItsContents=contents&Itemid=53&limit=10&limitstart=430&lang=en&vmcchk=1",
+      "domain": "mundobil.com",
+      "snippet": "Results 431 - 440 of 4603\u2014mundobil, second-handPlaymobil(R) parts / Pi\u00e8ces d\u00e9tach\u00e9es d'occasionPlaymobil(R) ... 5190 (set)Gymnast on Balance Beam.",
+      "etype": "organic",
+      "position": 7
+    },
+    {
+      "title": "PLAYMOBIL\u00ae Ib\u00e9rica - PLAYMOBIL\u00ae Tienda Online",
+      "url": "https://www.playmobil.es/",
+      "domain": "playmobil.es",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 8
+    },
+    {
+      "title": "Balance Beam - Amazon - Todas las mejores marcas",
+      "url": "https://www.amazon.es/balance-beam/s?k=balance+beam",
+      "domain": "amazon.es",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 9
+    },
+    {
+      "title": "Balance Beam at Amazon - Balance Beam, Low Prices",
+      "url": "https://www.amazon.de/balance-beam/s?k=balance+beam",
+      "domain": "amazon.de",
+      "snippet": "",
+      "etype": "native_ad",
+      "position": 10
+    },
+    {
+      "title": "Ads\u00b7Shop now",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwimjurz9534AhWEIK0GHYgCC0YYABAIGgJwdg&sig=AOD64_29FtgGrdi_ymvMQHYmUdx_a7QXfg&ctype=5&q=&ved=2ahUKEwi85t7z9534AhUQm44IHTD9DcAQ5bgDKAB6BAgwEAc&adurl=",
+      "domain": "google.com",
+      "snippet": "",
+      "etype": "dd_right",
+      "position": 11
+    },
+    {
+      "title": "Ads\u00b7Shop buy playmobil gymnast o...",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwimjurz9534AhWEIK0GHYgCC0YYABAIGgJwdg&sig=AOD64_29FtgGrdi_ymvMQHYmUdx_a7QXfg&ctype=5&q=&ved=2ahUKEwi85t7z9534AhUQm44IHTD9DcAQ5bgDKAB6BAgwEAc&adurl=",
+      "domain": "google.com",
+      "snippet": "",
+      "etype": "dd_right",
+      "position": 12
+    },
+    {
+      "title": "Playmobil gimnasio 9454Playmobil gimnasio 9454",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwimjurz9534AhWEIK0GHYgCC0YYABAIGgJwdg&sig=AOD64_29FtgGrdi_ymvMQHYmUdx_a7QXfg&ctype=5&q=&ved=2ahUKEwi85t7z9534AhUQm44IHTD9DcAQ9A4oAnoECDAQCQ&adurl=",
+      "domain": "google.com",
+      "snippet": "",
+      "etype": "dd_right",
+      "position": 13
+    },
+    {
+      "title": "Descuento - 10% Torneo de Equitaci\u00f3nDescuento - 10% Torneo de Equitaci\u00f3n",
+      "url": "http://www.google.com/aclk?sa=l&ai=DChcSEwimjurz9534AhWEIK0GHYgCC0YYABAHGgJwdg&sig=AOD64_13i5M3IwYbU-t8FwEaJkSMIg9QYQ&ctype=5&q=&ved=2ahUKEwi85t7z9534AhUQm44IHTD9DcAQ9A4oAnoECDAQGA&adurl=",
+      "domain": "google.com",
+      "snippet": "",
+      "etype": "dd_right",
+      "position": 14
+    },
+    {
+      "title": "PLAYMOBIL City Life 9454 Gimnasio, A partir de 5 a\u00f1osPLAYMOBIL City Life 9454 Gimnasio, A partir de 5 a\u00f1os",
+      "url": "http://www.google.com/aclk?sa=L&ai=DChcSEwimjurz9534AhWEIK0GHYgCC0YYABAGGgJwdg&sig=AOD64_31ihZPCT9Z32p5F9LDcrDrAGBAHQ&ctype=5&q=&ved=2ahUKEwi85t7z9534AhUQm44IHTD9DcAQ9A4oAnoECDAQKQ&adurl=",
+      "domain": "google.com",
+      "snippet": "",
+      "etype": "dd_right",
+      "position": 15
+    }
+  ]
+}
