@@ -67,22 +67,78 @@ Mark your SERP results:
 
 ## Episode data
 
-Each completed cursor visit to a result produces:
+Every completed cursor visit to a result produces a 19-field episode from `Episode.toJSON()`. Grouped by purpose:
 
 ```js
 {
-  position: 0,
-  dwell_ms: 847,
-  visited: true,
+  // --- Identity + outcome ---
+  position: 2,                    // rank in the SERP (from data-position)
+  outcome: 'deferred',            // four-class: clicked | deferred | evaluated_rejected | not_approached
+  visited: true,                  // always true for emitted episodes
   clicked: false,
   retreated: true,
-  visit_number: 1,          // 2+ = re-approach
-  approach_velocity: 0.34,  // px/ms entering the AOI
-  approach_angle: 1.21,     // radians
-  peak_velocity: 0.89,      // max speed while over result
-  min_velocity: 0.02,       // min speed (near-pause = reading)
-  sample_count: 51,
+  visit_number: 2,                // 1 = first visit, 2+ = re-approach
+
+  // --- Timing (all ms, performance.now() base) ---
+  dwell_ms: 847,                  // total time cursor was over the AOI
+  entered_at: 1412.38,            // when cursor crossed into the AOI
+  exited_at: 2259.77,             // when cursor left the AOI
+  clicked_at: null,               // populated only when the visit ended in a click
+
+  // --- Cursor dynamics ---
+  approach_velocity: 0.34,        // px/ms at the moment of entry
+  approach_angle: 1.21,           // radians, atan2(vy, vx) at entry
+  peak_velocity: 0.89,             // max speed while over the result
+  min_velocity: 0.02,              // min speed while over — near-pause = reading
+  retreat_distance: 186,           // px from AOI center at max retreat (0 if clicked)
+  sample_count: 51,                // number of raw mousemove samples captured
+
+  // --- Scroll context (forward/regressive split) ---
+  direction: 'forward',            // 'forward' = at/near scroll HWM, 'regressive' = scrolled back up
+  entry_scroll: 420,               // window.scrollY at entry
+  hwm_at_entry: 420,               // running max of scrollY at entry
 }
+```
+
+### Raw trajectory (opt-in)
+
+Set `includeSamplesInEpisodeJson: true` on the library to add a `samples` array to each episode. Every sample is `{ x, y, t, vx, vy }` at the native mousemove rate (typically 60Hz). This is research-grade material — keep it local unless you're shipping it to an instrumented adapter like PostHog (see below).
+
+```js
+const ar = new ApproachRetreat({
+  resultSelector: '[data-result]',
+  includeSamplesInEpisodeJson: true,
+  onEpisode: (ep) => saveForAnalysis(ep),
+});
+```
+
+### PostHog capture shape
+
+The bundled PostHog adapter (`adapters/posthog.js`) ships three event types, all prefixed `ar_`:
+
+| Event | Fires on | Key fields |
+|---|---|---|
+| `ar_episode` | every finalized episode | all 19 fields above + optional `ar_trajectory` (flat `[x,y,t_rel_ms,vx,vy,...]` array, 10% sample rate by default) |
+| `ar_click` | every click on a result | pre-click velocity, angle, direction, retreat distance, dwell before click |
+| `ar_session_summary` | `visibilitychange` / `pagehide` | four-class taxonomy counts, positions per class, forward/regressive counts, time-to-first-click, max position approached |
+
+Every event is merged with a session context: `ar_session_id`, `ar_layout`, `ar_query_id`, viewport (`w`, `h`, `dpr`), UA, referrer, page path, load time.
+
+Dev kill-switch: append `?ph=0` to any URL to skip PostHog entirely.
+
+### Library-side classification
+
+```js
+ar.classify();
+// { clicked: [{position, ...}], deferred: [...],
+//   evaluated_rejected: [...], not_approached: [...] }
+
+ar.getSignals();
+// [{ position, outcome, total_dwell_ms, mean_retreat_distance,
+//    visit_count, retreat_count, reapproach_count, ... }, ...]
+
+ar.getEpisodes();  // full list, one entry per finalized visit
+ar.flush();        // finalize in-flight episodes without clearing history
 ```
 
 ## Relevance scoring
@@ -108,11 +164,18 @@ const ar = new ApproachRetreat({ resultSelector: '[data-result]', onEpisode: ...
 
 ## Live experiment
 
-> **Status: work-in-progress.** Data collection is not yet wired up. The library runs in the browser and builds episode data, but nothing is being persisted or transmitted. Treat the current site as an instrumentation demo — your cursor behavior is visible in the on-page debug overlay (press `d`) but is not recorded anywhere.
+The [gh-pages site](https://andyed.github.io/approach-retreat/) runs the library across **five layout variants** (narrow vertical, wide two-pane, card grid, dense titles-only, rich thumbnail) crossed with **four Q&A SERPs**, producing 20 bookmarkable combinations. Every variant uses the same library contract and emits the same episode schema — the layout is the variable, the instrumentation is the constant.
 
-The [gh-pages site](https://andyed.github.io/approach-retreat/) presents real questions displayed as search results with synthetic answers that represent the discourse arc over time. An injected ad tests discrimination cost (the approach-retreat signature when users identify sponsored content).
+Each Q&A SERP presents a question with synthetic answers representing a discourse arc over time, plus an injected ad to test discrimination cost (the approach-retreat signature when users identify sponsored content):
 
-Starting with: **"Will AI be an existential threat to humanity?"** — synthetic answers representing ~15 years of shifting consensus, from early dismissal through the Bostrom inflection to post-GPT recalibration.
+| Question | Year range | Flavor |
+|---|---|---|
+| Will AI be an existential threat to humanity? | 2011–2025 | Technical / philosophical, consensus shift |
+| Is The A-Team the dumbest great show ever made? | 1984–2024 | Nostalgic / critical, multi-decade reappraisal |
+| Are cats intelligent? | 2011–2025 | Scientific / anecdotal, research drift |
+| What was your favorite sunset? | 2013–2024 | Personal / experiential, no consensus to shift |
+
+**Telemetry is live.** Every cursor episode, click, and session summary ships to PostHog via the bundled adapter (same project as the attentional-foraging scanpath viewer). Episodes include the optional 10%-downsampled trajectory as research-grade material. Press `d` on any SERP page to toggle the in-page debug overlay showing episodes, retreats, and the four-class classification. Append `?ph=0` to any URL to disable capture.
 
 ## Adapters
 
