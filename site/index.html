@@ -40,11 +40,81 @@
           </div>
         </div>
         <div class="debug-mock-caption">
-          <p>Every approach-retreat episode becomes a PostHog event with the full 19-field flatten (position, outcome, dwell, retreat distance, velocity, forward/regressive direction, etc.) plus a 10% downsampled cursor trajectory (<code>xytvxvy/1</code> format).</p>
-          <p>Four-class taxonomy splits the non-click outcomes into <strong>deferred</strong> (retreated but re-approached), <strong>evaluated_rejected</strong> (retreated and never returned), and <strong>not_approached</strong> (visible but cursor never entered the AOI).</p>
-          <p>Session summary fires on <code>visibilitychange</code>/<code>pagehide</code> with per-position classification counts and time-to-first-click.</p>
+          <p>Every finalized approach-retreat episode becomes a PostHog <code>ar_episode</code> event with the full 19-field flatten below, plus a 10% downsampled cursor trajectory (<code>xytvxvy/1</code> format — flat integer array, time relative to entry).</p>
+          <p><strong>Four-class taxonomy</strong> splits the non-click outcomes into <strong>deferred</strong> (retreated but re-approached), <strong>evaluated_rejected</strong> (retreated and never returned), and <strong>not_approached</strong> (visible but cursor never entered the AOI).</p>
+          <p>A session summary fires on <code>visibilitychange</code>/<code>pagehide</code> with per-position classification counts and time-to-first-click. Append <code>?ph=0</code> to any URL to disable capture entirely.</p>
         </div>
       </div>
+
+      <h3 class="subsection-title">The full schema — 19 fields per episode</h3>
+      <p class="section-sub">Everything we log on every result you hover. Nothing hidden, nothing invented.</p>
+
+      <div class="schema-groups">
+        <div class="schema-group">
+          <h4>Identity &amp; outcome</h4>
+          <table class="schema-table">
+            <tr><th><code>position</code></th><td>rank in the SERP, from <code>data-position</code></td></tr>
+            <tr><th><code>outcome</code></th><td>four-class: <code>clicked</code> | <code>deferred</code> | <code>evaluated_rejected</code> | <code>not_approached</code></td></tr>
+            <tr><th><code>visited</code></th><td>always true for emitted episodes</td></tr>
+            <tr><th><code>clicked</code></th><td>whether the visit ended in a click</td></tr>
+            <tr><th><code>retreated</code></th><td>whether the cursor exited the AOI without clicking</td></tr>
+            <tr><th><code>visit_number</code></th><td>1 = first visit, 2+ = re-approach</td></tr>
+          </table>
+        </div>
+
+        <div class="schema-group">
+          <h4>Timing</h4>
+          <table class="schema-table">
+            <tr><th><code>dwell_ms</code></th><td>total time the cursor was over the AOI</td></tr>
+            <tr><th><code>entered_at</code></th><td>when cursor crossed into the AOI (<code>performance.now</code>)</td></tr>
+            <tr><th><code>exited_at</code></th><td>when cursor left the AOI</td></tr>
+            <tr><th><code>clicked_at</code></th><td>populated only when the visit ended in a click</td></tr>
+          </table>
+        </div>
+
+        <div class="schema-group">
+          <h4>Cursor dynamics</h4>
+          <table class="schema-table">
+            <tr><th><code>approach_velocity</code></th><td>px/ms at the moment of entry — fast = scanning, slow = evaluating</td></tr>
+            <tr><th><code>approach_angle</code></th><td><code>atan2(vy, vx)</code> at entry, radians</td></tr>
+            <tr><th><code>peak_velocity</code></th><td>max speed while over the result</td></tr>
+            <tr><th><code>min_velocity</code></th><td>min speed while over — near-pause = reading</td></tr>
+            <tr><th><code>retreat_distance</code></th><td>px from AOI center at max retreat (0 if clicked)</td></tr>
+            <tr><th><code>sample_count</code></th><td>number of raw mousemove samples captured</td></tr>
+          </table>
+        </div>
+
+        <div class="schema-group">
+          <h4>Scroll context (forward/regressive)</h4>
+          <table class="schema-table">
+            <tr><th><code>direction</code></th><td><code>forward</code> = at/near scroll high-water mark; <code>regressive</code> = scrolled back up</td></tr>
+            <tr><th><code>entry_scroll</code></th><td><code>window.scrollY</code> at entry</td></tr>
+            <tr><th><code>hwm_at_entry</code></th><td>running max of <code>scrollY</code> at entry</td></tr>
+          </table>
+        </div>
+
+        <div class="schema-group schema-group-wide">
+          <h4>Session context (merged into every event)</h4>
+          <p class="schema-note">
+            <code>ar_session_id</code> (UUID), <code>ar_layout</code>, <code>ar_query_id</code>, <code>ar_year_min</code>/<code>ar_year_max</code>,
+            viewport <code>w</code>/<code>h</code>/<code>dpr</code>, <code>ar_ua</code>, <code>ar_referrer</code>, <code>ar_page_path</code>, <code>ar_loaded_at</code>.
+          </p>
+        </div>
+
+        <div class="schema-group schema-group-wide">
+          <h4>Optional raw trajectory — <code>ar_trajectory</code></h4>
+          <p class="schema-note">
+            Flat integer array in <code>xytvxvy/1</code> format: <code>[x, y, t_rel_ms, vx, vy, x, y, ...]</code>.
+            10% downsample (every 10th sample) from the native ~60Hz mousemove stream.
+            A typical 5-second episode ships ~700 bytes of trajectory. Research-grade material, kept so cursor reanalysis stays possible.
+          </p>
+        </div>
+      </div>
+
+      <p class="schema-source">
+        Schema defined in <a href="https://github.com/andyed/approach-retreat/blob/main/src/approach-retreat.js"><code>src/approach-retreat.js</code> <code>Episode.toJSON()</code></a>
+        &middot; adapter in <a href="https://github.com/andyed/approach-retreat/blob/main/src/adapters/posthog.js"><code>src/adapters/posthog.js</code></a>.
+      </p>
     </section>
 
     <section class="layout-grid-picker">

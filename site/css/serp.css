@@ -149,6 +149,89 @@ body.layout-rich-thumbnail .page {
   .debug-mock-wrapper { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* --- Landing: full schema tables --- */
+
+.subsection-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 1.75rem;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.schema-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
+  margin-bottom: 0.75rem;
+}
+.schema-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.1rem 1.1rem;
+}
+.schema-group-wide { grid-column: 1 / -1; }
+.schema-group h4 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin-bottom: 0.6rem;
+}
+.schema-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.schema-table th {
+  text-align: left;
+  font-weight: 400;
+  padding: 0.28rem 0.6rem 0.28rem 0;
+  vertical-align: top;
+  white-space: nowrap;
+  color: var(--text);
+  width: 1%;
+}
+.schema-table td {
+  color: var(--text-secondary);
+  padding: 0.28rem 0;
+  vertical-align: top;
+}
+.schema-table th code,
+.schema-table td code {
+  background: var(--bg);
+  color: var(--text);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.78rem;
+}
+.schema-note {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+.schema-note code {
+  background: var(--bg);
+  color: var(--text);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+.schema-source {
+  font-size: 0.8rem;
+  color: var(--text-meta);
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+.schema-source a { color: var(--accent); text-decoration: none; }
+.schema-source a:hover { text-decoration: underline; }
+
 /* --- Landing: "every example" matrix --- */
 
 .examples-matrix-wrap {
