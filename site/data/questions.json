@@ -1,0 +1,45 @@
+{
+  "questions": [
+    {
+      "id": "ai-existential-threat",
+      "title": "Will AI be an existential threat to humanity?",
+      "subtitle": "~15 years of answers · watch consensus shift",
+      "year_min": 2011,
+      "year_max": 2025,
+      "answer_count": 10,
+      "ad_count": 1,
+      "tone": "technical / philosophical"
+    },
+    {
+      "id": "a-team-dumbest-great",
+      "title": "Is The A-Team the dumbest great show ever made?",
+      "subtitle": "1984–2024 · from broadcast to rediscovery",
+      "year_min": 1984,
+      "year_max": 2024,
+      "answer_count": 6,
+      "ad_count": 1,
+      "tone": "nostalgic / critical / pop culture"
+    },
+    {
+      "id": "cats-intelligent",
+      "title": "Are cats intelligent?",
+      "subtitle": "When the research actually changed",
+      "year_min": 2011,
+      "year_max": 2025,
+      "answer_count": 6,
+      "ad_count": 1,
+      "tone": "scientific / anecdotal"
+    },
+    {
+      "id": "sunset-favorite",
+      "title": "What was your favorite sunset?",
+      "subtitle": "No right answer · memory over measurement",
+      "year_min": 2013,
+      "year_max": 2024,
+      "answer_count": 6,
+      "ad_count": 1,
+      "tone": "personal / experiential"
+    }
+  ],
+  "default": "ai-existential-threat"
+}

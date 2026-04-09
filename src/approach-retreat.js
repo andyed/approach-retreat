@@ -79,15 +79,22 @@ const DEFAULTS = {
   // mirrors data_loader.classify_fixations in the attentional-foraging
   // notebooks (tol=50 px, parity-verified at 4,036/4,036 fixations).
   directionTolPx: 50,
+
+  // When true, Episode.toJSON() includes the raw samples[] array. Off by
+  // default to preserve the small JSON payload contract for existing users.
+  // Turn on to let adapters (e.g. PostHog) downsample and ship trajectory
+  // data as research material.
+  includeSamplesInEpisodeJson: false,
 };
 
 /**
  * A single approach-retreat episode on one result.
  */
 class Episode {
-  constructor(resultEl, position) {
+  constructor(resultEl, position, { includeSamples = false } = {}) {
     this.resultEl = resultEl;
     this.position = position;
+    this._includeSamples = includeSamples;
     this.enteredAt = performance.now();
     this.exitedAt = null;
     this.clicked = false;
@@ -149,7 +156,7 @@ class Episode {
   }
 
   toJSON() {
-    return {
+    const json = {
       position: this.position,
       outcome: this.outcome,
       dwell_ms: Math.round(this.dwellMs),
@@ -170,6 +177,10 @@ class Episode {
       exited_at: this.exitedAt,
       clicked_at: this.clickedAt,
     };
+    if (this._includeSamples) {
+      json.samples = this.samples;
+    }
+    return json;
   }
 }
 
@@ -307,7 +318,9 @@ export class ApproachRetreat {
     const visits = (this._visitCounts.get(el) || 0) + 1;
     this._visitCounts.set(el, visits);
 
-    const episode = new Episode(el, position);
+    const episode = new Episode(el, position, {
+      includeSamples: this.config.includeSamplesInEpisodeJson,
+    });
     episode.visitNumber = visits;
     episode.approachVelocity = Math.sqrt(
       this._velocity.vx ** 2 + this._velocity.vy ** 2
@@ -581,6 +594,26 @@ export class ApproachRetreat {
    */
   getEpisodes() {
     return this._episodes.map((ep) => ep.toJSON());
+  }
+
+  /**
+   * Finalize all in-flight episodes without clearing history.
+   * Graduates active (under-cursor) and retreating episodes to the finalized
+   * list so getEpisodes / classify / getSignals reflect everything so far.
+   * Call before capturing a session summary (e.g. on pagehide / visibilitychange).
+   */
+  flush() {
+    const now = performance.now();
+    // Exit and finalize active episodes
+    for (const [el, episode] of this._active) {
+      this._exitResult(el, episode, now);
+    }
+    this._active.clear();
+    // Finalize any still-retreating episodes
+    for (const ep of this._retreating) {
+      this._finalizeEpisode(ep);
+    }
+    this._retreating = [];
   }
 
   /**

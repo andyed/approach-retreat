@@ -21,9 +21,44 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
-  max-width: 720px;
-  margin: 0 auto;
   padding: 2rem 1.5rem;
+}
+
+/* Each layout sets its own max-width via .page wrapper */
+.page {
+  margin: 0 auto;
+  max-width: 720px;
+}
+body.layout-two-pane .page,
+body.layout-card-grid .page {
+  max-width: 1180px;
+}
+body.layout-dense .page {
+  max-width: 780px;
+}
+body.layout-rich-thumbnail .page {
+  max-width: 860px;
+}
+
+/* Question switcher (top of every SERP page) */
+.question-switcher {
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+.question-switcher select {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  margin-left: 0.5rem;
+}
+.question-switcher select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 /* --- Header --- */
@@ -50,7 +85,119 @@ body {
   max-width: 580px;
 }
 
-/* --- Query list (landing page) --- */
+/* --- Landing: section headings --- */
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  margin-top: 2.25rem;
+}
+.section-sub {
+  color: var(--text-meta);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+.section-sub code {
+  background: var(--surface);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.85rem;
+}
+
+/* --- Landing: layout picker cards --- */
+
+.layout-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.layout-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  overflow: hidden;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.layout-card:hover {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+}
+.layout-card:active {
+  transform: translateY(1px);
+}
+.layout-card .layout-thumb {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.layout-card-body {
+  padding: 0.85rem 1rem 1rem;
+}
+.layout-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 0.25rem;
+}
+.layout-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-meta);
+  line-height: 1.5;
+}
+
+/* --- Landing: question picker cards --- */
+
+.question-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+}
+.question-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  padding: 0.9rem 1.15rem;
+  text-align: left;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.question-card:hover {
+  background: var(--surface-hover);
+  border-color: var(--border);
+}
+.question-card.selected {
+  border-left-color: var(--accent);
+  background: var(--surface-hover);
+}
+.question-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.2rem;
+}
+.question-card-meta {
+  font-size: 0.75rem;
+  color: var(--text-meta);
+  margin-bottom: 0.2rem;
+}
+.question-card-sub {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* --- Query list (landing page) — legacy, kept for any old link --- */
 
 .query-list {
   display: flex;
@@ -233,6 +380,224 @@ body {
 
 .credits {
   margin-top: 0.5rem;
+}
+
+/* ============================================================
+   Layout variants — each demonstrates a different SERP idiom.
+   The library is layout-agnostic: an element with [data-result]
+   is an AOI regardless of where or how it's laid out.
+   ============================================================ */
+
+/* --- layout: wide-two-pane --- */
+
+body.layout-two-pane .serp-body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+body.layout-two-pane .serp-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+body.layout-two-pane .result {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  border-left: 2px solid transparent;
+  cursor: pointer;
+}
+body.layout-two-pane .result:hover {
+  background: var(--surface);
+}
+body.layout-two-pane .result.selected {
+  background: var(--surface);
+  border-left-color: var(--accent);
+}
+body.layout-two-pane .result-title {
+  font-size: 0.95rem;
+  margin-bottom: 0.15rem;
+}
+body.layout-two-pane .result-url {
+  font-size: 0.72rem;
+  margin-bottom: 0.1rem;
+}
+body.layout-two-pane .result-snippet {
+  font-size: 0.8rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+body.layout-two-pane .result-meta { display: none; }
+body.layout-two-pane .result-full-text { display: none !important; }
+
+.reading-pane {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem 1.75rem;
+  position: sticky;
+  top: 1rem;
+  min-height: 300px;
+}
+.reading-pane .placeholder {
+  color: var(--text-meta);
+  font-style: italic;
+}
+.reading-pane .rp-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+  margin-bottom: 0.35rem;
+}
+.reading-pane .rp-author {
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-bottom: 0.25rem;
+}
+.reading-pane .rp-meta {
+  font-size: 0.8rem;
+  color: var(--text-meta);
+  margin-bottom: 1rem;
+}
+.reading-pane .rp-body {
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+/* --- layout: card-grid --- */
+
+body.layout-card-grid .serp-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+body.layout-card-grid .result {
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+body.layout-card-grid .result:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+body.layout-card-grid .result-title { font-size: 1rem; margin-bottom: 0.2rem; }
+body.layout-card-grid .result-url { font-size: 0.72rem; }
+body.layout-card-grid .result-snippet {
+  font-size: 0.85rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+body.layout-card-grid .result.expanded {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+body.layout-card-grid .result.expanded .result-snippet {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+
+/* --- layout: dense-titles-only --- */
+
+body.layout-dense .serp-results { gap: 0; }
+body.layout-dense .result {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1.75rem 1fr auto;
+  align-items: baseline;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+body.layout-dense .result::before {
+  content: counter(serp-rank);
+  counter-increment: serp-rank;
+  font-size: 0.85rem;
+  color: var(--text-meta);
+  text-align: right;
+}
+body.layout-dense .serp-results { counter-reset: serp-rank; }
+body.layout-dense .result-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.35;
+}
+body.layout-dense .result-url,
+body.layout-dense .result-snippet {
+  display: none;
+}
+body.layout-dense .result-meta {
+  font-size: 0.75rem;
+  margin: 0;
+  grid-column: 3;
+  grid-row: 1;
+  white-space: nowrap;
+}
+body.layout-dense .result-full-text {
+  grid-column: 2 / -1;
+  margin-top: 0.5rem;
+}
+body.layout-dense .result.expanded {
+  padding: 0.75rem 0;
+}
+
+/* --- layout: rich-thumbnail --- */
+
+body.layout-rich-thumbnail .serp-results { gap: 0.5rem; }
+body.layout-rich-thumbnail .result {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 1.25rem;
+  cursor: pointer;
+  align-items: start;
+}
+body.layout-rich-thumbnail .result-thumbnail {
+  width: 160px;
+  height: 90px;
+  border-radius: 6px;
+  background:
+    radial-gradient(circle at 22% 32%, #6ea8fe 0 10px, transparent 11px),
+    linear-gradient(to bottom, #1a1a24 0%, #0f0f18 100%);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+body.layout-rich-thumbnail .result-thumbnail::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 48px;
+  background:
+    linear-gradient(135deg, transparent 40%, #2a2a3a 40% 52%, transparent 52% 62%, #2a2a3a 62% 76%, transparent 76%);
+  clip-path: polygon(0 100%, 12% 55%, 28% 75%, 46% 40%, 62% 68%, 80% 35%, 100% 70%, 100% 100%);
+}
+body.layout-rich-thumbnail .result-body { min-width: 0; }
+body.layout-rich-thumbnail .result-title { font-size: 1.05rem; }
+body.layout-rich-thumbnail .result-snippet {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+body.layout-rich-thumbnail .result.expanded .result-snippet {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+body.layout-rich-thumbnail .result.expanded {
+  grid-template-columns: 160px 1fr;
 }
 
 /* --- Signals debug overlay (dev only) --- */

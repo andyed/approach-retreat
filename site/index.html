@@ -3,47 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Approach/Retreat — How do you evaluate search results?</title>
+  <title>Approach/Retreat — How your cursor reveals evaluation</title>
   <link rel="stylesheet" href="css/serp.css">
+  <script src="js/posthog-init.js"></script>
 </head>
 <body>
-  <header class="site-header">
-    <h1>Approach / Retreat</h1>
-    <p class="subtitle">How your cursor reveals what you're really thinking about search results.</p>
-    <p class="description">
-      Pick a question below. You'll see real answers spanning years of debate.
-      Browse like you would a search engine — read what interests you, skip what doesn't.
-      Your cursor tells a story about how you evaluate.
-    </p>
-  </header>
+  <div class="page">
+    <header class="site-header">
+      <h1>Approach / Retreat</h1>
+      <p class="subtitle">How your cursor reveals what you're really thinking about ranked results.</p>
+      <p class="description">
+        Pick a layout. Pick a question. Browse the answers like a search engine —
+        read what interests you, skip what doesn't. The library captures how your
+        cursor approaches, dwells on, and retreats from each result.
+      </p>
+    </header>
 
-  <nav class="query-list">
-    <a href="serps/ai-existential-threat.html" class="query-card" data-query="ai-threat">
-      <span class="query-text">Will AI be an existential threat to humanity?</span>
-      <span class="query-meta">~15 years of Quora answers &middot; watch consensus shift</span>
-    </a>
-    <!-- Future queries -->
-    <!--
-    <a href="serps/consciousness.html" class="query-card" data-query="consciousness">
-      <span class="query-text">Is consciousness computable?</span>
-      <span class="query-meta">Philosophy meets neuroscience meets CS</span>
-    </a>
-    <a href="serps/remote-work.html" class="query-card" data-query="remote-work">
-      <span class="query-text">Will remote work become the default?</span>
-      <span class="query-meta">Pre-COVID predictions vs post-COVID reality</span>
-    </a>
-    -->
-  </nav>
+    <section class="layout-grid-picker">
+      <h2 class="section-title">Choose a layout</h2>
+      <p class="section-sub">Every variant uses the same library. Different geometries, same AOI contract.</p>
+      <div class="layout-cards" id="layouts"></div>
+    </section>
 
-  <footer class="site-footer">
-    <p>
-      Part of the <a href="https://github.com/andyed/clicksense">ClickSense</a> research program.
-      Cursor dynamics as cognitive signal.
-    </p>
-    <p class="credits">
-      Andy Edmonds &middot;
-      <a href="https://github.com/andyed/approach-retreat">Source</a>
-    </p>
-  </footer>
+    <section class="question-picker">
+      <h2 class="section-title">Choose a question</h2>
+      <p class="section-sub">Content swaps via <code>?q=</code> on any layout page.</p>
+      <div class="question-cards" id="questions"></div>
+    </section>
+
+    <footer class="site-footer">
+      <p>
+        Part of the <a href="https://github.com/andyed/clicksense">ClickSense</a> research program.
+        Cursor dynamics as cognitive signal.
+      </p>
+      <p class="credits">
+        Andy Edmonds &middot;
+        <a href="https://github.com/andyed/approach-retreat">Source</a>
+      </p>
+    </footer>
+  </div>
+
+  <script type="module">
+    const LAYOUTS = [
+      {
+        id: 'narrow-vertical',
+        title: 'Narrow vertical list',
+        description: 'Single-column Google/Quora style. The baseline.',
+      },
+      {
+        id: 'wide-two-pane',
+        title: 'Wide two-pane',
+        description: 'Compact list + reading pane. Gmail/Feedly idiom.',
+      },
+      {
+        id: 'card-grid',
+        title: 'Card grid',
+        description: 'Non-linear spatial order. Entry from any side.',
+      },
+      {
+        id: 'dense-titles-only',
+        title: 'Dense titles-only',
+        description: 'Hacker News style. Small AOIs, fast scan.',
+      },
+      {
+        id: 'rich-thumbnail',
+        title: 'Rich thumbnail card',
+        description: 'Image + text. Heterogeneous content inside one AOI.',
+      },
+    ];
+
+    // Current selection state — stored in URL so it survives reload
+    const url = new URL(location.href);
+    let currentQ = url.searchParams.get('q') || null;
+
+    // Layout cards
+    const layoutContainer = document.getElementById('layouts');
+    for (const layout of LAYOUTS) {
+      const a = document.createElement('a');
+      a.className = 'layout-card';
+      a.href = `serps/${layout.id}.html${currentQ ? `?q=${currentQ}` : ''}`;
+      a.innerHTML = `
+        <img src="assets/layouts/${layout.id}.svg" alt="${layout.title} schematic" class="layout-thumb">
+        <div class="layout-card-body">
+          <div class="layout-card-title">${layout.title}</div>
+          <div class="layout-card-desc">${layout.description}</div>
+        </div>
+      `;
+      layoutContainer.appendChild(a);
+    }
+
+    // Questions cards (from questions.json)
+    const idx = await (await fetch('data/questions.json')).json();
+    const qContainer = document.getElementById('questions');
+    if (!currentQ) currentQ = idx.default;
+
+    for (const q of idx.questions) {
+      const card = document.createElement('button');
+      card.className = 'question-card' + (q.id === currentQ ? ' selected' : '');
+      card.type = 'button';
+      card.innerHTML = `
+        <div class="question-card-title">${q.title}</div>
+        <div class="question-card-meta">${q.year_min}&ndash;${q.year_max} &middot; ${q.answer_count} answers &middot; ${q.tone}</div>
+        <div class="question-card-sub">${q.subtitle}</div>
+      `;
+      card.addEventListener('click', () => {
+        currentQ = q.id;
+        // Update URL and refresh layout links
+        const u = new URL(location.href);
+        u.searchParams.set('q', currentQ);
+        history.replaceState(null, '', u.toString());
+        document.querySelectorAll('.question-card.selected').forEach((el) => el.classList.remove('selected'));
+        card.classList.add('selected');
+        for (const link of layoutContainer.querySelectorAll('.layout-card')) {
+          const id = link.getAttribute('href').split('/').pop().split('.html')[0];
+          link.setAttribute('href', `serps/${id}.html?q=${currentQ}`);
+        }
+      });
+      qContainer.appendChild(card);
+    }
+  </script>
 </body>
 </html>

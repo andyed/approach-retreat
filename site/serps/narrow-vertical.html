@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Approach/Retreat — Narrow vertical</title>
+  <link rel="stylesheet" href="../css/serp.css">
+  <script src="../js/posthog-init.js"></script>
+</head>
+<body class="layout-narrow-vertical">
+  <div class="page">
+    <div class="question-switcher"></div>
+    <header class="serp-header">
+      <div class="serp-query"></div>
+      <div class="serp-info"></div>
+    </header>
+    <div class="serp-results" id="serp"></div>
+
+    <div class="ar-debug">
+      <div>Episodes: <span id="debug-episodes">0</span></div>
+      <div>Retreats: <span id="debug-retreats">0</span></div>
+      <div>Classification:</div>
+      <div id="debug-classes" style="font-size: 0.7rem;"></div>
+    </div>
+
+    <footer class="site-footer">
+      <p>Cursor captured anonymously. <a href="https://github.com/andyed/approach-retreat">Source &amp; method</a>. Press <kbd>d</kbd> for debug.</p>
+    </footer>
+  </div>
+
+  <script type="module">
+    import {
+      loadQuestion, initApproachRetreat, wireDebugOverlay,
+      renderHeader, renderAnswers,
+    } from '../js/ar-init.js';
+
+    const LAYOUT = 'narrow-vertical';
+    const { meta, answers, index } = await loadQuestion();
+    renderHeader({ meta, index, layoutName: LAYOUT });
+    renderAnswers(document.getElementById('serp'), answers);
+
+    let debugUpdate = () => {};
+    const { ar } = initApproachRetreat({
+      layoutName: LAYOUT,
+      queryMeta: meta,
+      onClick: ({ target }) => target.classList.toggle('expanded'),
+      onEpisode: () => debugUpdate(),
+    });
+    debugUpdate = wireDebugOverlay(ar);
+    ar.refresh();
+  </script>
+</body>
+</html>

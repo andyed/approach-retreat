@@ -23,9 +23,7 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm run build
-      - name: Prepare site
-        run: |
-          cp -r dist site/dist
+      # build.js mirrors dist/ → site/dist/ automatically, so no extra copy step.
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

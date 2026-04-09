@@ -1,4 +1,6 @@
 import * as esbuild from 'esbuild';
+import { cp, rm, mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 
 const shared = {
   entryPoints: ['src/index.js'],
@@ -7,6 +9,8 @@ const shared = {
 };
 
 const watch = process.argv.includes('--watch');
+
+// --- Library bundles ---
 
 // IIFE for <script> tag
 await esbuild.build({
@@ -30,4 +34,25 @@ await esbuild.build({
   format: 'cjs',
 });
 
-console.log('Built dist/approach-retreat.{js,esm.js,cjs.js}');
+// --- Adapter bundles ---
+// Adapters ship as separate ESM files so pages can import just what they need.
+
+await esbuild.build({
+  entryPoints: [
+    'src/adapters/posthog.js',
+    'src/adapters/callback.js',
+  ],
+  outdir: 'dist/adapters',
+  format: 'esm',
+  bundle: true,
+  minify: false, // keep adapter source legible for debugging
+});
+
+// --- Mirror dist/ → site/dist/ so the static site (served from site/) can
+// resolve imports without reaching outside its serving root. ---
+
+if (existsSync('site/dist')) await rm('site/dist', { recursive: true });
+await mkdir('site/dist', { recursive: true });
+await cp('dist', 'site/dist', { recursive: true });
+
+console.log('Built dist/ and mirrored to site/dist/');
