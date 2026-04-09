@@ -90,6 +90,142 @@
   doi       = {10.1145/3726302.3730325},
 }
 
+% ═══════════════════════════════════════════════════════════════════════════
+% Leiva / Arapakis cursor research program -- direct lineage for approach-retreat.
+% The Attentive Cursor Dataset (Leiva & Arapakis 2020) anchors four follow-up
+% papers; Brückner 2020 (abandonment RNN) and Brückner 2021 (mouse movement
+% length) are the most direct empirical comparators for approach-retreat.
+% ═══════════════════════════════════════════════════════════════════════════
+
+@inproceedings{bruckner2020abandonment,
+  author    = {Br\"{u}ckner, Lukas and Arapakis, Ioannis and Leiva, Luis A.},
+  title     = {Query Abandonment Prediction with Recurrent Neural Models of Mouse Cursor Movements},
+  booktitle = {Proceedings of the 29th ACM International Conference on Information and Knowledge Management (CIKM '20)},
+  year      = {2020},
+  pages     = {1969--1972},
+  publisher = {ACM},
+  address   = {New York, NY, USA},
+  doi       = {10.1145/3340531.3412126},
+  note      = {Session-level cursor RNN predicting abandonment. Structured non-click signal at session granularity. Approach-retreat extends this line to per-result granularity.},
+}
+
+@inproceedings{bruckner2021systematic,
+  author    = {Br\"{u}ckner, Lukas and Arapakis, Ioannis and Leiva, Luis A.},
+  title     = {When Choice Happens: A Systematic Examination of Mouse Movement Length for Decision Making in Web Search},
+  booktitle = {Proceedings of the 44th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '21)},
+  year      = {2021},
+  pages     = {1510--1514},
+  publisher = {ACM},
+  address   = {New York, NY, USA},
+  doi       = {10.1145/3404835.3463055},
+  note      = {BiLSTM over raw (x,y,t) cursor sequences for three SERP outcomes (ads noticeability, abandonment, frustration). Uses the Attentive Cursor Dataset (N=716 native-ad subset) for the attention task. Direct head-to-head comparator for approach-retreat features on the same data.},
+}
+
+@inproceedings{arapakis2020learning,
+  author    = {Arapakis, Ioannis and Leiva, Luis A.},
+  title     = {Learning Efficient Representations of Mouse Movements to Predict User Attention},
+  booktitle = {Proceedings of the 43rd International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '20)},
+  year      = {2020},
+  pages     = {1309--1318},
+  publisher = {ACM},
+  address   = {New York, NY, USA},
+  doi       = {10.1145/3397271.3401031},
+  note      = {Neural-embedding precursor to AdSight. Same team, same dataset.},
+}
+
+@article{arapakis2020price,
+  author    = {Arapakis, Ioannis and Penta, Antonio and Joho, Hideo and Leiva, Luis A.},
+  title     = {A Price-per-attention Auction Scheme Using Mouse Cursor Information},
+  journal   = {ACM Transactions on Information Systems},
+  volume    = {38},
+  number    = {2},
+  year      = {2020},
+  publisher = {ACM},
+  note      = {DOI to verify against publisher metadata. Applies cursor attention signals to an ad auction mechanism. Establishes the ``cursor-as-attention-currency'' framing the whole Arapakis/Leiva program rests on.},
+}
+
+@inproceedings{leiva2021privacy,
+  author    = {Leiva, Luis A. and Arapakis, Ioannis and Iordanou, Costas},
+  title     = {My Mouse, My Rules: Privacy Issues of Behavioral User Profiling via Mouse Tracking},
+  booktitle = {Proceedings of the 2021 ACM SIGIR Conference on Human Information Interaction and Retrieval (CHIIR '21)},
+  year      = {2021},
+  pages     = {51--61},
+  publisher = {ACM},
+  address   = {New York, NY, USA},
+  note      = {DOI to verify. Privacy analysis of the same telemetry primitives -- shows cursor streams can disclose demographics. Relevant to the ``deployable from standard mouse telemetry'' framing of approach-retreat.},
+}
+
+@inproceedings{villaizan2025adsight,
+  author    = {Villaiz\'{a}n-Vallelado, Mario and Salvatori, Matteo and Latifzadeh, Kayhan and Penta, Antonio and Leiva, Luis A. and Arapakis, Ioannis},
+  title     = {{AdSight}: Scalable and Accurate Quantification of User Attention in Multi-Slot Sponsored Search},
+  booktitle = {Proceedings of the 48th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '25)},
+  year      = {2025},
+  publisher = {ACM},
+  address   = {New York, NY, USA},
+  doi       = {10.1145/3726302.3729891},
+  note      = {Seq2Seq Transformer on cursor trajectories predicting fixation. Modern endpoint of the Arapakis/Leiva cursor-embedding lineage. Re-derives Uzilla 2003 vector compression 22 years later.},
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% Edmonds prior art -- cursor instrumentation primitives from 2001--2003.
+% Lucidity 2001 (SourceForge) and Uzilla 2003 (BRMIC) establish cursor
+% position tracking, scroll correction, mouse miles (integrated path length),
+% and vector compression as peer-reviewed prior art for the entire
+% bag-of-features cursor-on-SERP tradition.
+% ═══════════════════════════════════════════════════════════════════════════
+
+@article{edmonds2003uzilla,
+  author    = {Edmonds, Andy},
+  title     = {Uzilla: A new tool for {W}eb usability testing},
+  journal   = {Behavior Research Methods, Instruments, \& Computers},
+  volume    = {35},
+  number    = {2},
+  pages     = {194--201},
+  year      = {2003},
+  publisher = {Psychonomic Society},
+  note      = {DOI to verify -- BRMIC uses 10.3758/BF03xxxxxx pattern. Peer-reviewed prior art for mouse miles (integrated path length as a usability performance measure) and mouse vector compression (via the Optimoz gesture recognition algorithm). Applied in a Clemson case study supervised by A.~Duchowski comparing left vs right SERP navigation. Direct ancestor of the primitives re-derived in Br\"{u}ckner 2021 (mouse length, 18 years later) and Villaiz\'{a}n-Vallelado 2025 (trajectory embeddings, 22 years later).},
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% Query performance prediction -- IR precedent for learning signal from
+% retrieval-score variance. Approach-retreat's difficulty framing parallels
+% this line on the user side.
+% ═══════════════════════════════════════════════════════════════════════════
+
+@inproceedings{cronentownsend2002clarity,
+  author    = {Cronen-Townsend, Steve and Zhou, Yun and Croft, W. Bruce},
+  title     = {Predicting Query Performance},
+  booktitle = {Proceedings of the 25th Annual International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '02)},
+  year      = {2002},
+  pages     = {299--306},
+  publisher = {ACM},
+  address   = {New York, NY, USA},
+  doi       = {10.1145/564376.564429},
+  note      = {DOI to verify. Clarity score: KL divergence between query and collection language models. Founding pre-retrieval QPP predictor; operationalizes ``focused retrieved set = well-posed query.''},
+}
+
+@article{shtok2012nqc,
+  author    = {Shtok, Anna and Kurland, Oren and Carmel, David and Raiber, Fiana and Markovits, Gad},
+  title     = {Predicting Query Performance by Query-Drift Estimation},
+  journal   = {ACM Transactions on Information Systems},
+  volume    = {30},
+  number    = {2},
+  pages     = {11:1--11:35},
+  year      = {2012},
+  publisher = {ACM},
+  doi       = {10.1145/2180868.2180873},
+  note      = {DOI to verify. NQC (Normalized Query Commitment): std of top-$k$ retrieval scores as a post-retrieval difficulty predictor. Prior art for the idea that score variance carries difficulty signal. Approach-retreat extends this to the user side.},
+}
+
+@inproceedings{faggioli2023neuralqpp,
+  author    = {Faggioli, Guglielmo and Formal, Thibault and Marchesin, Stefano and Clinchant, St\'{e}phane and Ferro, Nicola and Piwowarski, Benjamin},
+  title     = {Query Performance Prediction for Neural {IR}: Are We There Yet?},
+  booktitle = {Advances in Information Retrieval: 45th European Conference on Information Retrieval (ECIR '23)},
+  year      = {2023},
+  publisher = {Springer},
+  note      = {Full bibliographic details to verify. Ports classical QPP predictors (NQC, WIG, UEF) to dense retrievers; std-of-scores remains competitive against neural alternatives.},
+}
+
 % NOTE: The Edmonds (2016) reference in the README is a YouTube talk, not a
 % peer-reviewed publication. Including it in a bib for a CIKM submission
 % is not recommended. If needed:
@@ -106,3 +242,257 @@
 % The C/W/L framework may have a different primary citation. Azzopardi has
 % multiple papers on economic models of search (SIGIR 2019 tutorial, etc.).
 % Confirm with co-author Azzopardi which paper to cite.
+
+% ═══════════════════════════════════════════════════════════════════════════
+% Cursor foundations -- eye-hand coordination and cursor-as-attention-proxy.
+% These are the earliest empirical results that justify treating the cursor
+% as a behavioral signal in its own right, independent of the click.
+% ═══════════════════════════════════════════════════════════════════════════
+
+@inproceedings{chen2001mousecursor,
+  author    = {Chen, Mon-Chu and Anderson, John R. and Sohn, Myeong-Ho},
+  title     = {What Can a Mouse Cursor Tell Us More? {Correlation} of Eye/Mouse Movements on Web Browsing},
+  booktitle = {CHI '01 Extended Abstracts on Human Factors in Computing Systems},
+  series    = {CHI EA '01},
+  year      = {2001},
+  pages     = {281--282},
+  publisher = {ACM},
+  doi       = {10.1145/634067.634234},
+  note      = {First empirical demonstration of strong eye-hand coordination during web browsing. The original justification for cursor telemetry as an attention proxy.},
+}
+
+@inproceedings{huang2012usersee,
+  author    = {Huang, Jeff and White, Ryen W. and Buscher, Georg},
+  title     = {User See, User Point: Gaze and Cursor Alignment in Web Search},
+  booktitle = {Proceedings of the SIGCHI Conference on Human Factors in Computing Systems (CHI '12)},
+  year      = {2012},
+  pages     = {1341--1350},
+  publisher = {ACM},
+  doi       = {10.1145/2207676.2208591},
+  note      = {Large-scale replication. Gaze-cursor alignment varies by mouse behavior type (reading, hesitating, scrolling, clicking). Same bibliographic record as huang2012user above; retained under the ``usersee'' key for compatibility with attentional-foraging.},
+}
+
+@inproceedings{smucker2014mouse,
+  author    = {Smucker, Mark D. and Guo, Xiaoyu Sunny and Toulis, Andrew},
+  title     = {Mouse Movement During Relevance Judging: Implications for Determining User Attention},
+  booktitle = {Proceedings of the 37th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '14)},
+  year      = {2014},
+  publisher = {ACM},
+  doi       = {10.1145/2600428.2609489},
+  note      = {Important negative result: for simple tasks, cursor does not track attention because users only move the mouse to click. Approach-retreat's task-model framing directly addresses this caveat by treating retreat geometry (not cursor position) as the informative primitive.},
+}
+
+@article{boi2016attention,
+  author    = {Boi, Paolo and Fenu, Gianni and Spano, Lucio Davide and Vargiu, Vittore},
+  title     = {Reconstructing User's Attention on the Web through Mouse Movements and Perception-Based Content Identification},
+  journal   = {ACM Transactions on Applied Perception},
+  volume    = {13},
+  number    = {3},
+  pages     = {15:1--15:21},
+  year      = {2016},
+  doi       = {10.1145/2912124},
+  note      = {Eye and cursor must co-locate at the \emph{content-group} level, not the pixel level. Justifies bounding-box / AOI granularity in approach-retreat episodes.},
+}
+
+@inproceedings{lagun2014attention,
+  author    = {Lagun, Dmitry and Hsieh, Chih-Hung and Webster, Dale and Navalpakkam, Vidhya},
+  title     = {Towards Better Measurement of Attention and Satisfaction in Mobile Search},
+  booktitle = {Proceedings of the 37th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '14)},
+  year      = {2014},
+  pages     = {113--122},
+  publisher = {ACM},
+  doi       = {10.1145/2600428.2609631},
+  note      = {Click+scroll features outperform click-only signals. Viewport duration correlates with gaze duration. Extends the cursor-as-attention-proxy argument to mobile via the touch viewport.},
+}
+
+@inproceedings{wang2018mobilesearch,
+  author    = {Wang, Xiaochuan and Su, Ning and He, Zexue and Liu, Yiqun and Ma, Shaoping},
+  title     = {A Large-Scale Study of Mobile Search Examination Behavior},
+  booktitle = {Proceedings of the 41st International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '18)},
+  year      = {2018},
+  publisher = {ACM},
+  doi       = {10.1145/3209978.3210099},
+  note      = {Viewport change events reconstruct SERP examination on mobile; clicks cluster in top 2/3 of viewport. Relevant to the deployment story for approach-retreat on mobile (where there is no cursor but viewport entry/exit has an analogous enter/dwell/exit structure).},
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% Eye tracking on SERPs -- the gaze literature approach-retreat is trying to
+% approximate with cursor-only telemetry. Granka/Joachims/Lorigo/Cutrell are
+% the foundational studies; Buscher et al.\ 2010 is the ad-specific result
+% that the C/W/L violation in §4 replicates at the cursor level.
+% ═══════════════════════════════════════════════════════════════════════════
+
+@inproceedings{granka2004eyetracking,
+  author    = {Granka, Laura A. and Joachims, Thorsten and Gay, Geri},
+  title     = {Eye-Tracking Analysis of User Behavior in {WWW} Search},
+  booktitle = {Proceedings of the 27th Annual International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '04)},
+  year      = {2004},
+  pages     = {478--479},
+  publisher = {ACM},
+  doi       = {10.1145/1008992.1009079},
+  note      = {Early SERP eye-tracking. Established the linear-scan-with-rapid-drop-off pattern that cascade click models formalize.},
+}
+
+@inproceedings{joachims2005clickthrough,
+  author    = {Joachims, Thorsten and Granka, Laura and Pan, Bing and Hembrooke, Helene and Gay, Geri},
+  title     = {Accurately Interpreting Clickthrough Data as Implicit Feedback},
+  booktitle = {Proceedings of the 28th Annual International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '05)},
+  year      = {2005},
+  pages     = {154--161},
+  publisher = {ACM},
+  doi       = {10.1145/1076034.1076063},
+  note      = {Clicks are informative but position-biased, validated with eye-tracking. Motivates extracting additional signal from non-click behavior --- exactly what approach-retreat does at the evaluation-phase granularity.},
+}
+
+@inproceedings{cutrell2007eyetracking,
+  author    = {Cutrell, Edward and Guan, Zhiwei},
+  title     = {What Are You Looking For? {An} Eye-tracking Study of Information Usage in Web Search},
+  booktitle = {Proceedings of the SIGCHI Conference on Human Factors in Computing Systems (CHI '07)},
+  year      = {2007},
+  pages     = {407--416},
+  publisher = {ACM},
+  doi       = {10.1145/1240624.1240690},
+  note      = {Eye-tracking study of how users allocate attention across SERP components. Shows that informational vs navigational intent changes examination strategy.},
+}
+
+@article{lorigo2008eyetracking,
+  author    = {Lorigo, Lori and Haridasan, Maya and Brynjarsd\'{o}ttir, Hr\"{o}nn and Xia, Ling and Joachims, Thorsten and Gay, Geri and Granka, Laura A. and Pellacini, Fabio and Pan, Bing},
+  title     = {Eye Tracking and Online Search: Lessons Learned and Challenges Ahead},
+  journal   = {Journal of the American Society for Information Science and Technology},
+  volume    = {59},
+  number    = {7},
+  pages     = {1041--1052},
+  year      = {2008},
+  doi       = {10.1002/asi.20794},
+  note      = {$\sim$2/3 of SERP scanpaths are nonlinear. Directly challenges monotonic cascade assumptions and motivates modeling re-approach / deferral explicitly.},
+}
+
+@inproceedings{buscher2010goodbad,
+  author    = {Buscher, Georg and Dumais, Susan T. and Cutrell, Edward},
+  title     = {The Good, the Bad, and the Random: An Eye-Tracking Study of Ad Quality in Web Search},
+  booktitle = {Proceedings of the 33rd International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '10)},
+  year      = {2010},
+  publisher = {ACM},
+  doi       = {10.1145/1835449.1835459},
+  note      = {Ad quality changes gaze patterns; users develop ad-specific examination strategies. The eye-tracking precedent for the discrimination-cost finding in approach-retreat (top ads evaluate \emph{more} expensively than organic, not less).},
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% Click models -- the cumulative tradition that approach-retreat complements
+% at the per-result evaluation level. Approach-retreat does not replace click
+% models; it provides structured non-click signal for results that never get
+% a click observation at all.
+% ═══════════════════════════════════════════════════════════════════════════
+
+@inproceedings{craswell2008positionbias,
+  author    = {Craswell, Nick and Zoeter, Onno and Taylor, Michael and Ramsey, Bill},
+  title     = {An Experimental Comparison of Click Position-Bias Models},
+  booktitle = {Proceedings of the 2008 International Conference on Web Search and Data Mining (WSDM '08)},
+  year      = {2008},
+  pages     = {87--94},
+  publisher = {ACM},
+  doi       = {10.1145/1341531.1341545},
+  note      = {Cascade, examination, and logistic position-bias models for clicks. Foundational click-model comparison.},
+}
+
+@inproceedings{dupret2008ubm,
+  author    = {Dupret, Georges E. and Piwowarski, Benjamin},
+  title     = {A User Browsing Model to Predict Search Engine Click Data from Past Observations},
+  booktitle = {Proceedings of the 31st Annual International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '08)},
+  year      = {2008},
+  pages     = {331--338},
+  publisher = {ACM},
+  doi       = {10.1145/1390334.1390392},
+  note      = {User Browsing Model (UBM). Position + distance-to-last-click determines examination probability.},
+}
+
+@inproceedings{chapelle2009dbn,
+  author    = {Chapelle, Olivier and Zhang, Ya},
+  title     = {A Dynamic {Bayesian} Network Click Model for Web Search Ranking},
+  booktitle = {Proceedings of the 18th International Conference on World Wide Web (WWW '09)},
+  year      = {2009},
+  pages     = {1--10},
+  publisher = {ACM},
+  doi       = {10.1145/1526709.1526711},
+  note      = {DBN click model separating perceived from actual relevance. Widely used baseline in the cascade-family click-modeling literature.},
+}
+
+@book{chuklin2015clickmodels,
+  author    = {Chuklin, Aleksandr and Markov, Ilya and de Rijke, Maarten},
+  title     = {Click Models for Web Search},
+  publisher = {Morgan \& Claypool},
+  series    = {Synthesis Lectures on Information Concepts, Retrieval, and Services},
+  year      = {2015},
+  doi       = {10.2200/S00654ED1V01Y201507ICR043},
+  note      = {Comprehensive survey of the click-model tradition. Most models assume monotonic top-to-bottom examination; approach-retreat retreats and re-approaches break this assumption.},
+}
+
+@inproceedings{guo2010browsing,
+  author    = {Guo, Qi and Agichtein, Eugene},
+  title     = {Ready to Buy or Just Browsing? {Detecting} Web Searcher Goals from Interaction Data},
+  booktitle = {Proceedings of the 33rd International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '10)},
+  year      = {2010},
+  publisher = {ACM},
+  doi       = {10.1145/1835449.1835473},
+  note      = {Goal detection (transactional vs informational) from cursor + click interaction data. Task-classification precedent for the four-class taxonomy.},
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% Information Foraging Theory and stopping models -- the theoretical lineage
+% for the evaluation / leave decision that retreat geometry visualizes.
+% ═══════════════════════════════════════════════════════════════════════════
+
+@article{pirolli1999foraging,
+  author    = {Pirolli, Peter and Card, Stuart},
+  title     = {Information Foraging},
+  journal   = {Psychological Review},
+  volume    = {106},
+  number    = {4},
+  pages     = {643--675},
+  year      = {1999},
+  doi       = {10.1037/0033-295X.106.4.643},
+  note      = {Foundational IFT paper. Adapts optimal foraging theory to human information seeking. OSEC applies the IFT patch-leaving lens at the per-result level rather than the session level.},
+}
+
+@inproceedings{liu2014skimming,
+  author    = {Liu, Yiqun and Wang, Chao and Zhou, Ke and Nie, Jian-Yun and Zhang, Min and Ma, Shaoping},
+  title     = {From Skimming to Reading: {A} Two-stage Examination Model for Web Search},
+  booktitle = {Proceedings of the 23rd ACM International Conference on Information and Knowledge Management (CIKM '14)},
+  year      = {2014},
+  pages     = {849--858},
+  publisher = {ACM},
+  doi       = {10.1145/2661829.2661907},
+  note      = {Two-phase SERP evaluation (skimming then reading), both phases predictable from mouse. The closest prior art to the OSEC Survey $\to$ Evaluate decomposition that approach-retreat operationalizes.},
+}
+
+@inproceedings{maxwell2018scent,
+  author    = {Maxwell, David and Azzopardi, Leif},
+  title     = {Information Scent, Searching and Stopping},
+  booktitle = {Proceedings of the 40th European Conference on Information Retrieval (ECIR '18)},
+  year      = {2018},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-319-76941-7_17},
+  note      = {SERP-level stopping model using information scent. Models the session-leave decision but not within-page re-evaluation --- the gap approach-retreat fills with per-result retreat geometry.},
+}
+
+@inproceedings{azzopardi2018utility,
+  author    = {Azzopardi, Leif and Thomas, Paul and Craswell, Nick},
+  title     = {Measuring the Utility of Search Engine Result Pages: An Information Foraging Based Measure},
+  booktitle = {Proceedings of the 41st International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '18)},
+  year      = {2018},
+  pages     = {605--614},
+  publisher = {ACM},
+  doi       = {10.1145/3209978.3210027},
+  note      = {IFT-based SERP utility measure within the C/W/L framework. Marginal value theorem for stopping decisions. This is the paper approach-retreat's discrimination-cost finding extends by showing top ads \emph{violate} the assumed monotone cost profile.},
+}
+
+@article{jaiswal2023foraging,
+  author    = {Jaiswal, Amit Kumar and Tiwari, Prayag and Hossain, M. Shamim},
+  title     = {Predicting Users' Behavior Using Mouse Movement Information: An Information Foraging Theory Perspective},
+  journal   = {Neural Computing and Applications},
+  volume    = {35},
+  pages     = {33},
+  year      = {2023},
+  doi       = {10.1007/s00521-020-05306-7},
+  note      = {Recent IFT framing for cursor-based behavior prediction. Closest contemporary prior art for the IFT $\times$ cursor combination approach-retreat operationalizes.},
+}
