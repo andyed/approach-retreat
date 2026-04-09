@@ -17,7 +17,35 @@
         read what interests you, skip what doesn't. The library captures how your
         cursor approaches, dwells on, and retreats from each result.
       </p>
+      <p class="hero-links">
+        <a class="repo-link" href="https://github.com/andyed/approach-retreat">
+          View the approach-retreat repo on GitHub &rarr;
+        </a>
+      </p>
     </header>
+
+    <section class="how-it-works">
+      <h2 class="section-title">What's captured</h2>
+      <p class="section-sub">Press <kbd>d</kbd> on any SERP page to toggle this debug overlay.</p>
+      <div class="debug-mock-wrapper">
+        <div class="ar-debug debug-mock" aria-label="Debug panel preview">
+          <div>Episodes: <span>14</span></div>
+          <div>Retreats: <span>9</span></div>
+          <div>Classification:</div>
+          <div class="debug-classes-mock">
+            clicked: 2<br>
+            deferred: 4,7<br>
+            evaluated_rejected: 1,3,5,8,10<br>
+            not_approached: 6
+          </div>
+        </div>
+        <div class="debug-mock-caption">
+          <p>Every approach-retreat episode becomes a PostHog event with the full 19-field flatten (position, outcome, dwell, retreat distance, velocity, forward/regressive direction, etc.) plus a 10% downsampled cursor trajectory (<code>xytvxvy/1</code> format).</p>
+          <p>Four-class taxonomy splits the non-click outcomes into <strong>deferred</strong> (retreated but re-approached), <strong>evaluated_rejected</strong> (retreated and never returned), and <strong>not_approached</strong> (visible but cursor never entered the AOI).</p>
+          <p>Session summary fires on <code>visibilitychange</code>/<code>pagehide</code> with per-position classification counts and time-to-first-click.</p>
+        </div>
+      </div>
+    </section>
 
     <section class="layout-grid-picker">
       <h2 class="section-title">Choose a layout</h2>
@@ -29,6 +57,14 @@
       <h2 class="section-title">Choose a question</h2>
       <p class="section-sub">Content swaps via <code>?q=</code> on any layout page.</p>
       <div class="question-cards" id="questions"></div>
+    </section>
+
+    <section class="all-examples">
+      <h2 class="section-title">Every example</h2>
+      <p class="section-sub">All 20 layout × question combinations. Linkable, bookmarkable, shareable.</p>
+      <div class="examples-matrix-wrap">
+        <table class="examples-matrix" id="examples-matrix"></table>
+      </div>
     </section>
 
     <footer class="site-footer">
@@ -121,6 +157,39 @@
       });
       qContainer.appendChild(card);
     }
+
+    // All examples matrix — rows = questions, cols = layouts, cells = direct links.
+    const matrix = document.getElementById('examples-matrix');
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    headRow.appendChild(document.createElement('th')); // top-left spacer
+    for (const layout of LAYOUTS) {
+      const th = document.createElement('th');
+      th.textContent = layout.title.replace(' list', '').replace(' card', '').replace('titles-only', 'titles');
+      headRow.appendChild(th);
+    }
+    thead.appendChild(headRow);
+    matrix.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    for (const q of idx.questions) {
+      const tr = document.createElement('tr');
+      const rowHead = document.createElement('th');
+      rowHead.scope = 'row';
+      rowHead.textContent = q.title;
+      tr.appendChild(rowHead);
+      for (const layout of LAYOUTS) {
+        const td = document.createElement('td');
+        const a = document.createElement('a');
+        a.href = `serps/${layout.id}.html?q=${q.id}`;
+        a.textContent = 'open →';
+        a.setAttribute('aria-label', `${layout.title} with ${q.title}`);
+        td.appendChild(a);
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    matrix.appendChild(tbody);
   </script>
 </body>
 </html>

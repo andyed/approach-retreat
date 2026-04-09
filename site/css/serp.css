@@ -85,6 +85,125 @@ body.layout-rich-thumbnail .page {
   max-width: 580px;
 }
 
+/* --- Landing: hero CTA link --- */
+
+.hero-links {
+  margin-top: 1.25rem;
+}
+.repo-link {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  padding: 0.6rem 1.1rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+.repo-link:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+
+/* --- Landing: debug panel mock (always-visible version of .ar-debug) --- */
+
+.debug-mock-wrapper {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.75rem;
+  align-items: start;
+  margin-bottom: 1.25rem;
+}
+.ar-debug.debug-mock {
+  display: block;
+  position: static;
+  margin: 0;
+  min-width: 260px;
+  font-size: 0.8rem;
+}
+.ar-debug.debug-mock .debug-classes-mock {
+  font-size: 0.72rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+.ar-debug.debug-mock span { color: var(--text); }
+.debug-mock-caption p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+}
+.debug-mock-caption p:last-child { margin-bottom: 0; }
+.debug-mock-caption code {
+  background: var(--surface);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+.debug-mock-caption strong { color: var(--text); }
+@media (max-width: 680px) {
+  .debug-mock-wrapper { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* --- Landing: "every example" matrix --- */
+
+.examples-matrix-wrap {
+  overflow-x: auto;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.examples-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 620px;
+}
+.examples-matrix thead th {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-meta);
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  padding: 0.7rem 0.7rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.examples-matrix tbody th {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  padding: 0.6rem 0.7rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.examples-matrix tbody td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.examples-matrix tbody tr:last-child th,
+.examples-matrix tbody tr:last-child td { border-bottom: none; }
+.examples-matrix td a {
+  color: var(--accent);
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-block;
+  font-size: 0.8rem;
+}
+.examples-matrix td a:hover {
+  background: var(--surface-hover);
+  text-decoration: underline;
+}
+
 /* --- Landing: section headings --- */
 
 .section-title {
