@@ -2,6 +2,8 @@
 
 Cursor approach-retreat dynamics on **ranked list layouts** (search result pages, recommendation feeds, comparison tables). Sister library to [ClickSense](https://github.com/andyed/clicksense).
 
+*Current iteration of a cursor-instrumentation line that began with the Optimoz Firefox gesture extension (2001) and Uzilla (2003) — see [Precedents](#precedents-2001-2003) below and [`docs/history.md`](docs/history.md) for the full lineage.*
+
 ## The idea
 
 Before you click a search result, your cursor tells a story. It approaches a result (interest), dwells over it (evaluation), then either commits (click) or retreats. The geometry of that retreat — how curved, how far, how directly — distinguishes results the user is done with from results they may come back to. Curved + close retreats predict re-approach; straight + far retreats predict commitment to rejection.
@@ -196,6 +198,19 @@ This library is the instrumentation half of a two-part research program:
 - **Analysis:** [attentional-foraging](https://github.com/andyed/attentional-foraging) — a reanalysis of the AdSERP dataset (Latifzadeh, Gwizdka & Leiva, SIGIR '25; 2,776 trials, 47 participants, simultaneous eye + mouse + scroll + pupil tracking) that produces the OSEC task model and the four-class taxonomy.
 - **Deployment:** this library — the task model in runnable form. You get the signal without the eye tracker.
 
+### Precedents (2001–2003)
+
+The modern IR cursor literature did not start in 2012 with Huang et al. Two of its foundational primitives were already codified in the early 2000s, in browser instrumentation work that predates the SIGIR cursor-on-SERP thread by roughly a decade. Approach-retreat is directly descended from both.
+
+| Year | Release | Primitive | Modern re-derivation |
+|---|---|---|---|
+| **2001** | [Optimoz](http://optimoz.mozdev.org/) — Firefox gesture extension, [Slashdotted](https://www.flickr.com/photos/andyed/125275288/), installed by millions | **Real-time cursor-vector compression** via the gesture-recognition algorithm. Turned cursor-trajectory summarization from a batch lab exercise into something running live in every gesture-enabled Firefox. | **Villaizán-Vallelado et al.** (SIGIR '25) — Seq2Seq Transformer over raw cursor-trajectory embeddings, 24 years later. Same primitive, different decoder. |
+| **2003** | **Edmonds.** [*Uzilla: A new tool for Web usability testing*](https://link.springer.com/article/10.3758/BF03202549) (Behavior Research Methods, Instruments, & Computers 35(2):194–201) | **"Mouse miles"** — integrated cursor path length (and its horizontal/vertical decomposition) as a summative usability measure, reported alongside time-on-task and success rate. Used in a 2002 Clemson case study comparing left- vs right-hand navigation on a SERP-like test site. | **Brückner, Arapakis & Leiva** (SIGIR '21) — "When Choice Happens: A Systematic Examination of Mouse Movement Length for Decision Making in Web Search." Same primitive, same framing, 18 years later. |
+
+Uzilla also introduced the **DOM-path click signature** — identifying click targets by their full DOM-tree path rather than pixel position. That one is arguably the most widely adopted idea from the paper, silently embedded in most modern web analytics, session-recording, A/B testing, and accessibility tools.
+
+See [`docs/history.md`](docs/history.md) for the full lineage (Lucidity 2001 → Optimoz 2001 → Uzilla 2003 → ClickSense 2026 → approach-retreat 2026) and the Slashdot front-page screenshot. Approach-retreat adds a **task model** on top of these primitives — the four-class taxonomy (clicked / deferred / evaluated_rejected / not_approached) reframes the same cursor primitives as labels rather than features.
+
 ### The Leiva/Arapakis research program
 
 The cursor-on-SERP lineage this work builds on runs through a single sustained collaboration — Luis Leiva and Ioannis Arapakis have been producing the foundational datasets, features, and baselines for more than a decade. Approach/retreat is best understood as a task-model layer on top of their instrument.
@@ -237,6 +252,7 @@ The four-class taxonomy and retreat geometry claims are validated in the attenti
 
 ## References
 
+- Edmonds (2003). ["Uzilla: A new tool for Web usability testing"](https://link.springer.com/article/10.3758/BF03202549) — instrumented Mozilla browser, "mouse miles" (integrated cursor path length), DOM-path click signature, cursor-vector compression via Optimoz's gesture recognition algorithm. Behavior Research Methods, Instruments, & Computers 35(2):194–201.
 - Huang, White & Buscher (2012). ["User see, user point"](https://jeffhuang.com/papers/GazeCursor_CHI12.pdf) — gaze-cursor alignment on SERPs, 700 ms lag, behavior-dependent (CHI '12)
 - Guo & Agichtein (2012). ["Beyond dwell time"](https://dl.acm.org/doi/10.1145/2187836.2187914) — post-click cursor movements for document relevance (WWW '12)
 - Arapakis & Leiva (2016). ["Predicting user engagement with direct displays"](https://dl.acm.org/doi/10.1145/2911451.2911505) — 638 cursor features, AUC 0.86 for attention prediction (SIGIR '16)

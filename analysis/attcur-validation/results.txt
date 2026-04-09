@@ -1,0 +1,91 @@
+Joined metadata rows: 2909
+Native-ad sessions: 960
+Feature rows: 954  skipped: 6
+
+Label distributions (native-ad subset, feature-extracted):
+  noticed (attn>=3): 663/954 (0.695)
+  ad_clicked:         289/954 (0.303)
+
+Feature summary (approach-retreat only, native-ad subset):
+shape: (9, 9)
+┌───────────┬───────────┬───────────┬───────────┬───┬───────────┬───────────┬───────────┬──────────┐
+│ statistic ┆ min_dist  ┆ retreat_d ┆ retreat_a ┆ … ┆ dwell_in_ ┆ ever_in_t ┆ n_target_ ┆ n_events │
+│ ---       ┆ ---       ┆ ist       ┆ rc_ratio  ┆   ┆ target_ms ┆ arget     ┆ entries   ┆ ---      │
+│ str       ┆ f64       ┆ ---       ┆ ---       ┆   ┆ ---       ┆ ---       ┆ ---       ┆ f64      │
+│           ┆           ┆ f64       ┆ f64       ┆   ┆ f64       ┆ f64       ┆ f64       ┆          │
+╞═══════════╪═══════════╪═══════════╪═══════════╪═══╪═══════════╪═══════════╪═══════════╪══════════╡
+│ count     ┆ 954.0     ┆ 954.0     ┆ 954.0     ┆ … ┆ 954.0     ┆ 954.0     ┆ 954.0     ┆ 954.0    │
+│ null_coun ┆ 0.0       ┆ 0.0       ┆ 0.0       ┆ … ┆ 0.0       ┆ 0.0       ┆ 0.0       ┆ 0.0      │
+│ t         ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆          │
+│ mean      ┆ 120.13417 ┆ 343.74213 ┆ 2.157068  ┆ … ┆ 2024.3542 ┆ 0.772537  ┆ 1.459119  ┆ 25.17295 │
+│           ┆ 2         ┆ 8         ┆           ┆   ┆ 98        ┆           ┆           ┆ 6        │
+│ std       ┆ 112.37772 ┆ 423.59920 ┆ 1.599201  ┆ … ┆ 5151.5119 ┆ 0.419414  ┆ 1.411579  ┆ 22.99779 │
+│           ┆ 1         ┆ 7         ┆           ┆   ┆ 66        ┆           ┆           ┆ 8        │
+│ min       ┆ 3.0       ┆ 0.0       ┆ 1.0       ┆ … ┆ 0.0       ┆ 0.0       ┆ 0.0       ┆ 3.0      │
+│ 25%       ┆ 52.0      ┆ 36.0      ┆ 1.010902  ┆ … ┆ 0.0       ┆ 1.0       ┆ 1.0       ┆ 12.0     │
+│ 50%       ┆ 89.0      ┆ 165.0     ┆ 1.499371  ┆ … ┆ 574.0     ┆ 1.0       ┆ 1.0       ┆ 18.0     │
+│ 75%       ┆ 153.0     ┆ 493.0     ┆ 2.748286  ┆ … ┆ 2163.0    ┆ 1.0       ┆ 2.0       ┆ 31.0     │
+│ max       ┆ 960.0     ┆ 2213.0    ┆ 18.297365 ┆ … ┆ 95416.0   ┆ 1.0       ┆ 14.0      ┆ 276.0    │
+└───────────┴───────────┴───────────┴───────────┴───┴───────────┴───────────┴───────────┴──────────┘
+
+=== target: noticed  (pos rate 0.695) ===
+  [approach-retreat (11 feats)]
+      AUC  0.594 ± 0.007
+      F1w  0.602 ± 0.007
+  [Brückner primitive (total_mouse_length only)]
+      AUC  0.505 ± 0.008
+      F1w  0.551 ± 0.012
+  [min_dist only]
+      AUC  0.566 ± 0.026
+      F1w  0.592 ± 0.023
+  [min_dist + retreat_dist + ever_in_target]
+      AUC  0.587 ± 0.019
+      F1w  0.621 ± 0.011
+  [retreat-only (dist + path + arc_ratio)]
+      AUC  0.532 ± 0.025
+      F1w  0.610 ± 0.019
+
+=== target: ad_clicked  (pos rate 0.303) ===
+  [approach-retreat (11 feats)]
+      AUC  0.821 ± 0.022
+      F1w  0.732 ± 0.011
+  [Brückner primitive (total_mouse_length only)]
+      AUC  0.696 ± 0.031
+      F1w  0.543 ± 0.004
+  [min_dist only]
+      AUC  0.564 ± 0.032
+      F1w  0.520 ± 0.012
+  [min_dist + retreat_dist + ever_in_target]
+      AUC  0.798 ± 0.036
+      F1w  0.649 ± 0.019
+  [retreat-only (dist + path + arc_ratio)]
+      AUC  0.705 ± 0.020
+      F1w  0.586 ± 0.016
+
+=== Feature importance: approach-retreat → ad_clicked (full-data fit) ===
+  n_events            -1.353  → skip 
+  dwell_in_target_ms  +0.952  → click
+  retreat_dist        -0.723  → skip 
+  ever_in_target      +0.700  → click
+  n_target_entries    +0.617  → click
+  retreat_path        +0.219  → click
+  session_ms          +0.169  → click
+  retreat_arc_ratio   -0.140  → skip 
+  max_dist            +0.131  → click
+  total_mouse_length  -0.024  → skip 
+  min_dist            +0.017  → click
+
+=== Spearman ρ with attention Likert (1-5) ===
+  dwell_in_target_ms  ρ = +0.163  p = 4.009e-07 ***
+  ever_in_target      ρ = +0.127  p = 8.580e-05 ***
+  max_dist            ρ = -0.082  p = 1.106e-02 *
+  min_dist            ρ = -0.087  p = 7.314e-03 **
+  n_events            ρ = -0.039  p = 2.259e-01   
+  n_target_entries    ρ = +0.129  p = 6.320e-05 ***
+  retreat_arc_ratio   ρ = -0.019  p = 5.485e-01   
+  retreat_dist        ρ = -0.065  p = 4.454e-02 *
+  retreat_path        ρ = -0.050  p = 1.240e-01   
+  session_ms          ρ = -0.012  p = 7.130e-01   
+  total_mouse_length  ρ = -0.027  p = 4.104e-01   
+
+Done.
