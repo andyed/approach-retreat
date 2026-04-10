@@ -234,14 +234,14 @@ Each of the papers above treats cursor behavior as a *signal to decode*. None of
 
 The four-class taxonomy and retreat geometry claims are validated in the attentional-foraging notebooks:
 
-- **Click prediction (NB21, NB22):** Episode-level features (dwell, retreat distance, arc ratio, visit count) → AUC 0.821 for click prediction. With element-type interactions → 0.838. Competitive with Arapakis & Leiva 2016 (0.86 AUC, 638 features) using ~6 features because the task model tells you which features matter.
+- **Click prediction (NB21, NB22):** Episode-level features (dwell, retreat distance, arc ratio, visit count) → AUC 0.792 for click prediction (LOSO M3, post coordinate-space audit 2026-04-09; was 0.821 pre-fix). With element-type interactions → TBD (NB22 pending re-verification). Competitive with Arapakis & Leiva 2016 (0.86 AUC, 638 features) using ~6 features because the task model tells you which features matter.
 - **Retreat arc geometry (NB24):** Top ads show 2.36× arc ratio (curved retreats) vs 1.08 for organic (near-straight). Re-approached retreats have both higher arc ratio (2.09 vs 1.18) and lower Fitts ID (2.21 vs 2.31 bits) — the DEFERRED signature is curved + close.
 - **Discrimination cost (NB20):** Top ads produce 2× the approach rate of organic results, 2.3× the dwell, 17× the lateral drift during retreat, and the highest pupil dilation (+0.41%). This is the C/W/L violation: top ads evaluate *more* expensively than organic, not less.
 - **Public head-to-head against Brückner et al. 2021:** See [`docs/validation/attcur-bruckner.md`](docs/validation/attcur-bruckner.md). Approach-retreat features beat the Brückner scalar mouse-movement-length baseline by +12.5 AUC (0.821 vs 0.696) on their own ad-click-prediction benchmark, using an 11-feature logistic regression — no neural network, no embeddings. The task model is the whole reason for the gap.
 
 ### Framework extensions
 
-- **C/W/L (Azzopardi, Thomas & Craswell, SIGIR '18)** predicts user evaluation cost decreases with position — ads should be cheaper than organic because they demand less reading. The AdSERP data shows the opposite for top ads: discrimination ("is this ad or result?") is a cost C/W/L doesn't model. Adding a retreat × is_top_ad interaction lifts click-prediction AUC from 0.884 to 0.914. A CIKM 2026 paper draft formalizes this as a missing variable in the framework.
+- **C/W/L (Azzopardi, Thomas & Craswell, SIGIR '18)** predicts user evaluation cost decreases with position — ads should be cheaper than organic because they demand less reading. The AdSERP data shows the opposite for top ads: discrimination ("is this ad or result?") is a cost C/W/L doesn't model. Adding a retreat × is_top_ad interaction lifts click-prediction AUC (pre-audit: 0.884 → 0.914; pending re-verification post coordinate-space audit 2026-04-09). A CIKM 2026 paper draft formalizes this as a missing variable in the framework.
 - **Information Foraging Theory (Pirolli & Card, 1999)** provides the patch-leaving vocabulary, but operates at the session level. OSEC applies the same foraging lens at the per-result evaluation level — each result is a mini-patch with its own cost and reward. Retreat geometry is the motor trace of the patch-leaving decision.
 
 ### Datasets used for validation

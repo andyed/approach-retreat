@@ -34,7 +34,14 @@ Largest public cursor-on-SERP dataset available. Ground truth includes BOTH clic
 
 150 transactional queries with actual SERP HTML means we can compute AOI bounding boxes from the DOM and replay cursor traces as approach-retreat episodes.
 
-**Status:** Public GitLab repo. Andy emailed Leiva (no response as of 2026-04-07). Data is freely cloneable — no access request needed.
+## Companion papers on the same GitLab
+
+The Leiva/Arapakis GitLab repo hosts data and code for four related papers, not just the 2020 Frontiers dataset paper. All use the same core cursor-on-SERP instrumentation lineage (EvTrack JS + custom proxy + SERP HTML snapshots):
+
+1. **Arapakis, Penta, Joho & Leiva (2020).** *A Price-per-attention Auction Scheme Using Mouse Cursor Information.* ACM TOIS 38(2). Uses cursor attention signals to drive an auction mechanism — the "attention as currency" framing that motivates their whole program.
+2. **Arapakis & Leiva (2020).** *Learning Efficient Representations of Mouse Movements to Predict User Attention.* SIGIR. The neural-embedding precursor to AdSight (SIGIR '25).
+3. **Leiva, Arapakis & Iordanou (2021).** *My Mouse, My Rules: Privacy Issues of Behavioral User Profiling via Mouse Tracking.* CHIIR. Privacy analysis of the same telemetry primitives.
+4. **Brückner, Arapakis & Leiva (2021).** *When Choice Happens: A Systematic Examination of Mouse Movement Length for Decision Making in Web Search.* SIGIR. **Project zip in `~/Downloads`.** This is the paper that Uzilla 2003 "mouse miles" is direct prior art for — having the actual project artifacts in hand means approach-retreat can be replayed on Brückner's own trials, which is the cleanest possible empirical comparison for the four-class taxonomy.
 
 ## Validation Plan
 
