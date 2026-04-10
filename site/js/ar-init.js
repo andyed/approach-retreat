@@ -131,7 +131,9 @@ function escapeHtml(s) {
  * [data-result] + [data-position] so the library picks it up automatically.
  *
  * Variants:
- *   default         — title/url/snippet/meta/full_text (narrow, dense, grid)
+ *   default         — title/url/snippet/meta/full_text (narrow, dense, grid,
+ *                     and carousel rows — carousel layouts bucket in the page
+ *                     and call renderAnswers per row with the default variant)
  *   rich-thumbnail  — prepends a .result-thumbnail element
  *   two-pane        — compact card, no meta, no full_text (lives in reading pane)
  */

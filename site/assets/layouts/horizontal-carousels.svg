@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" role="img" aria-labelledby="title desc">
+  <title id="title">Horizontal carousels</title>
+  <desc id="desc">Results grouped into three horizontal scrollable rows. Content overflows the right edge, indicating swipe/scroll navigation. Netflix/RecGaze idiom — tests a 2D decision topology with within-row horizontal scan and between-row vertical navigation.</desc>
+
+  <!-- Canvas -->
+  <rect x="0.75" y="0.75" width="478.5" height="358.5" rx="10" fill="#0a0a0a" stroke="#2a2a2a" stroke-width="1.5"/>
+
+  <!-- Clip path to crop items that overflow the right edge -->
+  <defs>
+    <clipPath id="crop">
+      <rect x="24" y="28" width="432" height="304"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#crop)">
+    <!-- Row 1: Earlier -->
+    <g transform="translate(24, 40)">
+      <rect x="0" y="0" width="60" height="8" rx="2" fill="#e8e8e8"/>
+      <!-- Cards 154x80, gap 14. Four visible + one half off-right -->
+      <g transform="translate(0, 16)">
+        <rect x="0" y="0" width="154" height="80" rx="6" fill="#141414" stroke="#2a2a2a" stroke-width="1"/>
+        <rect x="12" y="12" width="110" height="8" rx="2" fill="#6ea8fe"/>
+        <rect x="12" y="28" width="60" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="40" width="130" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="48" width="120" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="56" width="90" height="3" rx="1" fill="#909090"/>
+      </g>
+      <g transform="translate(168, 16)">
+        <rect x="0" y="0" width="154" height="80" rx="6" fill="#141414" stroke="#2a2a2a" stroke-width="1"/>
+        <rect x="12" y="12" width="100" height="8" rx="2" fill="#6ea8fe"/>
+        <rect x="12" y="28" width="55" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="40" width="130" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="48" width="125" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="56" width="75" height="3" rx="1" fill="#909090"/>
+      </g>
+      <g transform="translate(336, 16)">
+        <rect x="0" y="0" width="154" height="80" rx="6" fill="#141414" stroke="#2a2a2a" stroke-width="1"/>
+        <rect x="12" y="12" width="115" height="8" rx="2" fill="#6ea8fe"/>
+        <rect x="12" y="28" width="62" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="40" width="130" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="48" width="110" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="56" width="85" height="3" rx="1" fill="#909090"/>
+      </g>
+    </g>
+
+    <!-- Row 2: Middle -->
+    <g transform="translate(24, 152)">
+      <rect x="0" y="0" width="55" height="8" rx="2" fill="#e8e8e8"/>
+      <g transform="translate(-40, 16)">
+        <rect x="0" y="0" width="154" height="80" rx="6" fill="#141414" stroke="#2a2a2a" stroke-width="1"/>
+        <rect x="12" y="12" width="90" height="8" rx="2" fill="#6ea8fe"/>
+        <rect x="12" y="28" width="58" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="40" width="130" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="48" width="115" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="56" width="80" height="3" rx="1" fill="#909090"/>
+      </g>
+      <g transform="translate(128, 16)">
+        <rect x="0" y="0" width="154" height="80" rx="6" fill="#141414" stroke="#2a2a2a" stroke-width="1"/>
+        <rect x="12" y="12" width="105" height="8" rx="2" fill="#6ea8fe"/>
+        <rect x="12" y="28" width="60" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="40" width="130" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="48" width="120" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="56" width="78" height="3" rx="1" fill="#909090"/>
+      </g>
+      <g transform="translate(296, 16)">
+        <rect x="0" y="0" width="154" height="80" rx="6" fill="#141414" stroke="#2a2a2a" stroke-width="1"/>
+        <rect x="12" y="12" width="120" height="8" rx="2" fill="#6ea8fe"/>
+        <rect x="12" y="28" width="55" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="40" width="130" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="48" width="108" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="56" width="70" height="3" rx="1" fill="#909090"/>
+      </g>
+    </g>
+
+    <!-- Row 3: Recent -->
+    <g transform="translate(24, 264)">
+      <rect x="0" y="0" width="58" height="8" rx="2" fill="#e8e8e8"/>
+      <g transform="translate(0, 16)">
+        <rect x="0" y="0" width="154" height="80" rx="6" fill="#141414" stroke="#2a2a2a" stroke-width="1"/>
+        <rect x="12" y="12" width="108" height="8" rx="2" fill="#6ea8fe"/>
+        <rect x="12" y="28" width="65" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="40" width="130" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="48" width="115" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="56" width="88" height="3" rx="1" fill="#909090"/>
+      </g>
+      <g transform="translate(168, 16)">
+        <rect x="0" y="0" width="154" height="80" rx="6" fill="#141414" stroke="#2a2a2a" stroke-width="1"/>
+        <rect x="12" y="12" width="95" height="8" rx="2" fill="#6ea8fe"/>
+        <rect x="12" y="28" width="52" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="40" width="130" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="48" width="122" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="56" width="72" height="3" rx="1" fill="#909090"/>
+      </g>
+      <g transform="translate(336, 16)">
+        <rect x="0" y="0" width="154" height="80" rx="6" fill="#141414" stroke="#2a2a2a" stroke-width="1"/>
+        <rect x="12" y="12" width="112" height="8" rx="2" fill="#6ea8fe"/>
+        <rect x="12" y="28" width="58" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="40" width="130" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="48" width="118" height="3" rx="1" fill="#909090"/>
+        <rect x="12" y="56" width="82" height="3" rx="1" fill="#909090"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Right-edge fade hint suggesting horizontal overflow -->
+  <rect x="440" y="28" width="16" height="304" fill="url(#fade)" opacity="0.85"/>
+  <defs>
+    <linearGradient id="fade" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#0a0a0a" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0a0a0a" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+</svg>

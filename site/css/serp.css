@@ -802,6 +802,89 @@ body.layout-rich-thumbnail .result.expanded {
   grid-template-columns: 160px 1fr;
 }
 
+/* --- layout: horizontal-carousels ---
+   Netflix/RecGaze idiom. Answers are bucketed into horizontal rows by era;
+   each row scrolls independently. Tests a 2D decision topology (within-row
+   horizontal scan vs between-row vertical navigation).
+   Inspired by the carousel stimuli in RecGaze (de Leon-Martinez et al.,
+   SIGIR 2025) — our content, their layout shape. */
+
+body.layout-horizontal-carousels .page {
+  max-width: 1180px;
+}
+body.layout-horizontal-carousels .serp-results {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+body.layout-horizontal-carousels .carousel-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+body.layout-horizontal-carousels .carousel-row-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+body.layout-horizontal-carousels .carousel-strip {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.75rem;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+body.layout-horizontal-carousels .carousel-strip::-webkit-scrollbar {
+  height: 8px;
+}
+body.layout-horizontal-carousels .carousel-strip::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+body.layout-horizontal-carousels .carousel-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+body.layout-horizontal-carousels .result {
+  flex: 0 0 280px;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  white-space: normal;
+}
+body.layout-horizontal-carousels .result:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+body.layout-horizontal-carousels .result-title {
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+body.layout-horizontal-carousels .result-url {
+  font-size: 0.72rem;
+}
+body.layout-horizontal-carousels .result-snippet {
+  font-size: 0.85rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+body.layout-horizontal-carousels .result.expanded {
+  flex: 0 0 420px;
+}
+body.layout-horizontal-carousels .result.expanded .result-snippet {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+
 /* --- Signals debug overlay (dev only) --- */
 
 .ar-debug {

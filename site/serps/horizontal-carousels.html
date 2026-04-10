@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Approach/Retreat — Horizontal carousels</title>
+  <link rel="stylesheet" href="../css/serp.css">
+  <script src="../js/posthog-init.js"></script>
+</head>
+<body class="layout-horizontal-carousels">
+  <div class="page">
+    <div class="question-switcher"></div>
+    <header class="serp-header">
+      <div class="serp-query"></div>
+      <div class="serp-info"></div>
+    </header>
+    <div class="serp-results" id="serp"></div>
+
+    <div class="ar-debug">
+      <div>Episodes: <span id="debug-episodes">0</span></div>
+      <div>Retreats: <span id="debug-retreats">0</span></div>
+      <div>Classification:</div>
+      <div id="debug-classes" style="font-size: 0.7rem;"></div>
+    </div>
+
+    <footer class="site-footer">
+      <p>Cursor captured anonymously. <a href="https://github.com/andyed/approach-retreat">Source &amp; method</a>. Press <kbd>d</kbd> for debug.</p>
+      <p class="credits">
+        Layout inspired by the carousel stimuli in
+        <a href="https://doi.org/10.1145/3726302.3730301">RecGaze (de Leon-Martinez et al., SIGIR 2025)</a>.
+        Our content, their 2D decision topology.
+      </p>
+    </footer>
+  </div>
+
+  <script type="module">
+    import {
+      loadQuestion, initApproachRetreat, wireDebugOverlay,
+      renderHeader, renderAnswers,
+    } from '../js/ar-init.js';
+
+    const LAYOUT = 'horizontal-carousels';
+    const { meta, answers, index } = await loadQuestion();
+    renderHeader({ meta, index, layoutName: LAYOUT });
+
+    /**
+     * Bucket answers into horizontal rows.
+     *
+     * Strategy:
+     *   1. Ads get their own top row labeled "Sponsored" (if any exist).
+     *   2. Non-ad answers with a numeric year are sorted chronologically and
+     *      split into era tertiles — Earlier / Middle / Recent — using the
+     *      question's year_min/year_max from meta for the labels.
+     *   3. Answers without a year (shouldn't happen in current corpus) fall
+     *      into a tail "Other" row.
+     *
+     * Every result element still carries [data-result] + [data-position] so
+     * the library picks them all up regardless of which row they live in.
+     */
+    function bucketIntoRows(answers, meta) {
+      const rows = [];
+      const ads = answers.filter((a) => a.type === 'ad');
+      const regular = answers
+        .filter((a) => a.type !== 'ad')
+        .filter((a) => Number.isFinite(Number(a.year)));
+
+      if (ads.length > 0) {
+        rows.push({ title: 'Sponsored', answers: ads });
+      }
+
+      if (regular.length === 0) {
+        return rows;
+      }
+
+      const sorted = [...regular].sort((a, b) => Number(a.year) - Number(b.year));
+      const n = sorted.length;
+      // Split into 3 near-equal tertiles (last row picks up any remainder).
+      const t1 = Math.floor(n / 3);
+      const t2 = Math.floor((2 * n) / 3);
+      const buckets = [sorted.slice(0, t1), sorted.slice(t1, t2), sorted.slice(t2)];
+      const labels = rowLabelsForSpan(sorted);
+
+      buckets.forEach((bucket, i) => {
+        if (bucket.length > 0) {
+          rows.push({ title: labels[i], answers: bucket });
+        }
+      });
+
+      // Any answers without a valid year go in a tail row.
+      const tail = answers
+        .filter((a) => a.type !== 'ad')
+        .filter((a) => !Number.isFinite(Number(a.year)));
+      if (tail.length > 0) {
+        rows.push({ title: 'Other', answers: tail });
+      }
+
+      return rows;
+    }
+
+    /**
+     * Build era labels from the actual year distribution of this question's
+     * answers. For small corpora (2-3 items per bucket) we use descriptive
+     * year ranges rather than decade names.
+     */
+    function rowLabelsForSpan(sortedAnswers) {
+      const years = sortedAnswers.map((a) => Number(a.year));
+      const n = years.length;
+      const t1 = Math.floor(n / 3);
+      const t2 = Math.floor((2 * n) / 3);
+      const span = (arr) => {
+        if (arr.length === 0) return '';
+        const lo = arr[0];
+        const hi = arr[arr.length - 1];
+        return lo === hi ? `${lo}` : `${lo}\u2013${hi}`;
+      };
+      return [
+        `Earlier \u00b7 ${span(years.slice(0, t1))}`,
+        `Middle \u00b7 ${span(years.slice(t1, t2))}`,
+        `Recent \u00b7 ${span(years.slice(t2))}`,
+      ];
+    }
+
+    // Render rows into the main results container. Each row gets its own
+    // scrollable strip; renderAnswers() is called once per row with the
+    // row's answers, preserving the shared result-card DOM shape.
+    const serpContainer = document.getElementById('serp');
+    const rows = bucketIntoRows(answers, meta);
+    for (const row of rows) {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'carousel-row';
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'carousel-row-title';
+      titleEl.textContent = row.title;
+      rowEl.appendChild(titleEl);
+
+      const stripEl = document.createElement('div');
+      stripEl.className = 'carousel-strip';
+      renderAnswers(stripEl, row.answers);
+      rowEl.appendChild(stripEl);
+
+      serpContainer.appendChild(rowEl);
+    }
+
+    let debugUpdate = () => {};
+    const { ar } = initApproachRetreat({
+      layoutName: LAYOUT,
+      queryMeta: meta,
+      onClick: ({ target }) => target.classList.toggle('expanded'),
+      onEpisode: () => debugUpdate(),
+    });
+    debugUpdate = wireDebugOverlay(ar);
+    ar.refresh();
+  </script>
+</body>
+</html>
