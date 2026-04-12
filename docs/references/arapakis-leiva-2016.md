@@ -49,7 +49,7 @@ Our approach-retreat library captures the same signal with ~6 features per episo
 - Their distance-to-center = our retreat distance
 - Their hover ratio = our visit count
 - Their dwell time baseline = our episode dwell
-- Their AUC 0.86 (638 features) vs our AUC 0.792 (episode-level signals; post coordinate-space audit 2026-04-09)
+- Their AUC 0.86 (638 features) vs our AUC **0.859** (episode-level signals; post coordinate-space audit 2026-04-12 — parity on 6 features after the fixation-side fix)
 
 The 638→6 compression IS the contribution of having a cognitive task model. Feature engineering discovers what theory predicts.
 
