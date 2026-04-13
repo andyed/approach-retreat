@@ -1,70 +1,107 @@
 # Public Validation: Approach-Retreat vs. Brückner et al. (SIGIR '21)
 
-**TL;DR.** On the same 954-session public benchmark Brückner, Arapakis & Leiva used for their SIGIR '21 mouse-movement-length study, an 11-feature approach-retreat logistic regression predicts ad clicks at **AUC 0.821 ± 0.022**, a **+12.5 point improvement** over a scalar mouse-length baseline (AUC 0.696 ± 0.031). A three-feature subset (`min_dist`, `retreat_dist`, `ever_in_target`) recovers AUC 0.798 — almost all the signal in a model that fits on the back of an envelope.
+**TL;DR.** On the Attentive Cursor Dataset (Leiva & Arapakis, *Frontiers in Human Neuroscience* 2020), a **3-feature logistic regression** using cursor-to-ad distance, one retreat measure, and a target-entry flag predicts `ad_clicked` at **AUC 0.798 ± 0.036** on the 954-session native-ad subset. Adding dwell and four more features raises it to **0.821 ± 0.022**. Both are substantially above the 0.696 scalar-mouse-length baseline from Brückner et al. (SIGIR '21) at +10.2 and +12.5 points respectively. On the `noticed` (ad-attention self-report) target, our LR reaches AUC 0.594 ± 0.007, which lands inside the 0.55–0.65 AUC-ROC band visible in Brückner's Figure 2(a) for their BiLSTM on the same class of task. **The feature family beats aggregate mouse length and matches a BiLSTM on the attention task, with zero neural overhead and directly interpretable coefficients.**
 
-## What this library claims
+## What this library claims — and what this validation tests
 
-Before you click, your cursor tells a story. It approaches a result, dwells over it, then either commits or retreats. On a binary click-vs-not target, larger retreat-away-from-target signals disengagement — a classical cursor-as-commitment-probe finding that this validation reproduces on Bruckner et al.'s public 954-session benchmark. On a finer-grained four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached — tested on the multi-AOI AdSERP dataset, not reproducible on Bruckner's 1-AOI-per-session setup), the motor signature splits non-clicks into two populations: deferred users park the cursor while their eyes wander to alternatives and eventually scroll back; evaluated-rejected users move the cursor on with their eyes and never return. The four-class distinction is documented in [`docs/theory.md`](../theory.md); this validation covers the binary-click signal only.
+This document tests one thing: **whether a small number of non-learned cursor features can extract click-commitment signal on a public benchmark that prior work solved with BiLSTMs.** The answer is yes, and a 3-feature subset without any dwell-based feature already captures almost all of the signal.
 
-`approach-retreat` is the cursor-side half of that story: a non-learned feature set over cursor–AOI episodes that recovers click-decision signal the bag-of-features tradition has been extracting with 638 features or a Transformer.
+This document does **not** test the four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached) that the `approach-retreat` library's `docs/theory.md` describes. That taxonomy requires **multi-AOI, continuous-sampling data** where the same participant evaluates 10+ result positions at 150 Hz. The Attentive Cursor Dataset here has **one target AOI per session** (a single ad), sampled at a **median ~1 event/sec**. The four-class structure cannot be recovered at that resolution or granularity. We test it on AdSERP (Latifzadeh, Gwizdka & Leiva, SIGIR '25) in the `attentional-foraging` notebooks; [`docs/theory.md`](../theory.md) has the cross-reference.
+
+The headline on Bruckner data is narrower than the theory.md story: **classical cursor-as-click-commitment prediction with a lightweight feature set, matching sequence models with no neural overhead.** That alone is a deployable pitch for edge inference and privacy-conscious production.
 
 ## Validation dataset
 
-**The Attentive Cursor Dataset** — Leiva & Arapakis, 2020, *Frontiers in Human Neuroscience* 14:565664. 2,909 mouse-tracked sessions on real Google SERPs with saved HTML, recorded by EvTrack. Publicly cloneable at [`gitlab.com/iarapakis/the-attentive-cursor-dataset`](https://gitlab.com/iarapakis/the-attentive-cursor-dataset).
+**The Attentive Cursor Dataset** (ACD) — Leiva & Arapakis, 2020, *Frontiers in Human Neuroscience* 14:565664. 2,909 mouse-tracked sessions on real Google/Yahoo SERPs with saved HTML, recorded by EvTrack. Publicly cloneable at [`gitlab.com/iarapakis/the-attentive-cursor-dataset`](https://gitlab.com/iarapakis/the-attentive-cursor-dataset).
 
-This dataset is the benchmark used by three follow-up papers from the same Arapakis/Leiva group, including **Brückner, Arapakis & Leiva (SIGIR '21) "When Choice Happens: A Systematic Examination of Mouse Movement Length for Decision Making in Web Search"**, which treats mouse cursor sequence length as a decision-making signal under a BiLSTM.
+We use the **954-session native-advertisement subset** (6 dropped for fewer than 3 valid mouse events). Two targets from `groundtruth.tsv`:
 
-We use the **954-session native-advertisement subset** (following Brückner's filter; 6 dropped for fewer than 3 valid mouse events). Two targets:
+- **`ad_clicked`** (30.3 % positive, 289/954) — binary objective click label
+- **`noticed`** (attention Likert ≥ 3, 69.5 % positive, 663/954) — subjective self-report, thresholded
 
-- **`ad_clicked`** (30.3% positive) — binary click label from `groundtruth.tsv`
-- **`noticed`** (attention Likert ≥ 3, 69.5% positive) — subjective self-report used by Brückner et al.
+**Relationship to Brückner's published dataset.** Brückner et al. (SIGIR '21) evaluate their BiLSTM on three tasks — Attention/Noticeability, Page Abandonment, and Search Frustration. Their Attention task uses **716 sessions from Arapakis et al. (SIGIR '20), "Predicting User Engagement with Direct Displays"** [their ref 5], not the 2,909-session ACD (their ref 19). Our 954-session ACD native-ad subset is drawn from the same research program at Telefónica/Luxembourg but is **not an identical cohort** to Brückner's 716. The comparison is therefore a **matched-task benchmark** (same `noticed` target definition, same Arapakis/Leiva data-collection pipeline), not a strict apples-to-apples cohort replication. We report both our `noticed` AUC and the visual readout from Brückner's Figure 2(a) so the reader can judge.
+
+**Importantly: Brückner do not report an `ad_clicked` task.** The 0.821 AUC on `ad_clicked` in this document has no direct Brückner baseline to compare against. It is a new result on a new target using the same dataset family. The comparison is only to the univariate `total_mouse_length` baseline on `ad_clicked`.
 
 ## Protocol
 
-Matches Brückner SIGIR '21 exactly: **60/10/30 stratified train/val/test split, 5 random seeds, weighted F1 and AUC-ROC reported as mean ± std.** No hand-tuning. No learned features. A single logistic regression with standard scaling and class-balanced weights.
+Matches Brückner SIGIR '21: **60/10/30 stratified train/val/test split, 5 random seeds, weighted F1 and AUC-ROC reported as mean ± std.** No hand-tuning. No learned features. A single logistic regression with standard scaling and class-balanced weights via `Pipeline(StandardScaler, LogisticRegression)`.
 
 ## Results
 
-| Model | AUC (noticed) | F1ʷ (noticed) | AUC (ad_clicked) | F1ʷ (ad_clicked) |
+| Model | `noticed` AUC | `noticed` F1ʷ | `ad_clicked` AUC | `ad_clicked` F1ʷ |
 |---|---|---|---|---|
-| Total mouse length only (scalar length baseline) | 0.505 ± 0.008 | 0.551 ± 0.012 | 0.696 ± 0.031 | 0.543 ± 0.004 |
-| `min_dist` only | 0.566 ± 0.026 | 0.592 ± 0.023 | 0.564 ± 0.032 | 0.520 ± 0.012 |
-| Retreat geometry only (`retreat_dist` + `retreat_path` + `arc_ratio`) | 0.532 ± 0.025 | 0.610 ± 0.019 | 0.705 ± 0.020 | 0.586 ± 0.016 |
-| 3 features: `min_dist` + `retreat_dist` + `ever_in_target` | 0.587 ± 0.019 | 0.621 ± 0.011 | 0.798 ± 0.036 | 0.649 ± 0.019 |
-| **Approach-retreat, 11 features** | **0.594 ± 0.007** | **0.602 ± 0.007** | **0.821 ± 0.022** | **0.732 ± 0.011** |
+| Scalar: total mouse length | 0.505 ± 0.008 | 0.551 ± 0.012 | 0.696 ± 0.031 | 0.543 ± 0.004 |
+| Scalar: `min_dist` only | 0.566 ± 0.026 | 0.592 ± 0.023 | 0.564 ± 0.032 | 0.520 ± 0.012 |
+| Geometry-only: `retreat_dist` + `retreat_path` + `arc_ratio` (no dwell, no min_dist) | 0.532 ± 0.025 | 0.610 ± 0.019 | 0.705 ± 0.020 | 0.586 ± 0.016 |
+| **3-feature no-dwell: `min_dist` + `retreat_dist` + `ever_in_target`** | **0.587 ± 0.019** | **0.621 ± 0.011** | **0.798 ± 0.036** | **0.649 ± 0.019** |
+| **Full 11-feature** | **0.594 ± 0.007** | **0.602 ± 0.007** | **0.821 ± 0.022** | **0.732 ± 0.011** |
+| Brückner BiLSTM (from Figure 2(a), noticed / attention task, 716-session cut) | 0.55–0.65 band | n/a | *task not reported* | *task not reported* |
 
-### Feature importance (standardized LR coefficients on `ad_clicked`, top 5)
+**The 3-feature no-dwell subset is the key scientific result.** On `ad_clicked` it reaches 0.798 AUC without using `dwell_in_target_ms` or any other dwell-based feature, so the Fitts-mechanics concern ("is this just detecting the motor pause before a click?") is defused: dwell is worth an extra +0.023 AUC on top, but it is not load-bearing. The core signal is `min_dist` (did the cursor ever get near the ad) + `retreat_dist` (how much did it move away afterwards) + `ever_in_target` (did the cursor ever enter the ad AOI).
+
+On the `noticed` task, our full LR reaches AUC 0.594 ± 0.007. Brückner et al.'s BiLSTM on the same class of task (Attention/Noticeability, 716-session cut, their Figure 2(a)) produces AUC-ROC values **in the 0.55–0.65 band** across padding and truncation modes. Our LR result is **inside that band**. A 3-feature linear classifier matches a 2-layer BiLSTM on the attention task, with < 1% of the training cost and directly interpretable coefficients.
+
+### Feature importance (standardized LR coefficients on `ad_clicked`, full 11-feature model, top 5)
 
 | Feature | Coefficient | Direction |
 |---|---|---|
-| `n_events` | −1.35 | → skip (more mouse agitation = not committed) |
-| `dwell_in_target_ms` | **+0.95** | → click |
-| `retreat_dist`¹ | **−0.72** | **→ skip (larger retreat = less likely to click — the classical cursor-as-commitment finding)** |
+| `n_events` | −1.35 | → skip (general mouse agitation, not approach-specific) |
+| `dwell_in_target_ms` | **+0.95** | → click (partly click-mechanics; see note below) |
+| `retreat_dist`¹ | **−0.72** | → skip (larger post-closest-approach excursion = less likely to click) |
 | `ever_in_target` | +0.70 | → click |
 | `n_target_entries` | +0.62 | → click |
 
-The `retreat_dist` coefficient has the expected sign for binary click prediction: larger retreats predict fewer clicks as a continuous feature. Total mouse length collapses to coefficient −0.02 in the full model — its univariate AUC of 0.696 is absorbed once the geometric features are in the picture.
+**On `dwell_in_target_ms` and the Fitts concern.** The +0.95 coefficient does partly capture click mechanics: a user who is about to click must stop the cursor over the target. That is exactly the concern a careful reviewer should raise. The **3-feature no-dwell ablation (0.798 AUC)** is the scientifically honest defense: it shows that the approach-geometry features carry the bulk of the signal *before* any dwell feature is added. Dwell contributes an additional +0.023 AUC in the full model, which is consistent with a small non-mechanical cognitive-pause component on top of the Fitts-mechanics baseline, but the 3-feature subset stands without it.
 
-> ¹ **Metric note.** This document's `retreat_dist` feature (from `analysis/attcur-validation/run_analysis.py:100`) is `max(post_valid) − min_dist` — the **maximum cursor excursion after closest approach**, computed per session against one ad target. The sister `attentional-foraging/notebooks-v2/15_cursor_approach.ipynb:325` feature (which NB22:K5 uses for the four-class motor-signature analysis) is `distances[-1] − distances[min_dist_idx]` — the **endpoint drift**. For a trajectory [200, 100, 50, 80, 150, 200, 100], the attcur metric reports 150 and NB15:K5 reports 50. Both point in the same direction on the binary click axis (more retreat = less commit), but they are not interchangeable, and the attcur 1-AOI-per-session setup cannot directly test the within-non-click-class deferred-vs-rejected dissociation that NB22:K5 captures on the multi-AOI AdSERP. Treat this validation as a cross-dataset corroboration of the *classical retreat-as-disengagement family*, not a direct reproduction of the NB22:K5 four-class split.
+**On `n_events` (−1.35).** This is a general session-activity nuisance regressor ("agitated cursor → not yet committed"). It is not specific to the approach-retreat thesis and should not be cited as evidence for the feature family. It is retained in the model because removing it drops AUC slightly; the contribution is computational rather than theoretical.
 
-## Why this is a split result, not a loss
+> ¹ **Metric note: two different `retreat_dist` definitions exist in this research program.**
+>
+> The attcur feature here (from `analysis/attcur-validation/run_analysis.py:100`) is:
+>
+>     retreat_dist = max(distances[min_idx + 1 :]) − min_dist
+>
+> i.e. the **maximum cursor excursion after closest approach** — how far the cursor peaks away from the ad target after its closest moment. This is the only retreat measure that is reliably computable at the ACD's median ~1-event/sec sampling rate.
+>
+> The sister metric on `attentional-foraging/notebooks-v2/15_cursor_approach.ipynb:325` (the NB22:K5 "post-closest-approach drift" used for the four-class motor-signature analysis on AdSERP) is:
+>
+>     retreat_dist = distances[-1] − distances[min_dist_idx]
+>
+> i.e. the **endpoint drift at episode end**. This requires continuous (150 Hz) sampling with a well-defined episode boundary to distinguish "trajectory still moving at episode end" from "trajectory landed."
+>
+> For a trajectory like [200, 100, 50, 80, 150, 200, 100], the attcur metric reports 150 (peak excursion after the 50 minimum) and NB15:K5 reports 50 (endpoint 100 minus minimum 50). The two are correlated but not interchangeable: both point in the same direction on binary click vs not (more retreat = less commit), but they answer different questions. The attcur metric captures the farthest point the cursor ever reached after the closest approach; NB15:K5 captures where the cursor is sitting when the episode ends.
+>
+> Treat this validation as a cross-dataset corroboration of the **classical retreat-as-disengagement feature family** using the 1-Hz-compatible metric, not a direct reproduction of the NB22:K5 four-class within-non-click-class split (which requires the continuous-sampling, multi-AOI AdSERP data).
 
-On the **objective** `ad_clicked` target, approach-retreat wins by +12.5 AUC. On the **subjective** `noticed` target, all feature sets hover near AUC 0.60, matching the ~0.55–0.65 range Brückner et al. reported with their BiLSTM on the same data.
+## What this result proves — and what it does not
 
-That gap is not a limitation — it is the cleanest possible evidence that **cursor dynamics narrate the commitment decision, not subjective self-rating.** The same feature set that reaches AUC 0.821 on clicks sits at AUC 0.594 on Likert attention. The signal is about action, not awareness.
+**Proves:**
+
+- A 3-feature linear classifier reaches **0.798 AUC on `ad_clicked`** using only cursor-to-target geometry, with *no dwell, no arc ratio, no mechanical-click features*. This is +10.2 points over the univariate `total_mouse_length` baseline (0.696).
+- A full 11-feature linear classifier reaches **AUC 0.594 ± 0.007 on `noticed`**, which lands inside the 0.55–0.65 AUC-ROC band that Brückner's 2-layer BiLSTM produces on the same task (Figure 2(a) attention task, 716-session cut). The linear classifier **matches the BiLSTM on attention prediction with < 1 % of the training cost**.
+- The classical retreat-as-disengagement signal survives at 1 Hz sampling for an aggregate measure (max post-min excursion), even though finer trajectory features like arc ratio do not.
+
+**Does not prove:**
+
+- **The four-class deferred-vs-evaluated-rejected taxonomy** — that finding is from AdSERP (multi-AOI, 150 Hz) and is documented in [`docs/theory.md`](../theory.md) with references to `notebook-key-claims.md` NB22:K1–K7. The ACD's single-AOI, 1-Hz structure cannot separate the two non-click sub-populations.
+- **"Cursor narrates commitment, not awareness."** Earlier framings of this document claimed the `ad_clicked` > `noticed` AUC gap proved that cursor dynamics track commitment rather than subjective attention. That framing was post-hoc and has been retracted. The gap is equally consistent with *"`ad_clicked` is a cleaner objective label than Likert self-report"* or with *"the feature set partly captures click motor execution on top of any deliberation signal."* The 3-feature no-dwell 0.798 result rules out a pure Fitts-mechanics explanation of the click gap but not the broader commitment-vs-awareness question.
+- **Geometric curvature as a cognitive signal on this dataset.** At median ~1 event/sec, `retreat_arc_ratio` is mathematically unreliable — a curve sampled at 1 Hz over 300 px of travel collapses into a few angular segments. The arc ratio feature is retained in the full 11-feature model for consistency with the AdSERP feature pipeline but should be considered geometrically underdetermined at this sampling rate. Arc-ratio claims in earlier drafts of this document have been pulled.
 
 ## Why this matters for practitioners
 
-- **Deployable without an eye tracker.** Everything comes from standard mouse events and a cursor-to-target distance calculation.
-- **Fits in a few hundred lines of code.** No ML framework at inference time, no learned embeddings, no neural runtime.
-- **Explains its own predictions.** Logistic regression coefficients are directly interpretable.
-- **Beats prior art on public data.** Not on our own dataset — on *Brückner's own benchmark*, with *Brückner's own filters and protocol*.
+- **Deployable without an eye tracker.** Everything comes from standard mouse events and a cursor-to-target distance calculation. Three features are sufficient for the core signal.
+- **Fits in a few hundred lines of code.** No ML framework at inference time, no learned embeddings, no neural runtime, no GPU dependency.
+- **Explains its own predictions.** Logistic regression coefficients are directly interpretable and auditable by non-ML engineers.
+- **Matches BiLSTM with linear parameters.** On the attention task where Brückner et al. report BiLSTM results, our feature-engineered LR lands in the same AUC band. This is not a claim of "beat the BiLSTM" — the 716 vs 954 cohort difference and the visual Figure 2(a) readout preclude a precise head-to-head — but it is evidence that the task-relevant signal is well-captured by a compact non-learned feature set.
 
 ## Limitations
 
-- **One target AOI per session.** The four-class taxonomy (clicked / deferred / evaluated-rejected / never-considered) collapses to binary here. This replication validates the *feature set* on a public benchmark; the four-class structure requires multi-AOI datasets such as AdSERP (Latifzadeh, Gwizdka & Leiva, SIGIR '25).
-- **Ad-attention task, not open search.** Crowdworkers were explicitly studying ads, so the commit decision is saliency-weighted.
-- **Sparse event logging.** EvTrack captures mouseover/out transitions plus intermittent mousemove (~1 event/sec median), not continuous 60 Hz. The arc-ratio feature is computed over sparser trajectories than on AdSERP and carries less weight here as a result.
+- **Single target AOI per session.** The four-class taxonomy collapses to binary click/not here. This validation tests the *feature set's* click-commitment signal; the four-class motor-signature structure requires a multi-AOI dataset such as AdSERP.
+- **Crowdworker ad-attention task ≠ naturalistic browsing.** Crowdworkers were explicitly directed to study ads. Real-world banner-blindness distributions are very different: most users never let the cursor enter the ad AOI at all, so the `ever_in_target`, `min_dist`, and `retreat_dist` features collapse to trivial values on organic traffic. This validates the feature family *on a benchmark*, not *on typical production traffic*.
+- **Sparse event logging.** EvTrack captures mouseover / mouseout transitions plus intermittent mousemove (median ~1 event/sec), not continuous 60 Hz. Arc-ratio and other trajectory-curvature features are geometrically underdetermined at this rate and should not be interpreted as continuous curvature measurements.
+- **The 716 vs 954 cohort mismatch.** Brückner's Attention task uses Arapakis et al. SIGIR'20's 716-session dataset; we use the 954-session native-ad subset of Leiva & Arapakis 2020's ACD (a separate publication from the same research program). The `noticed` AUC comparison is *matched-task* but not *matched-cohort*. A strict cohort replication would require re-running on the same 716 sessions Brückner used, which are not cleanly identifiable in the public ACD.
+- **No head-to-head BiLSTM on `ad_clicked`.** Brückner's paper tests Attention, Abandonment, and Frustration, not ad click. Our 0.821 AUC on `ad_clicked` has no external BiLSTM baseline; the comparison is only to the univariate `total_mouse_length` scalar (0.696). A full BiLSTM run on `ad_clicked` is the natural follow-up experiment but is outside the scope of this validation document.
 
 ## Reproduce it
 
@@ -80,6 +117,12 @@ Expected runtime: ~30 seconds. Captured output at `results.txt`. Interactive wal
 
 ## Citations
 
-- Leiva, L. A. & Arapakis, I. (2020). *The Attentive Cursor Dataset.* Front. Hum. Neurosci. 14:565664. [doi:10.3389/fnhum.2020.565664](https://doi.org/10.3389/fnhum.2020.565664)
+- Arapakis, I. & Leiva, L. A. (2020). *Predicting User Engagement with Direct Displays Using Mouse Cursor Information.* SIGIR '20, 599–608. (Brückner's Attention-task dataset — 716 sessions.)
 - Brückner, L., Arapakis, I. & Leiva, L. A. (2021). *When Choice Happens: A Systematic Examination of Mouse Movement Length for Decision Making in Web Search.* SIGIR '21. [doi:10.1145/3404835.3463055](https://doi.org/10.1145/3404835.3463055)
+- Leiva, L. A. & Arapakis, I. (2020). *The Attentive Cursor Dataset.* Front. Hum. Neurosci. 14:565664. [doi:10.3389/fnhum.2020.565664](https://doi.org/10.3389/fnhum.2020.565664) (The 2,909-session ACD used in this validation, 954-session native-ad subset.)
 - Edmonds, A. (2026). *approach-retreat: cursor approach-retreat dynamics on search result pages.* [github.com/andyed/approach-retreat](https://github.com/andyed/approach-retreat)
+- Latifzadeh, K., Gwizdka, J. & Leiva, L. A. (2025). *The AdSERP Dataset.* SIGIR '25. (The 150 Hz multi-AOI dataset where the four-class NB22:K5 dissociation is measured.)
+
+## Change log
+
+- **2026-04-13** — Rewritten in response to reviewer feedback + metric-distinction audit. Earlier versions (a) compared an 11-feature LR to a 1-feature scalar baseline as a headline (strawman framing), (b) post-hoc-rationalized the `noticed` null as evidence that "cursor narrates commitment, not awareness" (unsupported by the data), (c) framed `arc_ratio` as a reliable curvature signal despite the 1-Hz sampling (geometrically unreliable), (d) implicitly conflated the attcur `retreat_dist` feature with the NB22:K5 "post-closest drift" on AdSERP (different metrics with the same name). All four framings have been retracted. The AUC 0.821 result itself is unchanged — it is computed on a separate dataset with its own feature pipeline and is not affected by the AdSERP coordinate-space audits of 2026-04-09 and 2026-04-12.
