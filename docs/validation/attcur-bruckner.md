@@ -4,7 +4,7 @@
 
 ## What this library claims
 
-Before you click, your cursor tells a story. It approaches a result, dwells over it, then either commits or retreats. The *geometry* of the retreat separates the results you're done with from the ones you may come back to. Curved + close retreats predict re-approach; straight + far retreats predict commitment to rejection.
+Before you click, your cursor tells a story. It approaches a result, dwells over it, then either commits or retreats. On a binary click-vs-not target, larger retreat-away-from-target signals disengagement — a classical cursor-as-commitment-probe finding that this validation reproduces on Bruckner et al.'s public 954-session benchmark. On a finer-grained four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached — tested on the multi-AOI AdSERP dataset, not reproducible on Bruckner's 1-AOI-per-session setup), the motor signature splits non-clicks into two populations: deferred users park the cursor while their eyes wander to alternatives and eventually scroll back; evaluated-rejected users move the cursor on with their eyes and never return. The four-class distinction is documented in [`docs/theory.md`](../theory.md); this validation covers the binary-click signal only.
 
 `approach-retreat` is the cursor-side half of that story: a non-learned feature set over cursor–AOI episodes that recovers click-decision signal the bag-of-features tradition has been extracting with 638 features or a Transformer.
 
@@ -39,11 +39,13 @@ Matches Brückner SIGIR '21 exactly: **60/10/30 stratified train/val/test split,
 |---|---|---|
 | `n_events` | −1.35 | → skip (more mouse agitation = not committed) |
 | `dwell_in_target_ms` | **+0.95** | → click |
-| `retreat_dist` | **−0.72** | **→ skip (longer retreat = rejection — the core thesis)** |
+| `retreat_dist`¹ | **−0.72** | **→ skip (larger retreat = less likely to click — the classical cursor-as-commitment finding)** |
 | `ever_in_target` | +0.70 | → click |
 | `n_target_entries` | +0.62 | → click |
 
-The `retreat_dist` coefficient has the expected sign: longer retreats predict rejection as a continuous feature. Total mouse length collapses to coefficient −0.02 in the full model — its univariate AUC of 0.696 is absorbed once the geometric features are in the picture.
+The `retreat_dist` coefficient has the expected sign for binary click prediction: larger retreats predict fewer clicks as a continuous feature. Total mouse length collapses to coefficient −0.02 in the full model — its univariate AUC of 0.696 is absorbed once the geometric features are in the picture.
+
+> ¹ **Metric note.** This document's `retreat_dist` feature (from `analysis/attcur-validation/run_analysis.py:100`) is `max(post_valid) − min_dist` — the **maximum cursor excursion after closest approach**, computed per session against one ad target. The sister `attentional-foraging/notebooks-v2/15_cursor_approach.ipynb:325` feature (which NB22:K5 uses for the four-class motor-signature analysis) is `distances[-1] − distances[min_dist_idx]` — the **endpoint drift**. For a trajectory [200, 100, 50, 80, 150, 200, 100], the attcur metric reports 150 and NB15:K5 reports 50. Both point in the same direction on the binary click axis (more retreat = less commit), but they are not interchangeable, and the attcur 1-AOI-per-session setup cannot directly test the within-non-click-class deferred-vs-rejected dissociation that NB22:K5 captures on the multi-AOI AdSERP. Treat this validation as a cross-dataset corroboration of the *classical retreat-as-disengagement family*, not a direct reproduction of the NB22:K5 four-class split.
 
 ## Why this is a split result, not a loss
 
