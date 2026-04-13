@@ -18,17 +18,31 @@ The cursor doesn't just navigate; it narrates the evaluation. Three patterns:
 
 1. **Approach velocity tracks information scent.** Fast scanning approaches mean the user is looking; slow deliberate approaches mean the user is reading.
 2. **Dwell tracks evaluation effort.** Long dwells with no click are evaluation followed by rejection. Long dwells with clicks are deliberation followed by commitment. ClickSense [1] captures the deliberation signal at the moment of commitment; this library captures it during evaluation.
-3. **Retreat geometry tracks the deliberation/commitment boundary.** This is the signal that motivated this library. When the user leaves a result without clicking, the *shape* of the leaving trajectory predicts whether they will come back. Curved + close retreats predict re-approach (deliberation continues). Straight + far retreats predict that the rejection sticks (decision committed).
+3. **Retreat geometry tracks the deliberation/commitment boundary.** This is the signal that motivated this library. When the user leaves a result without clicking, what happens after that exit predicts whether they will come back. The single strongest separator at this boundary is **post-closest-approach drift** — how far the cursor has drifted from its closest-approach point by the time the episode ends.
 
-The third pattern was tested on the AdSERP dataset (2,776 trials, 47 participants, simultaneous eye + mouse + pupil tracking) with these features per retreat episode:
+The relationship is the *opposite* of the geometric intuition you might expect from "deliberation = stays close, commitment = moves far":
 
-| Feature | Re-approached (median) | Rejected (median) | Mann-Whitney |
+| Class | Post-closest drift | Gaze dwell | Proximity dwell |
 |---|---|---|---|
-| Arc ratio (path / direct distance) | 2.35 | 1.35 | p = 8.4 × 10⁻⁴ |
-| Max retreat distance (px) | 369 | 415 | p = 0.022 |
-| Fitts' law ID (bits) at max retreat | 1.32 | 1.72 | p = 3.5 × 10⁻⁴ |
+| **Deferred** (will re-approach) | **234 px** (cursor parked) | **4,137 ms** | **1,213 ms** |
+| **Evaluated-rejected** (won't return) | **91 px** (cursor moving on) | **1,612 ms** | **690 ms** |
+| Mann-Whitney *p* | **1.76 × 10⁻³⁸** | **9.76 × 10⁻⁷⁰** | **1.36 × 10⁻¹⁶** |
 
-N = 731 retreats, 7.8% re-approach rate. **Pattern: curved + close + low ID = "I'll be back"; straight + far + high ID = "I'm done."** Caveat: pooled-arc statistics; mixed-effects model needed for reportable inference.
+(N = 1,916 deferred + 439 eval-rejected, AdSERP `[NB22:K5–K7]`, post 2026-04-12 fixation-side coordinate audit.)
+
+**Corrected interpretation: deferred = cursor parked, eyes wandering; evaluated-rejected = cursor moving on with the eyes.** Deferred users let the cursor sit wherever it landed (high post-closest drift) while they fixate alternative candidates before regressing back. Evaluated-rejected users actively move the cursor toward the next target as their gaze moves on, so post-closest drift stays small.
+
+The 2.6× drift gap, 2.6× gaze gap, and 1.8× proximity gap are all in the same direction — deferred users invest more visual and motor effort across the episode than eval-rejected users. They are still considering. The motor signature is real and strong (*p* values from 10⁻¹⁶ to 10⁻⁷⁰); the *geometric metaphor* in earlier versions of this section ("curved-close vs straight-far") had the direction inverted, and has been retracted.
+
+The 2026-04-12 audit also surfaced a complementary finding from the geometric arc-ratio metric in `attentional-foraging/notebooks-v2/24_retreat_arc_geometry.ipynb` — that metric measures something different from K5 (arc length / direct distance ratio at the moment of max retreat, *not* post-closest drift). NB24 was re-executed 2026-04-12 22:54 with the post-fix data; the per-retreat re-approach comparison (N = 793 retreats, 63 re-approached + 730 not, 7.9 % re-approach rate) gives:
+
+| Feature | Re-approached (median) | Not re-approached (median) | Mann-Whitney *p* |
+|---|---|---|---|
+| Arc ratio (path / direct distance) | 1.800 | 1.337 | 1.71 × 10⁻³ |
+| Fitts' law ID at max retreat (bits) | 1.33 | 1.76 | 7.94 × 10⁻⁴ |
+| Max retreat distance (px) | 380 | 425 | 0.062 (ns) |
+
+(Pre-fix values were 2.35 / 1.35, 1.32 / 1.72, 369 / 415 with N = 731. The arc-ratio gap shrank, max retreat dropped to ns under the post-fix data, but Fitts ID is essentially unchanged.) These are pooled-retreat statistics; participant-clustered inference is still pending. The K5 post-closest-drift signal in NB22 (sample size N = 2,355, *p* = 10⁻³⁸) remains the canonical motor-signature anchor for the four-class dissociation; NB24's arc-ratio finding is corroborating evidence on a different geometric quantity, but the post-fix max-retreat-distance result is now a null at the pooled level.
 
 ## What we're not claiming
 
@@ -49,11 +63,11 @@ Episode segmentation gives a four-class label that distinguishes them:
 | Class | Cursor signature | Use as label |
 |---|---|---|
 | **clicked** | enter → dwell → click | positive |
-| **evaluated-rejected** | enter → dwell → straight-far retreat → no return | strong negative (the user looked and said no) |
-| **deferred** | enter → dwell → curved-close retreat → re-approach | weak negative or hold-out (the user is still considering) |
+| **evaluated-rejected** | enter → dwell → cursor moves on with the eyes; no return | strong negative (the user looked and said no) |
+| **deferred** | enter → dwell → cursor parked while eyes wander; eventually regresses back | weak negative or hold-out (the user is still considering) |
 | **not-approached** | cursor never entered the AOI | unknown (not a negative — the user never looked) |
 
-A learning-to-rank model trained on this taxonomy gets cleaner gradients than one trained on binary clicks. Retreat geometry is what splits *evaluated-rejected* from *deferred* when the user has not yet committed to either: arc ratio, max retreat distance, and Fitts ID at max retreat are continuous within-class signals at that boundary.
+A learning-to-rank model trained on this taxonomy gets cleaner gradients than one trained on binary clicks. The post-closest-drift, total gaze dwell, and proximity dwell metrics in the table above (`[NB22:K5–K7]`) are continuous within-class signals at the deferred / evaluated-rejected boundary.
 
 This is not about adaptive reranking on the deployed page. The library does not ship a ranker. The contribution is the labels — what the upstream training pipeline gets to consume.
 
