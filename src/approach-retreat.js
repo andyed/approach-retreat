@@ -85,7 +85,141 @@ const DEFAULTS = {
   // Turn on to let adapters (e.g. PostHog) downsample and ship trajectory
   // data as research material.
   includeSamplesInEpisodeJson: false,
+
+  // Proximity threshold for the M4 `dwell_in_proximity_ms` feature, in
+  // page-space pixels. 100 px matches the canonical AdSERP extractor
+  // (attentional-foraging/scripts/m4_nb21_hybrid_rerun.py).
+  approachFeatureProximityPx: 100,
 };
+
+/**
+ * Per-result running aggregates of the nine M4 approach features
+ * (Edmonds 2026, CIKM). One tracker per SERP result element, updated on
+ * every mousemove with the cursor's page-space Y coordinate. O(1) memory
+ * per tracked result; 13 floats of live state regardless of sample count.
+ *
+ * The nine features mirror the canonical extractor in
+ * attentional-foraging/scripts/m4_nb21_hybrid_rerun.py:
+ *
+ *   1. min_dist              — min |Δy| cursor to result center over whole trial
+ *   2. mean_dist             — mean |Δy|
+ *   3. final_dist            — last seen |Δy|
+ *   4. retreat_dist          — final_dist − min_dist (post-closest drift)
+ *   5. dwell_in_proximity_ms — total time cursor was within proximityPx of center
+ *   6. mean_approach_velocity — mean −Δdist/Δt (directed toward result, px/s)
+ *   7. max_approach_velocity  — max −Δdist/Δt
+ *   8. direction_changes     — count of velocity sign flips
+ *   9. frac_decreasing       — fraction of sample transitions with decreasing dist
+ *
+ * Coordinates are page-space (pageY = clientY + scrollY) so the result
+ * center is scroll-invariant and can be cached at first observation.
+ */
+export class ResultFeatureTracker {
+  constructor(pageYCenter, proximityPx = 100) {
+    this.pageYCenter = pageYCenter;
+    this.proximityPx = proximityPx;
+
+    this.sampleCount = 0;
+    this.sumDist = 0;
+    this.minDist = Infinity;
+    this.finalDist = 0;
+    this.lastT = null;
+
+    // Velocity running state. lastVelSign === null means "no prior
+    // velocity seen" so the first velocity establishes the baseline
+    // without being counted as a direction change. Matches the paper's
+    // `np.diff(np.sign(vels)) != 0` length-(n-2) semantics.
+    this.lastVelSign = null;
+    this.sumVel = 0;
+    this.maxVel = -Infinity;
+    this.nTransitions = 0;
+    this.nDecreasing = 0;
+    this.directionChanges = 0;
+
+    this.dwellInProximityMs = 0;
+  }
+
+  /**
+   * Update with one mousemove sample. pageY is the cursor's page-space Y,
+   * t is a performance.now() timestamp in milliseconds.
+   */
+  update(pageY, t) {
+    const dist = Math.abs(pageY - this.pageYCenter);
+
+    if (this.sampleCount === 0) {
+      this.sampleCount = 1;
+      this.sumDist = dist;
+      this.minDist = dist;
+      this.finalDist = dist;
+      this.lastT = t;
+      return;
+    }
+
+    const dt = t - this.lastT;
+    // Skip samples with zero or negative time delta — can happen with
+    // duplicate events or clock skew. Don't count them as transitions.
+    if (dt <= 0) {
+      this.finalDist = dist;
+      if (dist < this.minDist) this.minDist = dist;
+      return;
+    }
+
+    // Directed velocity: positive = approaching result (dist decreasing)
+    // Matches the paper's `vels = -np.diff(dist) / dts * 1000` (px/s).
+    const vel = (-(dist - this.finalDist) / dt) * 1000;
+
+    this.nTransitions += 1;
+    this.sumVel += vel;
+    if (vel > this.maxVel) this.maxVel = vel;
+    if (dist < this.finalDist) this.nDecreasing += 1;
+
+    // Direction-change counter: mirrors the paper's
+    // `int(np.sum(np.diff(np.sign(vels)) != 0))` exactly. Every sign
+    // transition counts, including through zero (+1 → 0 → +1 counts as
+    // two changes). The first velocity establishes the baseline without
+    // being counted.
+    const velSign = vel > 0 ? 1 : vel < 0 ? -1 : 0;
+    if (this.lastVelSign !== null && velSign !== this.lastVelSign) {
+      this.directionChanges += 1;
+    }
+    this.lastVelSign = velSign;
+
+    // Dwell-in-proximity accumulator: integrate Δt where the cursor ENDED
+    // the interval inside the proximity band. Matches the paper's
+    // `if in_prox[i]: dwell_ms += dt`, with the 2000ms gap filter that
+    // protects against tab-switch / away-from-keyboard intervals.
+    if (dist < this.proximityPx && dt < 2000) {
+      this.dwellInProximityMs += dt;
+    }
+
+    this.sampleCount += 1;
+    this.sumDist += dist;
+    if (dist < this.minDist) this.minDist = dist;
+    this.finalDist = dist;
+    this.lastT = t;
+  }
+
+  /**
+   * Return the nine approach features as a plain object. Safe to call
+   * at any point; returns zeros / sentinels on fewer than two samples.
+   */
+  getFeatures() {
+    const n = this.sampleCount;
+    const t = this.nTransitions;
+    return {
+      min_dist: n > 0 ? this.minDist : 0,
+      mean_dist: n > 0 ? this.sumDist / n : 0,
+      final_dist: n > 0 ? this.finalDist : 0,
+      retreat_dist: n > 0 ? this.finalDist - this.minDist : 0,
+      dwell_in_proximity_ms: this.dwellInProximityMs,
+      mean_approach_velocity: t > 0 ? this.sumVel / t : 0,
+      max_approach_velocity: this.maxVel === -Infinity ? 0 : this.maxVel,
+      direction_changes: this.directionChanges,
+      frac_decreasing: t > 0 ? this.nDecreasing / t : 0,
+      sample_count: n,
+    };
+  }
+}
 
 /**
  * A single approach-retreat episode on one result.
@@ -200,6 +334,13 @@ export class ApproachRetreat {
     this._observer = null;
     this._visibleResults = new Set();
 
+    // Per-result running aggregates for the nine M4 paper features.
+    // resultEl → ResultFeatureTracker. Initialized on first mousemove
+    // after the result is visible, so pageY centers are cached from a
+    // known scroll position. See ResultFeatureTracker docstring.
+    this._approachFeatures = new Map();
+    this._resultPageYCenter = new Map(); // resultEl → cached pageY center
+
     this._onMouseMove = this._onMouseMove.bind(this);
     this._onScroll = this._onScroll.bind(this);
     this._onClick = this._onClick.bind(this);
@@ -250,6 +391,7 @@ export class ApproachRetreat {
     const now = performance.now();
     const x = e.clientX;
     const y = e.clientY;
+    const pageY = y + this._scrollY;
 
     // Compute velocity
     if (this._lastMouse) {
@@ -260,6 +402,12 @@ export class ApproachRetreat {
       }
     }
     this._lastMouse = { x, y, t: now };
+
+    // Update per-result approach-feature trackers (the nine M4 paper
+    // features, aggregated over the whole-trial cursor stream against
+    // each result's cached page-space center). Lazy-initialize on first
+    // mousemove after the result becomes visible.
+    this._updateApproachFeatures(pageY, now);
 
     // Check which result the cursor is over
     const results = document.querySelectorAll(this.config.resultSelector);
@@ -446,6 +594,65 @@ export class ApproachRetreat {
     }
   }
 
+  /**
+   * Update the nine M4 approach-feature running aggregates for every
+   * visible result. Lazy-initializes a tracker the first time a result
+   * is seen, caching its page-space Y center (scroll-invariant).
+   *
+   * Matches the whole-trial aggregation window used by the paper's
+   * canonical extractor: features are computed against each result's
+   * center using ALL mousemove samples, not restricted to approach
+   * episodes. The §4.4 phase-restriction ablation in the paper
+   * empirically validates that the Survey-phase cursor contributes
+   * no signal, so whole-trial aggregation and Evaluate-phase aggregation
+   * give essentially the same feature vector.
+   */
+  _updateApproachFeatures(pageY, t) {
+    const proximityPx = this.config.approachFeatureProximityPx;
+    const results = document.querySelectorAll(this.config.resultSelector);
+
+    for (const el of results) {
+      // Respect visibility filter if IntersectionObserver is enabled —
+      // results that never entered the viewport aren't meaningfully
+      // available to the cursor and shouldn't receive feature aggregates.
+      if (this._observer && !this._visibleResults.has(el)) continue;
+
+      // Lazy cache the result's page-space Y center. getBoundingClientRect
+      // is viewport-relative; adding scrollY converts to page coordinates,
+      // which are stable across subsequent scrolls.
+      let tracker = this._approachFeatures.get(el);
+      if (!tracker) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) continue; // not laid out yet
+        const pageYCenter = rect.top + rect.height / 2 + this._scrollY;
+        this._resultPageYCenter.set(el, pageYCenter);
+        tracker = new ResultFeatureTracker(pageYCenter, proximityPx);
+        this._approachFeatures.set(el, tracker);
+      }
+      tracker.update(pageY, t);
+    }
+  }
+
+  /**
+   * Return the nine M4 approach features per result as a plain array
+   * sorted by rank position. Each entry contains `position` plus the
+   * nine feature values, reproducing the per-(trial, result) record
+   * schema in attentional-foraging/scripts/m4_nb21_hybrid_rerun.py.
+   *
+   * This is the canonical feature vector referenced throughout the
+   * CIKM 2026 paper (§3.3, §4.1). Feed these directly into a trained
+   * M4 click-predictor or M5 deferred-class detector.
+   */
+  getApproachFeatures() {
+    const out = [];
+    for (const [el, tracker] of this._approachFeatures) {
+      const position = parseInt(
+        el.getAttribute(this.config.positionAttr) || '0', 10);
+      out.push({ position, ...tracker.getFeatures() });
+    }
+    return out.sort((a, b) => a.position - b.position);
+  }
+
   _onClick(e) {
     const resultEl = e.target.closest(this.config.resultSelector);
     if (!resultEl) return;
@@ -628,6 +835,8 @@ export class ApproachRetreat {
     this._episodes = [];
     this._active.clear();
     this._visitCounts.clear();
+    this._approachFeatures.clear();
+    this._resultPageYCenter.clear();
   }
 
   destroy() {
@@ -637,5 +846,7 @@ export class ApproachRetreat {
     if (this._observer) this._observer.disconnect();
     this._active.clear();
     this._retreating = [];
+    this._approachFeatures.clear();
+    this._resultPageYCenter.clear();
   }
 }

@@ -195,6 +195,14 @@ export function createPostHogAdapter(posthog, options = {}) {
     /**
      * Capture a session summary event. Flushes any in-flight episodes first
      * so the classify() counts include everything.
+     *
+     * Also captures the nine M4 approach features per result position via
+     * ar.getApproachFeatures(). These are the canonical feature vector
+     * referenced by the Edmonds 2026 CIKM paper (§3.3, §4.1) and are the
+     * input M4 click predictors and M5 deferred-class detectors consume.
+     * They are whole-trial running aggregates against each result's
+     * page-space center, not per-episode — a cursor that never entered
+     * an AOI still has a nine-feature record for that result.
      */
     captureSummary(ar) {
       if (typeof ar.flush === 'function') ar.flush();
@@ -219,6 +227,9 @@ export function createPostHogAdapter(posthog, options = {}) {
         -1
       );
 
+      const approachFeatures =
+        typeof ar.getApproachFeatures === 'function' ? ar.getApproachFeatures() : [];
+
       posthog.capture(summaryEventName, {
         ar_total_episodes: episodes.length,
         ar_total_clicked: (classes.clicked || []).length,
@@ -234,6 +245,8 @@ export function createPostHogAdapter(posthog, options = {}) {
         ar_total_dwell_ms: Math.round(totalDwellMs),
         ar_time_to_first_click_ms: timeToFirstClickMs,
         ar_max_position_approached: maxPositionApproached >= 0 ? maxPositionApproached : null,
+        ar_approach_features: approachFeatures,
+        ar_approach_feature_schema: 'edmonds-2026-m4-v1',
         ...getCtx(),
       });
     },

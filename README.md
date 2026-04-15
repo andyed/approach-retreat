@@ -143,6 +143,45 @@ ar.getEpisodes();  // full list, one entry per finalized visit
 ar.flush();        // finalize in-flight episodes without clearing history
 ```
 
+### Canonical nine-feature M4 vector
+
+The library ships the same nine-feature extractor used in the Edmonds 2026
+CIKM paper (*Cognitive Task Models Recover SERP Examination Signal Invisible
+to Atheoretic Cursor Feature Extraction*). One vector per result position
+per session, aggregated over the whole-trial cursor stream against each
+result's page-space Y center. These are the features M4 (click prediction,
+LOSO AUC 0.821) and M5 (deferred-class detection, calibration methodology)
+consume.
+
+```js
+ar.getApproachFeatures();
+// [
+//   { position: 0,
+//     min_dist: 2.0,               // min |Δy| to result center (px)
+//     mean_dist: 143.15,           // mean |Δy|
+//     final_dist: 200.0,           // last |Δy|
+//     retreat_dist: 198.0,         // final_dist − min_dist (post-closest drift)
+//     dwell_in_proximity_ms: 466,  // time within 100 px of center
+//     mean_approach_velocity: 238, // mean −Δdist/Δt (px/s, toward result)
+//     max_approach_velocity: 966,  // peak approach speed
+//     direction_changes: 11,       // sign flips in approach velocity
+//     frac_decreasing: 0.62,       // fraction of samples with decreasing dist
+//     sample_count: 64 },
+//   { position: 1, ... },
+//   ...
+// ]
+```
+
+**Parity.** The JavaScript `ResultFeatureTracker` is bit-compatible with the
+Python reference implementation in
+[`attentional-foraging/scripts/m4_nb21_hybrid_rerun.py`](https://github.com/andyed/attentional-foraging);
+all nine features match within 1e-6 on identical input. The parity test
+lives at `scripts/test_feature_tracker_parity.{js,py}`.
+
+**Calibration for the deferred-class detector (M5).** See
+[`docs/validation/m5-calibration.md`](docs/validation/m5-calibration.md) for
+the end-to-end calibration methodology.
+
 ## Relevance scoring
 
 ```js
