@@ -1,5 +1,7 @@
 # Attentive Cursor Dataset — External Validation
 
+> **Regime: [WILD, ACD]** — every number in this directory is computed on the Attentive Cursor Dataset (cursor + click, no eye tracker). See `../../CLAUDE.md` § "Role in the CIKM paper" for the LAB/WILD convention. This directory is the WILD half of the bridge; the LAB half (AdSERP, pupil + gaze + cursor) lives in the upstream `attentional-foraging` repo and carries `[LAB, NB##:K##]` tags there.
+
 Independent empirical test of the `approach-retreat` feature set against a published baseline on a public dataset the library has never seen. Run time: ~30 s.
 
 **Narrative writeup for paper readers:** [`../../docs/validation/attcur-bruckner.md`](../../docs/validation/attcur-bruckner.md)
@@ -187,9 +189,9 @@ Runtime ~30 s on a modern laptop. Full captured output in [`results.txt`](./resu
 
 The `approach-retreat` library's core claim is that a small set of cursor-geometry features — built around the evaluation → retreat dynamic — extracts more signal from cursor telemetry than scalar mouse-movement primitives. Validation of that claim should live with the library itself, not buried in a sibling repo, so that anyone evaluating whether to adopt `approach-retreat` can run the same test in one command.
 
-The **AdSERP** validation (multi-AOI SERPs, ten results per page, four-class taxonomy, eye-tracked ground truth) lives in the sibling [`attentional-foraging`](https://github.com/andyed/attentional-foraging) repo, where the full task model and its notebook pipeline are maintained. Together, the two validations bracket the feature set's transfer:
+The **`[LAB, AdSERP]`** validation (multi-AOI SERPs, ten results per page, four-class taxonomy, eye-tracked ground truth) lives in the sibling [`attentional-foraging`](https://github.com/andyed/attentional-foraging) repo, where the full task model and its notebook pipeline are maintained. Together, the two validations bracket the feature set's transfer:
 
-- **AdSERP** tests the full multi-AOI task-model taxonomy on eye-tracked ground truth in controlled lab conditions (47 participants, 2,776 trials).
-- **ACD** tests the binary ad-click target on cursor-only in-the-wild data at scale (954 native-ad sessions, no eye tracking).
+- **`[LAB, AdSERP]`** — full multi-AOI task-model taxonomy on eye-tracked ground truth in controlled lab conditions (47 participants, 2,776 trials, Gazepoint 150 Hz + cursor + pupil).
+- **`[WILD, ACD]`** — binary ad-click target on cursor-only in-the-wild crowdsourced data at scale (954 native-ad sessions, no eye tracker, no pupil).
 
-Same feature set. Different labels, different populations, different dataset constraints. The numbers in both validations support the same claim — the cursor geometry is carrying the signal — which is exactly what an external test is supposed to establish.
+Same feature set. Different labels, different populations, different instrumentation stacks. Claims that hold in **both** regimes earn the `[BOTH]` tag and are the only findings that survive to CIKM's "what deploys" argument; claims that hold in LAB only must be flagged as such. The numbers in both validations support the same headline — the cursor geometry is carrying the signal — which is exactly what an external test is supposed to establish.

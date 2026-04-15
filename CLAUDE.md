@@ -2,6 +2,27 @@
 
 Cursor episode decomposition library for SERP evaluation. Parses raw cursor telemetry into approach/dwell/retreat episodes per result, extracts geometric features (arc ratio, Fitts ID, max retreat distance), and predicts click outcomes.
 
+## Role in the CIKM paper: the LAB ↔ WILD bridge
+
+This repo is the portable cursor substrate. It runs the same four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached) in both regimes — that's what makes the paper's central claim tractable.
+
+- **LAB (AdSERP)** — 47 participants, Gazepoint 150 Hz gaze + pupil + cursor. Library features are validated against the upstream Key Claims (`attentional-foraging` notebooks NB20–NB24). When prose or figures cite LAB numbers from this repo, use `[LAB, NB##:K##]` so the tag threads back to the canonical source.
+- **WILD (ACD)** — Leiva & Arapakis, *Frontiers in Human Neuroscience* 2020, ~2,909 crowdsourced sessions, **cursor and click only, no eye tracker, no pupil.** The self-contained replication lives at `analysis/attcur-validation/`. Tag WILD numbers `[WILD, attcur]`.
+
+**The point of the convention.** Any LAB finding that requires gaze or pupil is LAB-only by construction. Everything else must be rebuilt from cursor alone and re-tested on ACD to earn the `[BOTH]` tag. The library is the instrument that makes that rebuilding mechanical — `attcur-validation` exercises the same feature extractor on a gaze-free cursor stream and reports which LAB results survive.
+
+**Never call ACD "deployment" or "production."** It is crowdsourced; `WILD` is honest. `deployed` is not.
+
+**What fits where:**
+- Four-class taxonomy discrimination → `[BOTH]` (must replicate on ACD)
+- retreat_dist / min_dist / total_dwell / direction_changes → `[BOTH]` (these are the cursor features)
+- LOSO LR on M4 feature set → `[BOTH]` (cross-dataset AUC comparison is the core §5 result)
+- Gaze-cursor coupling median (306/283/197 px) → `[LAB]` only (ACD has no gaze stream to measure against)
+- Pupil-derived cognitive load (LHIPA, Butterworth LF/HF) → `[LAB]` only (ACD has no pupil)
+- Element-type discrimination cost → `[LAB]` only (requires pupil + proximity dwell)
+
+When the LAB and WILD numbers for the same statistic diverge, that is itself a finding — report the divergence, don't paper over it.
+
 ## Notebook Conventions
 
 This repo cites quantitative claims from the upstream `attentional-foraging` repo using `[NB##:K##]` notation. When updating numbers in README.md or docs/:

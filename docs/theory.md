@@ -28,7 +28,7 @@ The relationship is the *opposite* of the geometric intuition you might expect f
 | **Evaluated-rejected** (won't return) | **91 px** (cursor moving on) | **1,612 ms** | **690 ms** |
 | Mann-Whitney *p* | **1.76 × 10⁻³⁸** | **9.76 × 10⁻⁷⁰** | **1.36 × 10⁻¹⁶** |
 
-(N = 1,916 deferred + 439 eval-rejected, AdSERP `[NB22:K5–K7]`, post 2026-04-12 fixation-side coordinate audit.)
+`[LAB, AdSERP, NB22:K5–K7]`. N = 1,916 deferred + 439 eval-rejected, post 2026-04-12 fixation-side coordinate audit. **Gaze dwell** and **proximity dwell** are LAB-only by construction — there is no gaze stream in `[WILD, ACD]`. The post-closest-drift column has a WILD counterpart at [`analysis/attcur-validation/`](../analysis/attcur-validation/README.md) that uses the 1-Hz-compatible `retreat_dist` definition (max post-min excursion, not the 150 Hz endpoint-drift formula used here) and reaches AUC 0.821 on `ad_clicked` with the 11-feature LR.
 
 **Corrected interpretation: deferred = cursor parked, eyes wandering; evaluated-rejected = cursor moving on with the eyes.** Deferred users let the cursor sit wherever it landed (high post-closest drift) while they fixate alternative candidates before regressing back. Evaluated-rejected users actively move the cursor toward the next target as their gaze moves on, so post-closest drift stays small.
 
