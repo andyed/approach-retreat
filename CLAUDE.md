@@ -14,9 +14,10 @@ This repo is the portable cursor substrate. It runs the same four-class taxonomy
 **Never call ACD "deployment" or "production."** It is crowdsourced; `WILD` is honest. `deployed` is not.
 
 **What fits where:**
-- Four-class taxonomy discrimination → `[BOTH]` (must replicate on ACD)
-- retreat_dist / min_dist / total_dwell / direction_changes → `[BOTH]` (these are the cursor features)
-- LOSO LR on M4 feature set → `[BOTH]` (cross-dataset AUC comparison is the core §5 result)
+- Four-class taxonomy discrimination → **`[LAB]`-only until further notice.** The deferred/eval-rejected split requires the gaze-fixation sequence revisiting earlier result positions (see `attentional-foraging/notebooks-v2/22_four_class_taxonomy.ipynb`). The feature commonly called `scroll_regressed_back` is actually **gaze-regression** — it reads `fix['y']`, not scroll events. A scroll-only detector is future work that would earn `[BOTH]` for the taxonomy if validated.
+- retreat_dist / min_dist / total_dwell / direction_changes → `[BOTH]` (these are pure cursor features, no gaze dependency)
+- LOSO LR on M4 feature set predicting **click vs no-click** → `[BOTH]` (this is the cross-dataset AUC comparison: AdSERP LAB AUC 0.861 vs ACD WILD AUC 0.821 on the analogous binary click target)
+- LOSO LR on M4 feature set predicting **deferred vs eval-rejected** → `[LAB]`-only (labels are gaze-derived)
 - Gaze-cursor coupling median (306/283/197 px) → `[LAB]` only (ACD has no gaze stream to measure against)
 - Pupil-derived cognitive load (LHIPA, Butterworth LF/HF) → `[LAB]` only (ACD has no pupil)
 - Element-type discrimination cost → `[LAB]` only (requires pupil + proximity dwell)
