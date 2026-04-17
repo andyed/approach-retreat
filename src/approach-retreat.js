@@ -668,7 +668,10 @@ export class ApproachRetreat {
       this.config.onClick({
         position,
         episode: episode ? episode.toJSON() : null,
-        target: resultEl,
+        target: resultEl,        // the SERP result container (kept for demo callers)
+        element: e.target,       // the specific DOM node that was clicked —
+                                 // lets adapters identify the link/button that
+                                 // got the click, aligned with clicksense target_* fields
       });
     }
   }

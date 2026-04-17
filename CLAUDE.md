@@ -40,6 +40,28 @@ Full convention spec: https://github.com/andyed/science-agent/blob/main/docs/not
 - Bruckner ACD validation is self-contained: `analysis/attcur-validation/`
 - Run `science-agent notebook-audit ./docs --cross-repo=.` to check for stale values
 
+## Clicksense Alignment
+
+Approach-retreat's schema is intentionally distinct — the analytical unit is
+the *episode* (approach/dwell/retreat against a SERP position), not the click.
+`ar_episode`, `ar_click`, `ar_session_summary` stay prefixed and schema-
+independent.
+
+**Where alignment is worth it:** the DOM-target vocabulary on `ar_click`
+events. As of 2026-04-17, `ar_click` emits the clicksense v0.2 target fields —
+`target_tag`, `target_id`, `target_label`, `target_href`, `target_text`,
+`target_aria_label`, `target_title`, `target_name` (computed accessible name),
+`target_path` (short CSS selector), and `target_data_<key>` for every data-*
+attribute. Shared vocabulary, not shared code — the extractor is inlined in
+`src/adapters/posthog.js` to preserve schema independence.
+
+This lets you JOIN click_confidence ↔ ar_click on `target_href` or
+`target_name` when both instruments are running on the same page.
+
+The AR library also passes `click.element` (the actual DOM node) alongside
+the existing `click.target` (the result container) to `onClick` handlers, so
+adapters can identify the specific clicked link/button.
+
 ## Key Decisions
 
 - **Four-class taxonomy:** clicked / deferred / evaluated-rejected / not-approached

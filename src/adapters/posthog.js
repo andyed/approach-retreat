@@ -89,6 +89,100 @@ function buildTrajectory(samples, stride) {
 }
 
 /**
+ * Extract DOM target metadata using the clicksense v0.2 vocabulary so
+ * ar_click events can be joined against click_confidence on a shared key
+ * (target_href, target_name, target_path). Kept inline rather than imported
+ * to preserve approach-retreat's intentional schema independence.
+ */
+function extractTargetFields(el, pathDepth = 3) {
+  if (!el || !el.tagName) return {};
+  // Walk up to nearest meaningful element, same as clicksense
+  const meaningful = el.closest('a, button, [role="button"], input, select, label, [data-clicksense]');
+  const use = meaningful || el;
+
+  const out = { target_tag: use.tagName.toLowerCase() };
+
+  if (use.id) out.target_id = use.id;
+  const label = use.getAttribute('data-clicksense');
+  if (label) out.target_label = label;
+  if (use.tagName === 'A' && use.href) out.target_href = use.href;
+
+  const text = (use.innerText || use.textContent || '').trim();
+  if (text.length > 0) out.target_text = text.substring(0, 80);
+
+  const aria = use.getAttribute('aria-label');
+  if (aria) out.target_aria_label = aria.substring(0, 80);
+  const title = use.getAttribute('title');
+  if (title) out.target_title = title.substring(0, 80);
+
+  // data-* attributes flattened as target_data_<key>
+  const attrs = use.attributes;
+  for (let i = 0; i < attrs.length; i++) {
+    const a = attrs[i];
+    if (a.name.startsWith('data-') && a.name !== 'data-clicksense') {
+      const key = a.name.slice(5).replace(/[^a-zA-Z0-9_-]/g, '_');
+      out['target_data_' + key] = String(a.value).substring(0, 80);
+    }
+  }
+
+  // Computed accessible name
+  out.target_name =
+    out.target_label ||
+    out.target_aria_label ||
+    out.target_id ||
+    out.target_text ||
+    out.target_title ||
+    out.target_tag;
+
+  // Short CSS path
+  out.target_path = computePath(use, pathDepth);
+  return out;
+}
+
+function computePath(el, depth) {
+  const parts = [];
+  let cur = el;
+  let steps = 0;
+  const max = Math.max(0, depth | 0);
+  while (cur && cur.tagName && cur.tagName !== 'BODY' && cur.tagName !== 'HTML' && steps <= max) {
+    parts.unshift(selectorFor(cur));
+    cur = cur.parentElement;
+    steps++;
+  }
+  return parts.join(' > ');
+}
+
+function selectorFor(el) {
+  let sel = el.tagName.toLowerCase();
+  if (el.id) return sel + '#' + el.id;
+  const classList = (el.className && typeof el.className === 'string')
+    ? el.className.trim().split(/\s+/)
+    : [];
+  const useful = classList
+    .filter((c) => c && /^[a-zA-Z_][\w-]*$/.test(c))
+    .slice(0, 2);
+  if (useful.length > 0) sel += '.' + useful.join('.');
+  const parent = el.parentElement;
+  if (parent) {
+    let idx = 1;
+    let sawSibling = false;
+    for (let i = 0; i < parent.children.length; i++) {
+      const sib = parent.children[i];
+      if (sib === el) break;
+      if (sib.tagName === el.tagName) { idx++; sawSibling = true; }
+    }
+    if (!sawSibling) {
+      for (let i = 0; i < parent.children.length; i++) {
+        const sib = parent.children[i];
+        if (sib !== el && sib.tagName === el.tagName) { sawSibling = true; break; }
+      }
+    }
+    if (sawSibling) sel += ':nth-of-type(' + idx + ')';
+  }
+  return sel;
+}
+
+/**
  * Flatten an Episode.toJSON() payload to PostHog-friendly properties.
  * Prefixed with ar_ so they co-exist cleanly with other event properties.
  */
@@ -133,6 +227,8 @@ function flattenEpisode(episode) {
  *        sample from each episode and ship as ar_trajectory (flat array).
  *        0 disables trajectory capture. Requires the library to be
  *        constructed with { includeSamplesInEpisodeJson: true }.
+ * @param {number} [options.targetPathDepth=3] — ancestors walked when
+ *        building target_path on ar_click events (clicksense-aligned).
  */
 export function createPostHogAdapter(posthog, options = {}) {
   const {
@@ -142,6 +238,7 @@ export function createPostHogAdapter(posthog, options = {}) {
     context = {},
     disabled = false,
     trajectoryStride = 10,
+    targetPathDepth = 3,
   } = options;
 
   const getCtx = typeof context === 'function' ? context : () => context;
@@ -179,6 +276,14 @@ export function createPostHogAdapter(posthog, options = {}) {
 
     onClick(click) {
       const ep = click.episode || {};
+      // Extract DOM target fields using clicksense v0.2 vocabulary so
+      // ar_click events are joinable with click_confidence on shared keys
+      // (target_href, target_name, target_path). Prefer click.element (the
+      // actual clicked node); fall back to click.target (result container).
+      const targetFields = extractTargetFields(
+        click.element || click.target,
+        targetPathDepth
+      );
       posthog.capture(clickEventName, {
         ar_position: click.position,
         ar_dwell_before_click: ep.dwell_ms ?? null,
@@ -188,6 +293,7 @@ export function createPostHogAdapter(posthog, options = {}) {
         ar_direction_before_click: ep.direction ?? null,
         ar_retreat_distance_before_click: ep.retreat_distance ?? null,
         ar_sample_count_before_click: ep.sample_count ?? null,
+        ...targetFields,
         ...getCtx(),
       });
     },
