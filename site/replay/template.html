@@ -173,7 +173,10 @@ function drawAOIs() {
       // Four-class label badge (top-right corner) — skip NOT_APPROACHED
       if (isApproached) {
         const ls = LABEL_STYLE[lbl.label];
-        const badgeText = `${ls.short} · ${lbl.episodes}ep · ${Math.round(lbl.total_dwell_ms)}ms`;
+        // Primary text: label + M5 proba (organic) or episode count (ads/heuristic)
+        const m5Bit = (lbl.m5_proba != null) ? `M5 ${lbl.m5_proba.toFixed(2)}` : `${lbl.episodes}ep`;
+        const dwellBit = `${Math.round(lbl.total_dwell_ms)}ms`;
+        const badgeText = `${ls.short} · ${m5Bit} · ${dwellBit}`;
         const badgeW = badgeText.length * 6.5 + 12;
         const badgeH = 18;
         const bx = x + w - badgeW - 4;
@@ -183,6 +186,15 @@ function drawAOIs() {
         const btx = mkSvg('text', {x: bx + 6, y: by + 13, fill: ls.text, 'font-family': 'monospace', 'font-size': 10, 'font-weight': 'bold'});
         btx.textContent = badgeText;
         aoiSvg.appendChild(btx);
+        // Disagreement indicator: small chevron when M5 disagrees with the heuristic
+        if (lbl.m5_label && lbl.heuristic_label && lbl.m5_label !== lbl.heuristic_label && lbl.heuristic_label !== 'NOT_APPROACHED') {
+          const dchip = mkSvg('rect', {x: bx, y: by + badgeH + 1, width: badgeW, height: 11, rx: 2, ry: 2, fill: '#1a1a1a', stroke: '#666', 'stroke-width': 1});
+          aoiSvg.appendChild(dchip);
+          const dtxt = mkSvg('text', {x: bx + 4, y: by + badgeH + 9, fill: '#aaa', 'font-family': 'monospace', 'font-size': 8});
+          const heurShort = (LABEL_STYLE[lbl.heuristic_label] || {short: lbl.heuristic_label}).short;
+          dtxt.textContent = `≠ heur:${heurShort}`;
+          aoiSvg.appendChild(dtxt);
+        }
       }
     });
   }

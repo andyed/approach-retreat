@@ -121,29 +121,61 @@ def trial_t0(trial_id: str) -> int:
     return min(candidates)
 
 
-def derive_aoi_labels(cursor: list[dict], bboxes: dict, min_dwell_ms: int = 100) -> dict:
-    """For each AOI, compute episodes and assign a four-class label.
+_M5_CLF = None  # lazy-loaded
 
-    Episodes = enter→exit traversals. An episode is kept if dwell ≥ min_dwell_ms
-    (filters drive-by crossings). Labels:
-      CLICKED            — any episode contains a click event
-      DEFERRED           — ≥2 kept episodes (re-approach happened)
-      EVALUATED_REJECTED — exactly 1 kept episode
-      NOT_APPROACHED     — 0 kept episodes
+
+def _m5() -> "m5_inference.M5Classifier":
+    global _M5_CLF
+    if _M5_CLF is None:
+        import m5_inference
+        _M5_CLF = m5_inference.M5Classifier()
+    return _M5_CLF
+
+
+def derive_aoi_labels(cursor: list[dict], bboxes: dict, min_dwell_ms: int = 100) -> dict:
+    """For each AOI, assign a four-class label using M5 (primary) and a
+    bbox episode-count heuristic (secondary, for comparison).
+
+    Both classifiers operate on cursor + AOI bbox, no gaze. They disagree
+    on what "DEFERRED" means:
+      - HEURISTIC: cursor literally entered the bbox ≥2 times (with each
+        episode dwell ≥ min_dwell_ms).
+      - M5: cursor signature looks deferred-like (close approach + dwell
+        + retreat) per LR coefficients learned against NB22 gaze labels.
+        See scripts/m5_inference.py.
+
+    Per-AOI output:
+      label              — final canonical label (M5-primary, see below)
+      m5_label           — M5's prediction (DEFERRED / EVALUATED_REJECTED / NOT_APPROACHED)
+      m5_proba           — M5 P(deferred), or None if not approached
+      heuristic_label    — bbox episode-count heuristic label
+      episodes           — bbox episode count (heuristic input)
+      total_dwell_ms     — sum of bbox episode dwells
+
+    Final label rules (priority):
+      CLICKED            — any bbox episode contains a click event
+      M5 if extractable  — M5_label (DEFERRED or EVALUATED_REJECTED)
+      NOT_APPROACHED     — M5 features not extractable AND no bbox episodes
     """
+    import m5_inference  # noqa: E402  (module under scripts/, sys.path appended by caller)
     def hit(x: float, y: float, b: dict) -> bool:
         bx, by = b["location"]["x"], b["location"]["y"]
         bw, bh = b["size"]["width"], b["size"]["height"]
         return bx <= x <= bx + bw and by <= y <= by + bh
 
+    clf = _m5()
+    moves = [s for s in cursor if s.get("event") == "mousemove"]
+
     out: dict[str, list[dict]] = {}
     for kind, items in bboxes.items():
         out[kind] = []
         for idx, item in enumerate(items):
+            # ── Heuristic: bbox episode count ────────────────────────────
             episodes = []
             inside = False
             enter_t = None
             had_click = False
+            had_click_this_ep = False
             for s in cursor:
                 in_now = hit(s["x"], s["y"], item)
                 if in_now and not inside:
@@ -160,27 +192,47 @@ def derive_aoi_labels(cursor: list[dict], bboxes: dict, min_dwell_ms: int = 100)
                             had_click = True
                     inside = False
                     had_click_this_ep = False
-            if inside:  # never exited
+            if inside:
                 dwell = (cursor[-1]["t"] if cursor else 0) - (enter_t or 0)
                 if dwell >= min_dwell_ms:
                     episodes.append({"enter_t": enter_t, "exit_t": None, "dwell": dwell, "click": had_click_this_ep})
                     if had_click_this_ep:
                         had_click = True
 
-            n = len(episodes)
+            n_ep = len(episodes)
+            if had_click:
+                heuristic_label = "CLICKED"
+            elif n_ep >= 2:
+                heuristic_label = "DEFERRED"
+            elif n_ep == 1:
+                heuristic_label = "EVALUATED_REJECTED"
+            else:
+                heuristic_label = "NOT_APPROACHED"
+
+            # ── M5 inference (organic AOIs only — M5's training population) ──
+            m5_proba = None
+            m5_label = "NOT_APPROACHED"
+            if kind == "organic_result":
+                feats = m5_inference.extract_m5_features(moves, m5_inference.aoi_y_center(item))
+                if feats is not None:
+                    m5_proba = clf.predict_proba(feats)
+                    m5_label = clf.predict_label(feats)
+
+            # ── Final canonical label: CLICKED > M5 (organic) > heuristic (ads) ──
             if had_click:
                 label = "CLICKED"
-            elif n >= 2:
-                label = "DEFERRED"
-            elif n == 1:
-                label = "EVALUATED_REJECTED"
+            elif kind == "organic_result":
+                label = m5_label
             else:
-                label = "NOT_APPROACHED"
+                label = heuristic_label
 
             entry = {
                 "kind": kind,
                 "label": label,
-                "episodes": n,
+                "m5_label": m5_label,
+                "m5_proba": round(m5_proba, 4) if m5_proba is not None else None,
+                "heuristic_label": heuristic_label,
+                "episodes": n_ep,
                 "total_dwell_ms": sum(e["dwell"] for e in episodes),
             }
             if "position" in item:
