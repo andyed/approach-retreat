@@ -29,6 +29,7 @@ body { background: #111; color: #eee; font-family: system-ui, -apple-system, san
 .timeline-label.lbl-cursor { color: #ff9933; text-shadow: 0 0 6px rgba(255,153,51,0.4); }
 .timeline-label.lbl-xy-delta { color: #ffd040; text-shadow: 0 0 6px rgba(255,208,64,0.4); }
 .timeline-label.lbl-pupil { color: #40e0ff; text-shadow: 0 0 6px rgba(64,224,255,0.4); }
+.timeline-label.lbl-lfhf { color: #f59e0b; text-shadow: 0 0 6px rgba(245,158,11,0.4); }
 .timeline-label.lbl-gaze-x { color: #e0e050; text-shadow: 0 0 6px rgba(224,224,80,0.4); }
 .timeline-label.lbl-gaze-y { color: #50c0e0; text-shadow: 0 0 6px rgba(80,192,224,0.4); }
 .timeline-label.lbl-aoi { color: #c8a8f0; text-shadow: 0 0 6px rgba(200,168,240,0.4); }
@@ -81,6 +82,7 @@ body { background: #111; color: #eee; font-family: system-ui, -apple-system, san
     <div class="timeline-row"><div class="timeline-label lbl-cursor">Cursor</div><div class="timeline-track" id="track-cursor"><canvas class="timeline-canvas" id="cv-cursor"></canvas></div></div>
     <div class="timeline-row"><div class="timeline-label lbl-xy-delta">|Δ| / ms</div><div class="timeline-track" id="track-xy"><canvas class="timeline-canvas" id="cv-xy"></canvas></div></div>
     <div class="timeline-row"><div class="timeline-label lbl-pupil">Pupil</div><div class="timeline-track" id="track-pupil"><canvas class="timeline-canvas" id="cv-pupil"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-lfhf">Pupil LF/HF</div><div class="timeline-track" id="track-lfhf"><canvas class="timeline-canvas" id="cv-lfhf"></canvas></div></div>
     <div class="timeline-row"><div class="timeline-label lbl-gaze-x">Gaze X</div><div class="timeline-track" id="track-gaze-x"><canvas class="timeline-canvas" id="cv-gaze-x"></canvas></div></div>
     <div class="timeline-row"><div class="timeline-label lbl-gaze-y">Gaze Y</div><div class="timeline-track" id="track-gaze-y"><canvas class="timeline-canvas" id="cv-gaze-y"></canvas></div></div>
     <div class="timeline-playhead" id="playhead"></div>
@@ -138,8 +140,10 @@ serpImg.addEventListener('load', () => {
 const AOI_STYLE = {
   organic_result: { stroke: '#22c55e', fill: 'rgba(34,197,94,0.06)', label: '#22c55e' },
   native_ad:      { stroke: '#dc2626', fill: 'rgba(220,38,38,0.06)', label: '#dc2626' },
-  dd_top:         { stroke: '#f97316', fill: 'rgba(249,115,22,0.06)', label: '#f97316' },
-  dd_right:       { stroke: '#a855f7', fill: 'rgba(168,85,247,0.06)', label: '#a855f7' },
+  dd_top:         { stroke: '#f97316', fill: 'rgba(249,115,22,0.04)', label: '#f97316', parent: true },
+  dd_right:       { stroke: '#a855f7', fill: 'rgba(168,85,247,0.04)', label: '#a855f7', parent: true },
+  dd_top_cell:    { stroke: '#f97316', fill: 'rgba(249,115,22,0.06)', label: '#f97316' },
+  dd_right_cell:  { stroke: '#a855f7', fill: 'rgba(168,85,247,0.06)', label: '#a855f7' },
 };
 const LABEL_STYLE = {
   CLICKED:            { fill: '#16a34a', text: '#fff', short: 'CLICKED' },
@@ -157,26 +161,34 @@ function drawAOIs() {
       const w = it.size.width, h = it.size.height;
       const lbl = labels[i] || { label: 'NOT_APPROACHED' };
       const isApproached = lbl.label !== 'NOT_APPROACHED';
-      // Bbox rect — emphasize approached AOIs with thicker stroke
+      // Bbox rect — parent ads (whole carousel) get a thinner dashed outline;
+      // cells and organic results use solid strokes that thicken when approached.
+      const isParent = !!s.parent;
       const rect = mkSvg('rect', {
         x, y, width: w, height: h,
         fill: s.fill, stroke: s.stroke,
-        'stroke-width': isApproached ? 3 : 1.5,
-        'stroke-opacity': isApproached ? 0.95 : 0.6,
+        'stroke-width': isParent ? 1 : (isApproached ? 3 : 1.5),
+        'stroke-opacity': isParent ? 0.5 : (isApproached ? 0.95 : 0.6),
+        'stroke-dasharray': isParent ? '6,4' : '',
       });
       aoiSvg.appendChild(rect);
       // Position/kind tag (top-left corner)
-      const tag = kind === 'organic_result' ? `O${it.position}` : kind.replace('_', ' ');
+      const TAG_PREFIX = {organic_result: 'O', dd_top_cell: 'T', dd_right_cell: 'R', native_ad: 'NA', dd_top: 'dd_top', dd_right: 'dd_right'};
+      const tag = (TAG_PREFIX[kind] || kind) + (it.position != null ? it.position : '');
       const tx = mkSvg('text', {x: x + 6, y: y + 18, fill: s.label, 'font-family': 'monospace', 'font-size': 12, 'font-weight': 'bold', stroke: '#000', 'stroke-width': 3, 'paint-order': 'stroke'});
       tx.textContent = tag;
       aoiSvg.appendChild(tx);
-      // Four-class label badge (top-right corner) — skip NOT_APPROACHED
-      if (isApproached) {
+      // Four-class label badge (top-right corner) — skip NOT_APPROACHED.
+      // Skip parent dd_top / dd_right entirely — labels live on cells.
+      if (isApproached && !isParent) {
         const ls = LABEL_STYLE[lbl.label];
-        // Primary text: label + M5 proba (organic) or episode count (ads/heuristic)
-        const m5Bit = (lbl.m5_proba != null) ? `M5 ${lbl.m5_proba.toFixed(2)}` : `${lbl.episodes}ep`;
+        // Source-tagged primary text: M5 for organics, EPISODE for ads
+        const isOrganic = (kind === 'organic_result');
+        const sourceBit = (isOrganic && lbl.m5_proba != null)
+          ? `M5 ${lbl.m5_proba.toFixed(2)}`
+          : `EPISODE ${lbl.episodes}ep`;
         const dwellBit = `${Math.round(lbl.total_dwell_ms)}ms`;
-        const badgeText = `${ls.short} · ${m5Bit} · ${dwellBit}`;
+        const badgeText = `${ls.short} · ${sourceBit} · ${dwellBit}`;
         const badgeW = badgeText.length * 6.5 + 12;
         const badgeH = 18;
         const bx = x + w - badgeW - 4;
@@ -186,13 +198,14 @@ function drawAOIs() {
         const btx = mkSvg('text', {x: bx + 6, y: by + 13, fill: ls.text, 'font-family': 'monospace', 'font-size': 10, 'font-weight': 'bold'});
         btx.textContent = badgeText;
         aoiSvg.appendChild(btx);
-        // Disagreement indicator: small chevron when M5 disagrees with the heuristic
-        if (lbl.m5_label && lbl.heuristic_label && lbl.m5_label !== lbl.heuristic_label && lbl.heuristic_label !== 'NOT_APPROACHED') {
+        // Disagreement chevron — ONLY when both classifiers ran (organic AOI
+        // with extractable M5 features) AND they actually disagree.
+        if (isOrganic && lbl.m5_proba != null && lbl.m5_label !== lbl.heuristic_label) {
           const dchip = mkSvg('rect', {x: bx, y: by + badgeH + 1, width: badgeW, height: 11, rx: 2, ry: 2, fill: '#1a1a1a', stroke: '#666', 'stroke-width': 1});
           aoiSvg.appendChild(dchip);
           const dtxt = mkSvg('text', {x: bx + 4, y: by + badgeH + 9, fill: '#aaa', 'font-family': 'monospace', 'font-size': 8});
           const heurShort = (LABEL_STYLE[lbl.heuristic_label] || {short: lbl.heuristic_label}).short;
-          dtxt.textContent = `≠ heur:${heurShort}`;
+          dtxt.textContent = `≠ EPISODE:${heurShort}`;
           aoiSvg.appendChild(dtxt);
         }
       }
@@ -486,6 +499,7 @@ function paintAllTracks() {
   paintLineSeries('cv-cursor', TRIAL.cursor.filter(c => c.event === 'mousemove'), s => Math.hypot(s.x, s.y), '#ff9933');
   paintLineSeries('cv-xy', TRIAL.xy_delta, s => s.speed, '#ffd040');
   paintLineSeries('cv-pupil', TRIAL.pupil, s => (s.lpd != null && s.rpd != null) ? (s.lpd + s.rpd) / 2 : (s.lpd || s.rpd), '#40e0ff');
+  paintLineSeries('cv-lfhf', TRIAL.lfhf || [], s => s.lfhf, '#f59e0b');
   paintLineSeries('cv-gaze-x', TRIAL.fixations, s => s.x, '#e0e050');
   paintLineSeries('cv-gaze-y', TRIAL.fixations, s => s.y, '#50c0e0');
 }

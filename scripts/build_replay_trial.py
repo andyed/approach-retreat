@@ -103,6 +103,63 @@ def read_pupil(trial_id: str, t0_ms: int) -> list[dict]:
     return out
 
 
+# ── LF/HF Butterworth (Duchowski 2026 IIR) ──────────────────────────────
+# Ported from attentional-foraging/scripts/compute_butterworth_lfhf.py.
+# Computes a sliding-window LF/HF track from raw pupil samples for the
+# AR viewer's cognitive-load timeline.
+LFHF_FS = 150          # Gazepoint GP3 HD sampling rate
+LFHF_ORDER = 4
+LFHF_LF_CUTOFF = 1.6   # Hz — lowpass for LF band (0–1.6 Hz)
+LFHF_HF_BAND = (1.6, 4.0)
+LFHF_WIN_SAMPLES = 750  # 5s window
+LFHF_STEP_SAMPLES = 38  # ~250ms step
+
+
+def compute_lfhf_track(pupil: list[dict]) -> list[dict]:
+    """Time-varying LF/HF ratio computed in sliding 5s windows over the
+    mean-pooled L+R pupil stream. Returns [{"t": ms, "lfhf": float}, ...].
+    Empty if scipy unavailable or insufficient samples.
+    """
+    if len(pupil) < LFHF_WIN_SAMPLES:
+        return []
+    try:
+        import numpy as np
+        from scipy.signal import butter, sosfiltfilt
+    except ImportError:
+        return []
+
+    ts = np.array([s["t"] for s in pupil])
+    # Mean of available eyes (treat None as that-eye-missing)
+    pd = np.array([
+        ((s["lpd"] or 0) + (s["rpd"] or 0)) /
+        max(1, (1 if s["lpd"] else 0) + (1 if s["rpd"] else 0))
+        for s in pupil
+    ], dtype=float)
+
+    # Resample-uniform: pupil samples are already at ~150Hz but with jitter.
+    # The AF reference implementation just uses the raw stream — we do the same.
+    lf_sos = butter(LFHF_ORDER, LFHF_LF_CUTOFF, btype="low",  fs=LFHF_FS, output="sos")
+    hf_sos = butter(LFHF_ORDER, LFHF_HF_BAND,  btype="band", fs=LFHF_FS, output="sos")
+    try:
+        lf_signal = sosfiltfilt(lf_sos, pd)
+        hf_signal = sosfiltfilt(hf_sos, pd)
+    except ValueError:
+        return []
+
+    out: list[dict] = []
+    n = len(pd)
+    half = LFHF_WIN_SAMPLES // 2
+    for c in range(half, n - half, LFHF_STEP_SAMPLES):
+        lo, hi = c - half, c + half
+        lf_var = float(np.var(lf_signal[lo:hi]))
+        hf_var = float(np.var(hf_signal[lo:hi]))
+        if hf_var < 1e-20:
+            continue
+        ratio = lf_var / hf_var
+        out.append({"t": int(ts[c]), "lfhf": round(ratio, 4)})
+    return out
+
+
 def trial_t0(trial_id: str) -> int:
     """Earliest timestamp across mouse + fixation + pupil — defines t=0."""
     candidates: list[int] = []
@@ -261,6 +318,7 @@ def build_trial(trial_id: str) -> dict | None:
     cursor, xy_delta = read_cursor(trial_id, t0, ratio_x)
     fixations = read_fixations(trial_id, t0)
     pupil = read_pupil(trial_id, t0)
+    lfhf = compute_lfhf_track(pupil)
 
     duration_ms = max(
         cursor[-1]["t"] if cursor else 0,
@@ -296,6 +354,7 @@ def build_trial(trial_id: str) -> dict | None:
         "xy_delta": xy_delta,
         "fixations": fixations,
         "pupil": pupil,
+        "lfhf": lfhf,
         "_meta": {
             "source": "AdSERP raw signals — no NB15 derivatives",
             "t0_unix_ms": t0,

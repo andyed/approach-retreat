@@ -98,12 +98,24 @@ def build_bundles(trial_ids: list[str]) -> list[dict]:
 
 # ── Group classification ────────────────────────────────────────────────
 def trial_features(b: dict) -> dict:
-    """Per-trial summary for group assignment."""
-    s = b["_meta"]["label_summary"]
-    n_clk = s.get("CLICKED", 0)
-    n_def = s.get("DEFERRED", 0)
-    n_rej = s.get("EVALUATED_REJECTED", 0)
-    n_not = s.get("NOT_APPROACHED", 0)
+    """Per-trial summary for group assignment.
+
+    Uses HEURISTIC counts (bbox re-entry) — not the final M5-driven labels —
+    because the heuristic still cleanly distinguishes DEFERRED (≥2 episodes)
+    from EVALUATED_REJECTED (1 episode), where M5 collapses both toward
+    DEFERRED at threshold 0.395.
+
+    The viewer still shows M5 as the primary per-AOI label; this function
+    is only for finding canonical exemplars to surface in pedagogical groups.
+    """
+    n_clk = n_def = n_rej = n_not = 0
+    for kind in b["aoi_labels"].values():
+        for it in kind:
+            h = it.get("heuristic_label", it.get("label"))
+            if h == "CLICKED":           n_clk += 1
+            elif h == "DEFERRED":        n_def += 1
+            elif h == "EVALUATED_REJECTED": n_rej += 1
+            else:                        n_not += 1
     classes_active = sum(1 for k in (n_clk, n_def, n_rej) if k > 0)
     # Boundary signal: any approached AOI with dwell in [100, 250] ms (close to threshold)
     near_threshold = 0
