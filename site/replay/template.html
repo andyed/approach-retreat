@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>__TITLE__</title>
+<meta name="viewport" content="width=1280">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #111; color: #eee; font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; }
+.header { width: 1280px; padding: 10px 16px; background: #1a1a1a; border-bottom: 1px solid #333;
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.header h1 { font-size: 14px; font-weight: 600; }
+.header h1 span { color: #aaa; font-weight: 400; }
+.controls { display: flex; gap: 12px; align-items: center; font-size: 12px; }
+.btn { background: #333; border: 1px solid #555; color: #eee; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+.btn:hover { background: #444; }
+.btn.active { background: #2a5a8a; border-color: #4a8aca; }
+.viewer { position: relative; width: 1280px; height: 70vh; overflow-y: auto; overflow-x: hidden; background: #000; }
+.serp-container { position: relative; width: 1280px; }
+#serp-img { width: 1280px; display: block; }
+.overlay-svg { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; }
+.aoi-svg { position: absolute; top: 0; left: 0; z-index: 5; pointer-events: none; }
+.mouse-cursor { position: absolute; z-index: 999; pointer-events: none;
+  width: 20px; height: 28px; transition: left 0.05s linear, top 0.05s linear; }
+.mouse-cursor svg { width: 20px; height: 28px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.7)); }
+.mouse-cursor.clicking svg path { fill: #ff3333; }
+.timeline { width: 1280px; background: #1a1a1a; padding: 6px 16px; border-top: 1px solid #333; }
+.timeline-tracks { position: relative; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.timeline-row { display: flex; align-items: stretch; height: 26px; margin-bottom: 1px; }
+.timeline-row:last-child { margin-bottom: 0; }
+.timeline-label { width: 70px; flex-shrink: 0; font-size: 9px; font-weight: 700; display: flex; align-items: center; padding-right: 6px; text-align: right; justify-content: flex-end; text-transform: uppercase; letter-spacing: 0.5px; position: relative; z-index: 3; background: #1a1a1a; }
+.timeline-label.lbl-cursor { color: #ff9933; text-shadow: 0 0 6px rgba(255,153,51,0.4); }
+.timeline-label.lbl-xy-delta { color: #ffd040; text-shadow: 0 0 6px rgba(255,208,64,0.4); }
+.timeline-label.lbl-pupil { color: #40e0ff; text-shadow: 0 0 6px rgba(64,224,255,0.4); }
+.timeline-label.lbl-gaze-x { color: #e0e050; text-shadow: 0 0 6px rgba(224,224,80,0.4); }
+.timeline-label.lbl-gaze-y { color: #50c0e0; text-shadow: 0 0 6px rgba(80,192,224,0.4); }
+.timeline-label.lbl-aoi { color: #c8a8f0; text-shadow: 0 0 6px rgba(200,168,240,0.4); }
+.timeline-track { position: relative; flex: 1; background: #222; border-radius: 2px; overflow: hidden; }
+.timeline-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.timeline-playhead { position: absolute; top: 0; width: 2px; height: 100%; background: #ff4444; z-index: 4; pointer-events: none; }
+.timeline-info { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: #aaa; padding-left: 76px; }
+.info-panel { width: 1280px; padding: 6px 16px; background: #1a1a1a; font-size: 11px; color: #aaa;
+  display: flex; gap: 20px; border-top: 1px solid #222; flex-wrap: wrap; }
+.info-panel .val { color: #ccc; }
+.info-panel a { color: #ff9933; text-decoration: none; font-weight: 600; }
+.info-panel a:hover { text-decoration: underline; }
+.back { font-size: 12px; }
+.back a { color: #6af; text-decoration: none; }
+.footer-note { width: 1280px; padding: 6px 16px; background: #1a1a1a; font-size: 10px; color: #666; border-top: 1px solid #222; }
+</style></head><body>
+<div class="header">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span class="back"><a href="index.html">&larr; All trials</a></span>
+    <h1>__TRIAL_ID__ <span>— __QUERY__</span></h1>
+  </div>
+  <div class="controls">
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;">
+      Window <input type="range" id="window-slider" min="0" max="7" value="7" style="width:90px;vertical-align:middle;">
+      <span id="window-label" style="min-width:36px;display:inline-block;">All</span>
+    </label>
+    <button class="btn active" id="aoi-btn">AOIs</button>
+    <button class="btn active" id="cursor-btn">Cursor trail</button>
+    <button class="btn" id="gaze-btn">Gaze fixations</button>
+    <button class="btn" id="play-btn">&#9654; Play</button>
+    <button class="btn" id="reset-btn">Reset</button>
+  </div>
+</div>
+<div class="viewer" id="viewer">
+  <div class="serp-container" id="serp-container">
+    <img id="serp-img" src="__SCREENSHOT__" />
+    <svg class="aoi-svg" id="aoi-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <svg class="overlay-svg" id="overlay-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="mouse-cursor" id="mouse-cursor"><svg viewBox="0 0 20 28"><path d="M0,0 L0,22 L5.5,17 L10,28 L14,26 L9,16 L16,16 Z" fill="#ff9933" stroke="#000" stroke-width="1"/></svg></div>
+  </div>
+</div>
+<div class="timeline">
+  <div class="timeline-tracks" id="timeline-tracks">
+    <div class="timeline-row"><div class="timeline-label lbl-aoi">AOI</div><div class="timeline-track" id="track-aoi"><canvas class="timeline-canvas" id="cv-aoi"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-cursor">Cursor</div><div class="timeline-track" id="track-cursor"><canvas class="timeline-canvas" id="cv-cursor"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-xy-delta">|Δ| / ms</div><div class="timeline-track" id="track-xy"><canvas class="timeline-canvas" id="cv-xy"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-pupil">Pupil</div><div class="timeline-track" id="track-pupil"><canvas class="timeline-canvas" id="cv-pupil"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-gaze-x">Gaze X</div><div class="timeline-track" id="track-gaze-x"><canvas class="timeline-canvas" id="cv-gaze-x"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-gaze-y">Gaze Y</div><div class="timeline-track" id="track-gaze-y"><canvas class="timeline-canvas" id="cv-gaze-y"></canvas></div></div>
+    <div class="timeline-playhead" id="playhead"></div>
+  </div>
+  <div class="timeline-info">
+    <span id="time-label">0.00s / 0.00s</span>
+    <span id="aoi-label">—</span>
+  </div>
+</div>
+<div class="info-panel">
+  <span>Doc: <span class="val" id="info-doc">—</span></span>
+  <span>Cursor samples: <span class="val" id="info-cursor">—</span></span>
+  <span>Fixations: <span class="val" id="info-fix">—</span></span>
+  <span>Pupil samples: <span class="val" id="info-pupil">—</span></span>
+  <span>Cursor pos: <span class="val" id="info-pos">—</span></span>
+  <span><a href="__SCREENSHOT__" download>Download SERP PNG</a></span>
+</div>
+<div class="footer-note">
+  AdSERP raw signals replayed over the dataset's shipped 1280-wide screenshot. Cursor xpos scaled by 1280/win_width; ypos is document-space. AOIs: ads from <code>ad-boundary-data</code> (shipped), organic results from row-projection CV detection (see <code>attentional-foraging/scripts/extract_organic_bboxes.py</code>).
+</div>
+<script>
+const TRIAL = __TRIAL_DATA__;
+const W = 1280;
+const DOC_H = TRIAL.doc_height;
+const DUR = Math.max(1, TRIAL.duration_ms);
+
+// Container sizing
+const serpImg = document.getElementById('serp-img');
+const aoiSvg = document.getElementById('aoi-svg');
+const overlaySvg = document.getElementById('overlay-svg');
+const cursor = document.getElementById('mouse-cursor');
+const viewer = document.getElementById('viewer');
+const playhead = document.getElementById('playhead');
+
+serpImg.addEventListener('load', () => {
+  const h = serpImg.naturalHeight;
+  for (const svg of [aoiSvg, overlaySvg]) {
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', h);
+    svg.setAttribute('viewBox', `0 0 ${W} ${h}`);
+  }
+  drawAOIs();
+  drawCursorTrail();
+  drawGazeFixations();
+});
+
+// ── AOI overlay ───────────────────────────────────────────────────────
+const AOI_STYLE = {
+  organic_result: { stroke: '#22c55e', fill: 'rgba(34,197,94,0.06)', label: '#22c55e' },
+  native_ad:      { stroke: '#dc2626', fill: 'rgba(220,38,38,0.06)', label: '#dc2626' },
+  dd_top:         { stroke: '#f97316', fill: 'rgba(249,115,22,0.06)', label: '#f97316' },
+  dd_right:       { stroke: '#a855f7', fill: 'rgba(168,85,247,0.06)', label: '#a855f7' },
+};
+function drawAOIs() {
+  aoiSvg.innerHTML = '';
+  for (const [kind, items] of Object.entries(TRIAL.bboxes)) {
+    const s = AOI_STYLE[kind]; if (!s) continue;
+    items.forEach((it, i) => {
+      const x = it.location.x, y = it.location.y;
+      const w = it.size.width, h = it.size.height;
+      const rect = mkSvg('rect', {x, y, width: w, height: h, fill: s.fill, stroke: s.stroke, 'stroke-width': 2});
+      aoiSvg.appendChild(rect);
+      const label = kind === 'organic_result' ? `O${it.position}` : kind.replace('_', ' ');
+      const tx = mkSvg('text', {x: x + 6, y: y + 18, fill: s.label, 'font-family': 'monospace', 'font-size': 12, 'font-weight': 'bold', stroke: '#000', 'stroke-width': 3, 'paint-order': 'stroke'});
+      tx.textContent = label;
+      aoiSvg.appendChild(tx);
+    });
+  }
+}
+
+// ── Window slider ─────────────────────────────────────────────────────
+// Slider 0..7: 250ms, 500ms, 1s, 2s, 5s, 10s, 30s, ALL
+const WINDOW_STEPS = [250, 500, 1000, 2000, 5000, 10000, 30000, Infinity];
+const WINDOW_LABELS = ['250ms', '500ms', '1s', '2s', '5s', '10s', '30s', 'All'];
+let windowMs = Infinity;     // current window
+let cursorVisible = true;
+let trailEnabled = true;
+
+function ensureGlowDef() {
+  let defs = overlaySvg.querySelector('defs');
+  if (defs) return;
+  defs = mkSvg('defs', {});
+  defs.innerHTML = `<filter id="trail-glow" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>`;
+  overlaySvg.appendChild(defs);
+}
+
+// ── Cursor trail (windowed: shows samples in [currentT - windowMs, currentT]) ─
+function drawCursorTrail() {
+  document.querySelectorAll('.cursor-trail').forEach(e => e.remove());
+  if (!trailEnabled || !TRIAL.cursor.length) return;
+  ensureGlowDef();
+  const tLo = currentT - windowMs;
+  const moves = TRIAL.cursor.filter(c => (c.event === 'mousemove' || c.event === 'click') && c.t <= currentT && c.t >= tLo);
+  if (moves.length < 2) return;
+  let d = `M ${moves[0].x} ${moves[0].y}`;
+  for (let i = 1; i < moves.length; i++) d += ` L ${moves[i].x} ${moves[i].y}`;
+  const halo = mkSvg('path', {d, stroke: '#000', 'stroke-width': 5, 'stroke-opacity': 0.45, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round'});
+  halo.classList.add('cursor-trail');
+  overlaySvg.appendChild(halo);
+  const path = mkSvg('path', {d, stroke: '#ff9933', 'stroke-width': 2.5, 'stroke-opacity': 0.95, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', filter: 'url(#trail-glow)'});
+  path.classList.add('cursor-trail');
+  overlaySvg.appendChild(path);
+  moves.forEach(m => {
+    const dot = mkSvg('circle', {cx: m.x, cy: m.y, r: 2, fill: '#fff', stroke: '#ff9933', 'stroke-width': 1, 'fill-opacity': 0.85});
+    dot.classList.add('cursor-trail');
+    overlaySvg.appendChild(dot);
+  });
+  // Click markers — only those within the window AND at-or-before currentT
+  TRIAL.cursor.filter(c => c.event === 'click' && c.t <= currentT && c.t >= tLo).forEach(c => {
+    const halo2 = mkSvg('circle', {cx: c.x, cy: c.y, r: 16, fill: 'rgba(239,68,68,0.2)', stroke: 'none'});
+    halo2.classList.add('cursor-trail');
+    overlaySvg.appendChild(halo2);
+    const star = mkSvg('circle', {cx: c.x, cy: c.y, r: 10, fill: 'none', stroke: '#ef4444', 'stroke-width': 3});
+    star.classList.add('cursor-trail');
+    overlaySvg.appendChild(star);
+  });
+}
+
+// ── Gaze fixations (optional secondary layer) ─────────────────────────
+let gazeVisible = false;
+function drawGazeFixations() {
+  document.querySelectorAll('.gaze-fix').forEach(e => e.remove());
+  if (!gazeVisible) return;
+  const tLo = currentT - windowMs;
+  TRIAL.fixations.forEach((f, i) => {
+    if (f.t > currentT || f.t < tLo) return;
+    const r = Math.max(8, Math.min(28, 8 + f.duration / 30));
+    const c = mkSvg('circle', {cx: f.x, cy: f.y, r, fill: 'rgba(80,192,224,0.18)', stroke: '#50c0e0', 'stroke-width': 1.5});
+    c.classList.add('gaze-fix');
+    overlaySvg.appendChild(c);
+    const t = mkSvg('text', {x: f.x, y: f.y + 4, 'text-anchor': 'middle', fill: '#fff', 'font-family': 'monospace', 'font-size': 10, 'font-weight': 'bold', stroke: '#000', 'stroke-width': 2, 'paint-order': 'stroke'});
+    t.textContent = i + 1;
+    t.classList.add('gaze-fix');
+    overlaySvg.appendChild(t);
+  });
+}
+
+// ── Timeline canvases ─────────────────────────────────────────────────
+function paintLineSeries(canvasId, samples, valFn, color) {
+  const cv = document.getElementById(canvasId);
+  if (!cv || !samples.length) return;
+  const rect = cv.getBoundingClientRect();
+  cv.width = Math.max(1, Math.floor(rect.width * devicePixelRatio));
+  cv.height = Math.max(1, Math.floor(rect.height * devicePixelRatio));
+  const ctx = cv.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  const vals = samples.map(valFn).filter(v => v != null && isFinite(v));
+  if (!vals.length) return;
+  const vmin = Math.min(...vals), vmax = Math.max(...vals);
+  const span = vmax - vmin || 1;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  let started = false;
+  for (const s of samples) {
+    const v = valFn(s);
+    if (v == null || !isFinite(v)) continue;
+    const x = s.t / DUR * rect.width;
+    const y = rect.height - ((v - vmin) / span) * (rect.height - 2) - 1;
+    if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+  }
+  ctx.stroke();
+}
+
+function paintAOIBands(canvasId) {
+  const cv = document.getElementById(canvasId);
+  if (!cv) return;
+  const rect = cv.getBoundingClientRect();
+  cv.width = Math.max(1, Math.floor(rect.width * devicePixelRatio));
+  cv.height = Math.max(1, Math.floor(rect.height * devicePixelRatio));
+  const ctx = cv.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  // For each cursor sample, find which AOI (if any) contains it; paint a band per run
+  let prev = null, runStart = 0;
+  for (let i = 0; i < TRIAL.cursor.length; i++) {
+    const s = TRIAL.cursor[i];
+    const aoi = aoiAt(s.x, s.y);
+    const key = aoi ? `${aoi.kind}:${aoi.label}` : null;
+    if (key !== prev) {
+      if (prev) drawBand(ctx, rect, runStart, s.t, prev);
+      runStart = s.t;
+      prev = key;
+    }
+  }
+  if (prev) drawBand(ctx, rect, runStart, DUR, prev);
+}
+function drawBand(ctx, rect, t0, t1, key) {
+  const [kind] = key.split(':');
+  const s = AOI_STYLE[kind]; if (!s) return;
+  const x0 = t0 / DUR * rect.width;
+  const x1 = t1 / DUR * rect.width;
+  ctx.fillStyle = s.stroke;
+  ctx.globalAlpha = 0.7;
+  ctx.fillRect(x0, 4, Math.max(1, x1 - x0), rect.height - 8);
+  ctx.globalAlpha = 1;
+}
+
+function aoiAt(x, y) {
+  for (const [kind, items] of Object.entries(TRIAL.bboxes)) {
+    for (const it of items) {
+      const ix = it.location.x, iy = it.location.y;
+      const iw = it.size.width, ih = it.size.height;
+      if (x >= ix && x <= ix + iw && y >= iy && y <= iy + ih) {
+        return { kind, label: it.position != null ? `${kind} ${it.position}` : kind };
+      }
+    }
+  }
+  return null;
+}
+
+// ── Time control ──────────────────────────────────────────────────────
+let currentT = 0;
+let playing = false;
+let lastFrameTime = 0;
+
+function setTime(t) {
+  currentT = Math.max(0, Math.min(DUR, t));
+  updateCursor();
+  updatePlayhead();
+  updateInfo();
+  // Re-draw windowed overlays (cheap; max ~400 SVG elems)
+  drawCursorTrail();
+  drawGazeFixations();
+}
+
+function updateCursor() {
+  // Find nearest cursor sample at or before currentT
+  if (!TRIAL.cursor.length) return;
+  let s = TRIAL.cursor[0];
+  for (const c of TRIAL.cursor) {
+    if (c.t <= currentT) s = c; else break;
+  }
+  cursor.style.left = s.x + 'px';
+  cursor.style.top = s.y + 'px';
+  cursor.classList.toggle('clicking', s.event === 'click' || s.event === 'mousedown');
+
+  // Auto-scroll viewer to keep cursor in view
+  const vrect = viewer.getBoundingClientRect();
+  const fy = s.y - viewer.scrollTop;
+  if (fy < 60 || fy > vrect.height - 60) {
+    viewer.scrollTo({top: s.y - vrect.height / 2, behavior: 'smooth'});
+  }
+}
+
+function updatePlayhead() {
+  const tracks = document.getElementById('timeline-tracks');
+  const firstTrack = tracks.querySelector('.timeline-track');
+  if (!firstTrack) return;
+  const tr = firstTrack.getBoundingClientRect();
+  const tc = tracks.getBoundingClientRect();
+  const off = tr.left - tc.left;
+  playhead.style.left = (off + (currentT / DUR) * tr.width) + 'px';
+}
+
+function updateInfo() {
+  document.getElementById('time-label').textContent = `${(currentT / 1000).toFixed(2)}s / ${(DUR / 1000).toFixed(2)}s`;
+  let s = TRIAL.cursor[0];
+  for (const c of TRIAL.cursor) { if (c.t <= currentT) s = c; else break; }
+  if (s) {
+    document.getElementById('info-pos').textContent = `(${Math.round(s.x)}, ${Math.round(s.y)})`;
+    const aoi = aoiAt(s.x, s.y);
+    document.getElementById('aoi-label').textContent = aoi ? aoi.label : 'no AOI';
+  }
+}
+
+// Playback animation
+function tick(now) {
+  if (!playing) return;
+  const dt = lastFrameTime ? now - lastFrameTime : 16;
+  lastFrameTime = now;
+  setTime(currentT + dt);
+  if (currentT >= DUR) { stopPlay(); return; }
+  requestAnimationFrame(tick);
+}
+function startPlay() {
+  if (currentT >= DUR) currentT = 0;
+  playing = true;
+  lastFrameTime = 0;
+  document.getElementById('play-btn').textContent = '⏸ Pause';
+  document.getElementById('play-btn').classList.add('active');
+  requestAnimationFrame(tick);
+}
+function stopPlay() {
+  playing = false;
+  document.getElementById('play-btn').textContent = '▶ Play';
+  document.getElementById('play-btn').classList.remove('active');
+}
+
+// ── Wire up controls ──────────────────────────────────────────────────
+document.getElementById('play-btn').addEventListener('click', () => {
+  if (playing) stopPlay(); else startPlay();
+});
+document.getElementById('reset-btn').addEventListener('click', () => {
+  stopPlay(); setTime(DUR); viewer.scrollTo({top: 0});
+});
+document.getElementById('aoi-btn').addEventListener('click', (e) => {
+  aoiSvg.style.display = aoiSvg.style.display === 'none' ? '' : 'none';
+  e.target.classList.toggle('active');
+});
+document.getElementById('cursor-btn').addEventListener('click', (e) => {
+  trailEnabled = !trailEnabled;
+  drawCursorTrail();
+  e.target.classList.toggle('active');
+});
+document.getElementById('gaze-btn').addEventListener('click', (e) => {
+  gazeVisible = !gazeVisible;
+  drawGazeFixations();
+  e.target.classList.toggle('active');
+});
+// Window slider
+const wSlider = document.getElementById('window-slider');
+const wLabel = document.getElementById('window-label');
+wSlider.addEventListener('input', () => {
+  const idx = parseInt(wSlider.value);
+  windowMs = WINDOW_STEPS[idx];
+  wLabel.textContent = WINDOW_LABELS[idx];
+  drawCursorTrail();
+  drawGazeFixations();
+});
+
+// Timeline scrub: click + drag
+const tracks = document.getElementById('timeline-tracks');
+let scrubbing = false;
+function tlScrub(e) {
+  const firstTrack = tracks.querySelector('.timeline-track');
+  const r = firstTrack.getBoundingClientRect();
+  const p = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  setTime(p * DUR);
+}
+tracks.addEventListener('mousedown', (e) => {
+  scrubbing = true;
+  stopPlay();
+  tlScrub(e);
+  e.preventDefault();
+});
+window.addEventListener('mousemove', (e) => { if (scrubbing) tlScrub(e); });
+window.addEventListener('mouseup', () => { scrubbing = false; });
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); if (playing) stopPlay(); else startPlay(); }
+  if (e.key === 'ArrowRight') { setTime(currentT + 100); stopPlay(); }
+  if (e.key === 'ArrowLeft') { setTime(currentT - 100); stopPlay(); }
+  if (e.key === 'Home') { setTime(0); }
+  if (e.key === 'End') { setTime(DUR); }
+});
+
+// ── Initial paint ─────────────────────────────────────────────────────
+function paintAllTracks() {
+  paintAOIBands('cv-aoi');
+  paintLineSeries('cv-cursor', TRIAL.cursor.filter(c => c.event === 'mousemove'), s => Math.hypot(s.x, s.y), '#ff9933');
+  paintLineSeries('cv-xy', TRIAL.xy_delta, s => s.speed, '#ffd040');
+  paintLineSeries('cv-pupil', TRIAL.pupil, s => (s.lpd != null && s.rpd != null) ? (s.lpd + s.rpd) / 2 : (s.lpd || s.rpd), '#40e0ff');
+  paintLineSeries('cv-gaze-x', TRIAL.fixations, s => s.x, '#e0e050');
+  paintLineSeries('cv-gaze-y', TRIAL.fixations, s => s.y, '#50c0e0');
+}
+
+// Info panel populates immediately
+document.getElementById('info-doc').textContent = `${W} × ${DOC_H}`;
+document.getElementById('info-cursor').textContent = TRIAL.cursor.length;
+document.getElementById('info-fix').textContent = TRIAL.fixations.length;
+document.getElementById('info-pupil').textContent = TRIAL.pupil.length;
+
+// Wait for image to size svgs, then paint everything.
+// Default: park playhead at end so the full trail is visible up-front.
+window.addEventListener('load', () => {
+  setTimeout(() => { paintAllTracks(); setTime(DUR); }, 50);
+});
+window.addEventListener('resize', paintAllTracks);
+
+// SVG helper
+function mkSvg(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+</script></body></html>

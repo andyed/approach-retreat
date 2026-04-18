@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>AR Replay: p049-b2-t6</title>
+<meta name="viewport" content="width=1280">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #111; color: #eee; font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; }
+.header { width: 1280px; padding: 10px 16px; background: #1a1a1a; border-bottom: 1px solid #333;
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.header h1 { font-size: 14px; font-weight: 600; }
+.header h1 span { color: #aaa; font-weight: 400; }
+.controls { display: flex; gap: 12px; align-items: center; font-size: 12px; }
+.btn { background: #333; border: 1px solid #555; color: #eee; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+.btn:hover { background: #444; }
+.btn.active { background: #2a5a8a; border-color: #4a8aca; }
+.viewer { position: relative; width: 1280px; height: 70vh; overflow-y: auto; overflow-x: hidden; background: #000; }
+.serp-container { position: relative; width: 1280px; }
+#serp-img { width: 1280px; display: block; }
+.overlay-svg { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; }
+.aoi-svg { position: absolute; top: 0; left: 0; z-index: 5; pointer-events: none; }
+.mouse-cursor { position: absolute; z-index: 999; pointer-events: none;
+  width: 20px; height: 28px; transition: left 0.05s linear, top 0.05s linear; }
+.mouse-cursor svg { width: 20px; height: 28px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.7)); }
+.mouse-cursor.clicking svg path { fill: #ff3333; }
+.timeline { width: 1280px; background: #1a1a1a; padding: 6px 16px; border-top: 1px solid #333; }
+.timeline-tracks { position: relative; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.timeline-row { display: flex; align-items: stretch; height: 26px; margin-bottom: 1px; }
+.timeline-row:last-child { margin-bottom: 0; }
+.timeline-label { width: 70px; flex-shrink: 0; font-size: 9px; font-weight: 700; display: flex; align-items: center; padding-right: 6px; text-align: right; justify-content: flex-end; text-transform: uppercase; letter-spacing: 0.5px; position: relative; z-index: 3; background: #1a1a1a; }
+.timeline-label.lbl-cursor { color: #ff9933; text-shadow: 0 0 6px rgba(255,153,51,0.4); }
+.timeline-label.lbl-xy-delta { color: #ffd040; text-shadow: 0 0 6px rgba(255,208,64,0.4); }
+.timeline-label.lbl-pupil { color: #40e0ff; text-shadow: 0 0 6px rgba(64,224,255,0.4); }
+.timeline-label.lbl-gaze-x { color: #e0e050; text-shadow: 0 0 6px rgba(224,224,80,0.4); }
+.timeline-label.lbl-gaze-y { color: #50c0e0; text-shadow: 0 0 6px rgba(80,192,224,0.4); }
+.timeline-label.lbl-aoi { color: #c8a8f0; text-shadow: 0 0 6px rgba(200,168,240,0.4); }
+.timeline-track { position: relative; flex: 1; background: #222; border-radius: 2px; overflow: hidden; }
+.timeline-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.timeline-playhead { position: absolute; top: 0; width: 2px; height: 100%; background: #ff4444; z-index: 4; pointer-events: none; }
+.timeline-info { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: #aaa; padding-left: 76px; }
+.info-panel { width: 1280px; padding: 6px 16px; background: #1a1a1a; font-size: 11px; color: #aaa;
+  display: flex; gap: 20px; border-top: 1px solid #222; flex-wrap: wrap; }
+.info-panel .val { color: #ccc; }
+.info-panel a { color: #ff9933; text-decoration: none; font-weight: 600; }
+.info-panel a:hover { text-decoration: underline; }
+.back { font-size: 12px; }
+.back a { color: #6af; text-decoration: none; }
+.footer-note { width: 1280px; padding: 6px 16px; background: #1a1a1a; font-size: 10px; color: #666; border-top: 1px solid #222; }
+</style></head><body>
+<div class="header">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span class="back"><a href="index.html">&larr; All trials</a></span>
+    <h1>p049-b2-t6 <span>— buy-robert-sorby-robert-sorby-410-sandmaster</span></h1>
+  </div>
+  <div class="controls">
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;">
+      Window <input type="range" id="window-slider" min="0" max="7" value="7" style="width:90px;vertical-align:middle;">
+      <span id="window-label" style="min-width:36px;display:inline-block;">All</span>
+    </label>
+    <button class="btn active" id="aoi-btn">AOIs</button>
+    <button class="btn active" id="cursor-btn">Cursor trail</button>
+    <button class="btn" id="gaze-btn">Gaze fixations</button>
+    <button class="btn" id="play-btn">&#9654; Play</button>
+    <button class="btn" id="reset-btn">Reset</button>
+  </div>
+</div>
+<div class="viewer" id="viewer">
+  <div class="serp-container" id="serp-container">
+    <img id="serp-img" src="../data/png/p049-b2-t6.png" />
+    <svg class="aoi-svg" id="aoi-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <svg class="overlay-svg" id="overlay-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="mouse-cursor" id="mouse-cursor"><svg viewBox="0 0 20 28"><path d="M0,0 L0,22 L5.5,17 L10,28 L14,26 L9,16 L16,16 Z" fill="#ff9933" stroke="#000" stroke-width="1"/></svg></div>
+  </div>
+</div>
+<div class="timeline">
+  <div class="timeline-tracks" id="timeline-tracks">
+    <div class="timeline-row"><div class="timeline-label lbl-aoi">AOI</div><div class="timeline-track" id="track-aoi"><canvas class="timeline-canvas" id="cv-aoi"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-cursor">Cursor</div><div class="timeline-track" id="track-cursor"><canvas class="timeline-canvas" id="cv-cursor"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-xy-delta">|Δ| / ms</div><div class="timeline-track" id="track-xy"><canvas class="timeline-canvas" id="cv-xy"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-pupil">Pupil</div><div class="timeline-track" id="track-pupil"><canvas class="timeline-canvas" id="cv-pupil"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-gaze-x">Gaze X</div><div class="timeline-track" id="track-gaze-x"><canvas class="timeline-canvas" id="cv-gaze-x"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-gaze-y">Gaze Y</div><div class="timeline-track" id="track-gaze-y"><canvas class="timeline-canvas" id="cv-gaze-y"></canvas></div></div>
+    <div class="timeline-playhead" id="playhead"></div>
+  </div>
+  <div class="timeline-info">
+    <span id="time-label">0.00s / 0.00s</span>
+    <span id="aoi-label">—</span>
+  </div>
+</div>
+<div class="info-panel">
+  <span>Doc: <span class="val" id="info-doc">—</span></span>
+  <span>Cursor samples: <span class="val" id="info-cursor">—</span></span>
+  <span>Fixations: <span class="val" id="info-fix">—</span></span>
+  <span>Pupil samples: <span class="val" id="info-pupil">—</span></span>
+  <span>Cursor pos: <span class="val" id="info-pos">—</span></span>
+  <span><a href="../data/png/p049-b2-t6.png" download>Download SERP PNG</a></span>
+</div>
+<div class="footer-note">
+  AdSERP raw signals replayed over the dataset's shipped 1280-wide screenshot. Cursor xpos scaled by 1280/win_width; ypos is document-space. AOIs: ads from <code>ad-boundary-data</code> (shipped), organic results from row-projection CV detection (see <code>attentional-foraging/scripts/extract_organic_bboxes.py</code>).
+</div>
+<script>
+const TRIAL = {"trial_id": "p049-b2-t6", "screenshot": "png/p049-b2-t6.png", "screenshot_width": 1280, "doc_height": 2588, "win_width": 1422, "ratio_x": 0.9001, "duration_ms": 5876, "task": "batch_291_trial_6 | buy-robert-sorby-robert-sorby-410-sandmaster", "url": "http://localhost/page.php?q=buy-robert-sorby-robert-sorby-410-sandmaster", "bboxes": {"organic_result": [{"position": 1, "location": {"x": 162, "y": 133}, "size": {"height": 184, "width": 586}}, {"position": 2, "location": {"x": 162, "y": 348}, "size": {"height": 85, "width": 586}}, {"position": 3, "location": {"x": 162, "y": 467}, "size": {"height": 82, "width": 586}}, {"position": 4, "location": {"x": 162, "y": 583}, "size": {"height": 82, "width": 586}}, {"position": 5, "location": {"x": 162, "y": 700}, "size": {"height": 81, "width": 586}}, {"position": 6, "location": {"x": 162, "y": 816}, "size": {"height": 81, "width": 586}}, {"position": 7, "location": {"x": 162, "y": 932}, "size": {"height": 81, "width": 586}}, {"position": 8, "location": {"x": 162, "y": 1047}, "size": {"height": 81, "width": 586}}, {"position": 9, "location": {"x": 162, "y": 1173}, "size": {"height": 244, "width": 586}}, {"position": 10, "location": {"x": 162, "y": 1460}, "size": {"height": 102, "width": 586}}, {"position": 11, "location": {"x": 162, "y": 1977}, "size": {"height": 80, "width": 586}}], "native_ad": [{"location": {"x": 162, "y": 1593}, "size": {"height": 69, "width": 540}}, {"location": {"x": 162, "y": 1689}, "size": {"height": 108, "width": 540}}, {"location": {"x": 162, "y": 1824}, "size": {"height": 108, "width": 540}}], "dd_top": [], "dd_right": []}, "cursor": [{"t": 461, "x": 628, "y": 265, "event": "mousemove"}, {"t": 472, "x": 627, "y": 265, "event": "mousemove"}, {"t": 523, "x": 626, "y": 265, "event": "mousemove"}, {"t": 539, "x": 626, "y": 265, "event": "mousemove"}, {"t": 590, "x": 625, "y": 264, "event": "mousemove"}, {"t": 640, "x": 624, "y": 264, "event": "mousemove"}, {"t": 669, "x": 623, "y": 264, "event": "mousemove"}, {"t": 706, "x": 622, "y": 263, "event": "mousemove"}, {"t": 757, "x": 622, "y": 262, "event": "mousemove"}, {"t": 829, "x": 621, "y": 262, "event": "mousemove"}, {"t": 1020, "x": 619, "y": 262, "event": "mousemove"}, {"t": 1055, "x": 619, "y": 261, "event": "mousemove"}, {"t": 1125, "x": 618, "y": 261, "event": "mousemove"}, {"t": 4085, "x": 617, "y": 261, "event": "mousemove"}, {"t": 4092, "x": 614, "y": 261, "event": "mousemove"}, {"t": 4105, "x": 610, "y": 261, "event": "mousemove"}, {"t": 4122, "x": 605, "y": 261, "event": "mousemove"}, {"t": 4138, "x": 599, "y": 261, "event": "mousemove"}, {"t": 4154, "x": 594, "y": 261, "event": "mousemove"}, {"t": 4172, "x": 592, "y": 261, "event": "mousemove"}, {"t": 4188, "x": 590, "y": 258, "event": "mousemove"}, {"t": 4205, "x": 553, "y": 247, "event": "mousemove"}, {"t": 4221, "x": 532, "y": 240, "event": "mousemove"}, {"t": 4239, "x": 509, "y": 228, "event": "mousemove"}, {"t": 4254, "x": 488, "y": 218, "event": "mousemove"}, {"t": 4271, "x": 474, "y": 211, "event": "mousemove"}, {"t": 4289, "x": 468, "y": 204, "event": "mousemove"}, {"t": 4305, "x": 463, "y": 201, "event": "mousemove"}, {"t": 4322, "x": 460, "y": 198, "event": "mousemove"}, {"t": 4338, "x": 459, "y": 198, "event": "mousemove"}, {"t": 4355, "x": 455, "y": 197, "event": "mousemove"}, {"t": 4371, "x": 455, "y": 196, "event": "mousemove"}, {"t": 4388, "x": 454, "y": 196, "event": "mousemove"}, {"t": 4444, "x": 453, "y": 196, "event": "mousemove"}, {"t": 4460, "x": 452, "y": 196, "event": "mousemove"}, {"t": 4471, "x": 450, "y": 197, "event": "mousemove"}, {"t": 4488, "x": 448, "y": 201, "event": "mousemove"}, {"t": 4504, "x": 446, "y": 204, "event": "mousemove"}, {"t": 4522, "x": 445, "y": 206, "event": "mousemove"}, {"t": 4539, "x": 443, "y": 211, "event": "mousemove"}, {"t": 4555, "x": 443, "y": 213, "event": "mousemove"}, {"t": 4571, "x": 443, "y": 214, "event": "mousemove"}, {"t": 4587, "x": 442, "y": 215, "event": "mousemove"}, {"t": 4780, "x": 441, "y": 216, "event": "mousemove"}, {"t": 5876, "x": 441, "y": 216, "event": "click"}], "xy_delta": [{"t": 472, "speed": 0.09}, {"t": 523, "speed": 0.02}, {"t": 539, "speed": 0.0}, {"t": 590, "speed": 0.03}, {"t": 640, "speed": 0.02}, {"t": 669, "speed": 0.03}, {"t": 706, "speed": 0.04}, {"t": 757, "speed": 0.02}, {"t": 829, "speed": 0.01}, {"t": 1020, "speed": 0.01}, {"t": 1055, "speed": 0.03}, {"t": 1125, "speed": 0.01}, {"t": 4085, "speed": 0.0}, {"t": 4092, "speed": 0.43}, {"t": 4105, "speed": 0.31}, {"t": 4122, "speed": 0.29}, {"t": 4138, "speed": 0.38}, {"t": 4154, "speed": 0.31}, {"t": 4172, "speed": 0.11}, {"t": 4188, "speed": 0.23}, {"t": 4205, "speed": 2.27}, {"t": 4221, "speed": 1.38}, {"t": 4239, "speed": 1.44}, {"t": 4254, "speed": 1.55}, {"t": 4271, "speed": 0.92}, {"t": 4289, "speed": 0.51}, {"t": 4305, "speed": 0.36}, {"t": 4322, "speed": 0.25}, {"t": 4338, "speed": 0.06}, {"t": 4355, "speed": 0.24}, {"t": 4371, "speed": 0.06}, {"t": 4388, "speed": 0.06}, {"t": 4444, "speed": 0.02}, {"t": 4460, "speed": 0.06}, {"t": 4471, "speed": 0.2}, {"t": 4488, "speed": 0.26}, {"t": 4504, "speed": 0.23}, {"t": 4522, "speed": 0.12}, {"t": 4539, "speed": 0.32}, {"t": 4555, "speed": 0.12}, {"t": 4571, "speed": 0.06}, {"t": 4587, "speed": 0.09}, {"t": 4780, "speed": 0.01}], "fixations": [{"t": 0, "x": 654, "y": 170, "duration": 153}, {"t": 201, "x": 653, "y": 206, "duration": 194}, {"t": 295, "x": 526, "y": 245, "duration": 87}, {"t": 462, "x": 270, "y": 176, "duration": 140}, {"t": 850, "x": 188, "y": 147, "duration": 381}, {"t": 1072, "x": 252, "y": 140, "duration": 214}, {"t": 1199, "x": 244, "y": 169, "duration": 120}, {"t": 1326, "x": 190, "y": 174, "duration": 120}, {"t": 1755, "x": 189, "y": 157, "duration": 260}, {"t": 2090, "x": 340, "y": 141, "duration": 328}, {"t": 2438, "x": 467, "y": 115, "duration": 341}, {"t": 2753, "x": 717, "y": 166, "duration": 287}, {"t": 2866, "x": 672, "y": 169, "duration": 107}, {"t": 3062, "x": 328, "y": 264, "duration": 168}, {"t": 3416, "x": 210, "y": 333, "duration": 348}, {"t": 3577, "x": 187, "y": 274, "duration": 154}, {"t": 3871, "x": 209, "y": 152, "duration": 267}, {"t": 4045, "x": 244, "y": 140, "duration": 167}, {"t": 4253, "x": 316, "y": 133, "duration": 201}, {"t": 4474, "x": 399, "y": 146, "duration": 214}, {"t": 4601, "x": 440, "y": 127, "duration": 120}, {"t": 4836, "x": 935, "y": 133, "duration": 207}, {"t": 4970, "x": 868, "y": 200, "duration": 127}, {"t": 5264, "x": 686, "y": 111, "duration": 187}, {"t": 5499, "x": 727, "y": 31, "duration": 228}, {"t": 5726, "x": 716, "y": 45, "duration": 220}], "pupil": [{"t": 0, "lpd": 17.93925, "rpd": 17.20366}, {"t": 8, "lpd": 17.80469, "rpd": 17.11447}, {"t": 15, "lpd": 17.5659, "rpd": 17.11447}, {"t": 20, "lpd": 17.9809, "rpd": 17.14478}, {"t": 27, "lpd": 17.87297, "rpd": 17.14478}, {"t": 34, "lpd": 17.80025, "rpd": 17.14973}, {"t": 40, "lpd": 18.06448, "rpd": 17.14946}, {"t": 47, "lpd": 17.92243, "rpd": 17.14946}, {"t": 54, "lpd": 17.96383, "rpd": 17.04257}, {"t": 60, "lpd": 17.82642, "rpd": 17.01775}, {"t": 67, "lpd": 17.71709, "rpd": 17.18999}, {"t": 74, "lpd": 17.87125, "rpd": 17.21354}, {"t": 81, "lpd": 17.6792, "rpd": 17.54831}, {"t": 87, "lpd": 17.86112, "rpd": 17.64816}, {"t": 94, "lpd": 17.86787, "rpd": 17.15612}, {"t": 101, "lpd": 17.37408, "rpd": 17.18058}, {"t": 107, "lpd": 17.48284, "rpd": 17.00529}, {"t": 114, "lpd": 17.40648, "rpd": 17.14434}, {"t": 121, "lpd": 17.54662, "rpd": 17.27064}, {"t": 128, "lpd": 17.51693, "rpd": 17.25475}, {"t": 134, "lpd": 17.71788, "rpd": 17.66697}, {"t": 141, "lpd": 17.5808, "rpd": 17.43554}, {"t": 148, "lpd": 17.51094, "rpd": 17.19595}, {"t": 154, "lpd": 17.3284, "rpd": 17.06533}, {"t": 161, "lpd": 17.36799, "rpd": 16.82435}, {"t": 168, "lpd": 17.72884, "rpd": 16.54147}, {"t": 175, "lpd": 17.51146, "rpd": 16.72509}, {"t": 181, "lpd": 17.50054, "rpd": 16.88679}, {"t": 188, "lpd": 17.28099, "rpd": 16.95883}, {"t": 195, "lpd": 17.17955, "rpd": 17.18658}, {"t": 201, "lpd": 17.1325, "rpd": 17.30286}, {"t": 208, "lpd": 17.17618, "rpd": 16.98256}, {"t": 215, "lpd": 17.18337, "rpd": 16.87576}, {"t": 221, "lpd": 17.49302, "rpd": 17.19043}, {"t": 228, "lpd": 17.22017, "rpd": 17.09977}, {"t": 235, "lpd": 17.18436, "rpd": 17.12685}, {"t": 241, "lpd": 17.15383, "rpd": 16.93126}, {"t": 248, "lpd": 17.23154, "rpd": 16.96516}, {"t": 255, "lpd": 17.03486, "rpd": 17.09307}, {"t": 262, "lpd": 17.22106, "rpd": 17.02691}, {"t": 268, "lpd": 17.11548, "rpd": 16.52237}, {"t": 275, "lpd": 17.02855, "rpd": 16.9669}, {"t": 282, "lpd": 17.1957, "rpd": 17.26678}, {"t": 289, "lpd": 17.22115, "rpd": 17.01294}, {"t": 295, "lpd": 17.10887, "rpd": 16.93677}, {"t": 302, "lpd": 16.7206, "rpd": 16.67178}, {"t": 309, "lpd": 16.6123, "rpd": 17.48811}, {"t": 315, "lpd": 16.60717, "rpd": 16.795}, {"t": 322, "lpd": 16.86807, "rpd": 16.83289}, {"t": 329, "lpd": 16.65334, "rpd": 16.89496}, {"t": 335, "lpd": 16.63924, "rpd": 16.66444}, {"t": 342, "lpd": 16.65334, "rpd": 16.62707}, {"t": 348, "lpd": 16.68816, "rpd": 16.64506}, {"t": 355, "lpd": 16.73246, "rpd": 16.488}, {"t": 362, "lpd": 16.73246, "rpd": 16.39252}, {"t": 369, "lpd": 16.76698, "rpd": 16.39252}, {"t": 375, "lpd": 16.65464, "rpd": 16.29598}, {"t": 382, "lpd": 17.12543, "rpd": 16.66364}, {"t": 389, "lpd": 16.77506, "rpd": 17.07735}, {"t": 396, "lpd": 16.92746, "rpd": 15.73319}, {"t": 403, "lpd": 17.25705, "rpd": 16.14102}, {"t": 409, "lpd": 16.57513, "rpd": 16.56401}, {"t": 416, "lpd": 17.56544, "rpd": 16.24764}, {"t": 423, "lpd": 16.75899, "rpd": 16.67608}, {"t": 429, "lpd": 16.74296, "rpd": 16.69522}, {"t": 436, "lpd": 16.75899, "rpd": 16.42956}, {"t": 442, "lpd": 16.58588, "rpd": 16.21818}, {"t": 449, "lpd": 16.70609, "rpd": 16.32248}, {"t": 457, "lpd": 16.7506, "rpd": 16.32479}, {"t": 462, "lpd": 16.71202, "rpd": 16.2177}, {"t": 469, "lpd": 16.80622, "rpd": 16.60023}, {"t": 476, "lpd": 16.43083, "rpd": 16.60023}, {"t": 483, "lpd": 16.5326, "rpd": 16.65688}, {"t": 489, "lpd": 16.502, "rpd": 16.61841}, {"t": 496, "lpd": 16.56281, "rpd": 16.39481}, {"t": 503, "lpd": 16.35131, "rpd": 16.29414}, {"t": 509, "lpd": 16.15004, "rpd": 16.17992}, {"t": 516, "lpd": 16.31237, "rpd": 16.10816}, {"t": 523, "lpd": 16.31237, "rpd": 15.90873}, {"t": 529, "lpd": 16.77531, "rpd": 15.99402}, {"t": 536, "lpd": 16.77531, "rpd": 16.35559}, {"t": 543, "lpd": 16.37682, "rpd": 16.57015}, {"t": 550, "lpd": 16.33472, "rpd": 16.18873}, {"t": 556, "lpd": 16.20484, "rpd": 16.21551}, {"t": 563, "lpd": 16.30217, "rpd": 16.51777}, {"t": 570, "lpd": 16.35472, "rpd": 16.22697}, {"t": 576, "lpd": 16.79918, "rpd": 16.28744}, {"t": 583, "lpd": 16.19307, "rpd": 16.49277}, {"t": 590, "lpd": 16.17127, "rpd": 15.98971}, {"t": 596, "lpd": 16.39251, "rpd": 16.08263}, {"t": 603, "lpd": 16.44326, "rpd": 16.7866}, {"t": 610, "lpd": 16.35656, "rpd": 16.84361}, {"t": 617, "lpd": 16.60763, "rpd": 16.46627}, {"t": 623, "lpd": 16.57991, "rpd": 16.72469}, {"t": 630, "lpd": 16.90277, "rpd": 16.78871}, {"t": 637, "lpd": 16.8627, "rpd": 16.51176}, {"t": 643, "lpd": 16.8386, "rpd": 16.29122}, {"t": 650, "lpd": 17.09204, "rpd": 15.91155}, {"t": 657, "lpd": 16.43245, "rpd": 15.98094}, {"t": 664, "lpd": 16.47784, "rpd": 16.73219}, {"t": 671, "lpd": 16.37975, "rpd": 16.42222}, {"t": 676, "lpd": 16.84371, "rpd": 16.55646}, {"t": 683, "lpd": 16.92207, "rpd": 16.76043}, {"t": 690, "lpd": 17.30542, "rpd": 16.68688}, {"t": 697, "lpd": 16.43789, "rpd": 16.02355}, {"t": 704, "lpd": 16.57867, "rpd": 16.50843}, {"t": 711, "lpd": 16.75574, "rpd": 16.25261}, {"t": 717, "lpd": 16.84371, "rpd": 16.7858}, {"t": 724, "lpd": 16.65201, "rpd": 16.64769}, {"t": 731, "lpd": 16.63852, "rpd": 16.77704}, {"t": 737, "lpd": 16.55703, "rpd": 16.6659}, {"t": 744, "lpd": 16.96232, "rpd": 16.41381}, {"t": 751, "lpd": 16.9539, "rpd": 16.38818}, {"t": 757, "lpd": 16.85446, "rpd": 16.12256}, {"t": 764, "lpd": 16.84898, "rpd": 16.54704}, {"t": 771, "lpd": 15.9312, "rpd": 16.85259}, {"t": 777, "lpd": 15.96273, "rpd": 17.10637}, {"t": 784, "lpd": 16.64256, "rpd": 16.10067}, {"t": 791, "lpd": 16.09443, "rpd": 16.3934}, {"t": 798, "lpd": 16.04771, "rpd": 16.45937}, {"t": 804, "lpd": 16.62565, "rpd": 16.47373}, {"t": 811, "lpd": 16.69821, "rpd": 15.85272}, {"t": 817, "lpd": 16.73859, "rpd": 16.39542}, {"t": 824, "lpd": 16.8025, "rpd": 16.45153}, {"t": 831, "lpd": 16.53207, "rpd": 16.39227}, {"t": 837, "lpd": 16.78547, "rpd": 16.59196}, {"t": 845, "lpd": 16.89895, "rpd": 16.08074}, {"t": 851, "lpd": 16.90755, "rpd": 16.30614}, {"t": 858, "lpd": 16.80723, "rpd": 15.93935}, {"t": 865, "lpd": 16.917, "rpd": 16.60532}, {"t": 871, "lpd": 16.40122, "rpd": 16.77852}, {"t": 878, "lpd": 16.10648, "rpd": 17.12652}, {"t": 885, "lpd": 16.4831, "rpd": 16.8623}, {"t": 892, "lpd": 16.74197, "rpd": 16.40652}, {"t": 898, "lpd": 16.9811, "rpd": 16.22077}, {"t": 905, "lpd": 17.15458, "rpd": 16.55575}, {"t": 912, "lpd": 17.08149, "rpd": 16.51964}, {"t": 918, "lpd": 16.85732, "rpd": 17.26373}, {"t": 925, "lpd": 16.89974, "rpd": 16.73922}, {"t": 932, "lpd": 16.37576, "rpd": 17.34386}, {"t": 938, "lpd": 16.15832, "rpd": 16.48281}, {"t": 945, "lpd": 16.43522, "rpd": 15.98433}, {"t": 951, "lpd": 16.51156, "rpd": 16.12704}, {"t": 958, "lpd": 16.05571, "rpd": 15.93964}, {"t": 965, "lpd": 16.00261, "rpd": 16.1378}, {"t": 972, "lpd": 16.14382, "rpd": 16.2227}, {"t": 978, "lpd": 15.8575, "rpd": 16.58016}, {"t": 985, "lpd": 16.42121, "rpd": 16.79653}, {"t": 992, "lpd": 16.49176, "rpd": 16.86729}, {"t": 998, "lpd": 16.27933, "rpd": 17.13184}, {"t": 1005, "lpd": 16.53989, "rpd": 16.97935}, {"t": 1012, "lpd": 16.93692, "rpd": 16.13959}, {"t": 1018, "lpd": 16.50869, "rpd": 16.52182}, {"t": 1025, "lpd": 16.71999, "rpd": 16.90893}, {"t": 1031, "lpd": 16.22173, "rpd": 16.66251}, {"t": 1039, "lpd": 17.07266, "rpd": 16.73266}, {"t": 1045, "lpd": 16.99103, "rpd": 16.88678}, {"t": 1052, "lpd": 17.18663, "rpd": 16.82995}, {"t": 1058, "lpd": 16.22223, "rpd": 16.74593}, {"t": 1065, "lpd": 16.97662, "rpd": 16.92589}, {"t": 1072, "lpd": 16.9627, "rpd": 16.57687}, {"t": 1079, "lpd": 16.97675, "rpd": 16.92447}, {"t": 1086, "lpd": 16.61865, "rpd": 16.6479}, {"t": 1092, "lpd": 16.43621, "rpd": 16.67159}, {"t": 1099, "lpd": 16.43545, "rpd": 16.93736}, {"t": 1105, "lpd": 16.813, "rpd": 17.01456}, {"t": 1112, "lpd": 16.73382, "rpd": 17.2013}, {"t": 1119, "lpd": 16.90824, "rpd": 16.77341}, {"t": 1126, "lpd": 16.55494, "rpd": 16.79134}, {"t": 1132, "lpd": 16.34201, "rpd": 16.49283}, {"t": 1139, "lpd": 16.70917, "rpd": 16.46067}, {"t": 1146, "lpd": 16.96012, "rpd": 16.74021}, {"t": 1152, "lpd": 17.23083, "rpd": 16.6777}, {"t": 1159, "lpd": 16.85972, "rpd": 16.56314}, {"t": 1166, "lpd": 16.79706, "rpd": 15.66642}, {"t": 1173, "lpd": 16.65238, "rpd": 15.66044}, {"t": 1179, "lpd": 16.7208, "rpd": 16.27072}, {"t": 1186, "lpd": 17.01003, "rpd": 16.14157}, {"t": 1193, "lpd": 17.03267, "rpd": 15.89723}, {"t": 1200, "lpd": 16.34465, "rpd": 16.36858}, {"t": 1206, "lpd": 16.43692, "rpd": 16.46495}, {"t": 1213, "lpd": 16.51211, "rpd": 16.42889}, {"t": 1220, "lpd": 16.39307, "rpd": 16.44765}, {"t": 1226, "lpd": 16.436, "rpd": 15.9584}, {"t": 1233, "lpd": 16.89492, "rpd": 15.9584}, {"t": 1240, "lpd": 16.53906, "rpd": 15.77429}, {"t": 1246, "lpd": 16.46298, "rpd": 16.05032}, {"t": 1253, "lpd": 16.40803, "rpd": 16.17329}, {"t": 1260, "lpd": 16.71364, "rpd": 16.37196}, {"t": 1266, "lpd": 16.63399, "rpd": 16.24994}, {"t": 1273, "lpd": 16.5872, "rpd": 16.72408}, {"t": 1280, "lpd": 16.74953, "rpd": 16.74071}, {"t": 1286, "lpd": 16.75533, "rpd": 16.65896}, {"t": 1293, "lpd": 16.71865, "rpd": 16.41773}, {"t": 1300, "lpd": 16.4635, "rpd": 16.89269}, {"t": 1306, "lpd": 16.50979, "rpd": 16.75037}, {"t": 1313, "lpd": 16.24069, "rpd": 15.8251}, {"t": 1320, "lpd": 16.21867, "rpd": 15.96327}, {"t": 1327, "lpd": 16.7001, "rpd": 15.99633}, {"t": 1333, "lpd": 16.82926, "rpd": 16.23923}, {"t": 1340, "lpd": 16.8058, "rpd": 16.58134}, {"t": 1347, "lpd": 16.52228, "rpd": 17.15102}, {"t": 1354, "lpd": 16.53292, "rpd": 16.88222}, {"t": 1360, "lpd": 16.8087, "rpd": 16.65036}, {"t": 1367, "lpd": 16.52495, "rpd": 16.90405}, {"t": 1374, "lpd": 17.0431, "rpd": 16.40357}, {"t": 1380, "lpd": 16.81565, "rpd": 16.27396}, {"t": 1387, "lpd": 16.64256, "rpd": 16.38828}, {"t": 1394, "lpd": 16.47259, "rpd": 16.11524}, {"t": 1400, "lpd": 16.95973, "rpd": 16.42213}, {"t": 1407, "lpd": 16.3942, "rpd": 16.86132}, {"t": 1414, "lpd": 16.18444, "rpd": 16.69998}, {"t": 1420, "lpd": 15.77114, "rpd": 16.88808}, {"t": 1427, "lpd": 14.25636, "rpd": 15.03766}, {"t": 1433, "lpd": 9.49269, "rpd": 10.22406}, {"t": 1601, "lpd": 15.94228, "rpd": null}, {"t": 1608, "lpd": 16.04094, "rpd": 15.77051}, {"t": 1615, "lpd": 15.78337, "rpd": 16.00212}, {"t": 1622, "lpd": 16.20637, "rpd": 16.22806}, {"t": 1628, "lpd": 16.0868, "rpd": 15.89193}, {"t": 1635, "lpd": 16.72715, "rpd": 15.95469}, {"t": 1642, "lpd": 16.71358, "rpd": 16.12807}, {"t": 1648, "lpd": 16.37578, "rpd": 16.07946}, {"t": 1656, "lpd": 16.35221, "rpd": 16.12779}, {"t": 1662, "lpd": 16.54852, "rpd": 15.88779}, {"t": 1668, "lpd": 16.79542, "rpd": 16.45282}, {"t": 1675, "lpd": 16.59891, "rpd": 15.66986}, {"t": 1682, "lpd": 16.29098, "rpd": 16.23932}, {"t": 1689, "lpd": 16.73589, "rpd": 16.42921}, {"t": 1695, "lpd": 16.41502, "rpd": 15.95617}, {"t": 1702, "lpd": 16.36298, "rpd": 15.95617}, {"t": 1709, "lpd": 16.24364, "rpd": 16.30943}, {"t": 1715, "lpd": 16.16038, "rpd": 15.95885}, {"t": 1722, "lpd": 16.238, "rpd": 15.80364}, {"t": 1729, "lpd": 16.30324, "rpd": 15.95395}, {"t": 1735, "lpd": 16.4038, "rpd": 15.86269}, {"t": 1742, "lpd": 16.74525, "rpd": 15.77055}, {"t": 1749, "lpd": 16.54396, "rpd": 16.24762}, {"t": 1755, "lpd": 16.15258, "rpd": 15.75007}, {"t": 1762, "lpd": 16.07057, "rpd": 16.15969}, {"t": 1769, "lpd": 15.73108, "rpd": 16.14997}, {"t": 1776, "lpd": 15.88172, "rpd": 16.20686}, {"t": 1782, "lpd": 15.94809, "rpd": 16.28104}, {"t": 1789, "lpd": 15.96885, "rpd": 16.31341}, {"t": 1796, "lpd": 15.98083, "rpd": 16.45347}, {"t": 1802, "lpd": 15.95813, "rpd": 16.28493}, {"t": 1809, "lpd": 16.19748, "rpd": 16.30264}, {"t": 1816, "lpd": 16.27969, "rpd": 16.27045}, {"t": 1822, "lpd": 16.16282, "rpd": 16.17565}, {"t": 1829, "lpd": 16.13597, "rpd": 16.16239}, {"t": 1836, "lpd": 16.07952, "rpd": 16.16979}, {"t": 1842, "lpd": 16.07162, "rpd": 16.20515}, {"t": 1849, "lpd": 16.35652, "rpd": 17.13862}, {"t": 1856, "lpd": 16.25515, "rpd": 16.32036}, {"t": 1863, "lpd": 16.59998, "rpd": 16.27196}, {"t": 1869, "lpd": 16.51717, "rpd": 16.03482}, {"t": 1876, "lpd": 16.89495, "rpd": 15.90157}, {"t": 1883, "lpd": 17.12122, "rpd": 16.77702}, {"t": 1889, "lpd": 17.23954, "rpd": 16.60265}, {"t": 1896, "lpd": 16.55779, "rpd": 16.64925}, {"t": 1903, "lpd": 16.05617, "rpd": 16.68873}, {"t": 1909, "lpd": 16.21213, "rpd": 16.67446}, {"t": 1916, "lpd": 16.66185, "rpd": 16.41448}, {"t": 1923, "lpd": 16.66229, "rpd": 15.94289}, {"t": 1929, "lpd": 16.76474, "rpd": 16.19643}, {"t": 1936, "lpd": 16.72305, "rpd": 16.07305}, {"t": 1943, "lpd": 16.56269, "rpd": 16.03428}, {"t": 1950, "lpd": 16.79882, "rpd": 16.03399}, {"t": 1956, "lpd": 16.87797, "rpd": 16.40755}, {"t": 1963, "lpd": 16.87797, "rpd": 16.3093}, {"t": 1970, "lpd": 16.07021, "rpd": 16.00911}, {"t": 1977, "lpd": 16.34456, "rpd": 16.40896}, {"t": 1983, "lpd": 15.97044, "rpd": 16.37828}, {"t": 1990, "lpd": 16.14888, "rpd": 16.46967}, {"t": 1997, "lpd": 16.2743, "rpd": 16.60945}, {"t": 2003, "lpd": 16.57819, "rpd": 16.55699}, {"t": 2010, "lpd": 16.5626, "rpd": 16.44338}, {"t": 2017, "lpd": 16.69561, "rpd": 16.57135}, {"t": 2023, "lpd": 16.51717, "rpd": 16.67185}, {"t": 2030, "lpd": 16.51717, "rpd": 16.60683}, {"t": 2037, "lpd": 16.51717, "rpd": 16.21325}, {"t": 2043, "lpd": 16.48936, "rpd": 15.86505}, {"t": 2050, "lpd": 17.12517, "rpd": 16.02114}, {"t": 2057, "lpd": 17.09771, "rpd": 15.70263}, {"t": 2064, "lpd": 17.07549, "rpd": 16.17246}, {"t": 2070, "lpd": 16.78191, "rpd": 16.2032}, {"t": 2077, "lpd": 16.42841, "rpd": 16.36804}, {"t": 2083, "lpd": 16.42841, "rpd": 16.36804}, {"t": 2090, "lpd": 16.3357, "rpd": 16.36804}, {"t": 2097, "lpd": 16.41101, "rpd": 16.32814}, {"t": 2104, "lpd": 16.465, "rpd": 16.65252}, {"t": 2110, "lpd": 16.40591, "rpd": 16.99404}, {"t": 2117, "lpd": 16.42112, "rpd": 16.34594}, {"t": 2124, "lpd": 16.27414, "rpd": 16.33696}, {"t": 2130, "lpd": 16.16979, "rpd": 16.57221}, {"t": 2137, "lpd": 16.03047, "rpd": 16.36478}, {"t": 2144, "lpd": 15.92332, "rpd": 16.1712}, {"t": 2150, "lpd": 16.06788, "rpd": 16.2998}, {"t": 2158, "lpd": 15.99995, "rpd": 15.7679}, {"t": 2164, "lpd": 16.00467, "rpd": 16.108}, {"t": 2171, "lpd": 15.92883, "rpd": 16.42046}, {"t": 2178, "lpd": 16.26974, "rpd": 16.45043}, {"t": 2184, "lpd": 16.06742, "rpd": 16.47003}, {"t": 2191, "lpd": 16.52548, "rpd": 16.39753}, {"t": 2198, "lpd": 16.54855, "rpd": 16.18362}, {"t": 2204, "lpd": 16.62958, "rpd": 16.31677}, {"t": 2211, "lpd": 16.08747, "rpd": 16.63687}, {"t": 2218, "lpd": 15.80783, "rpd": 16.11549}, {"t": 2224, "lpd": 15.80154, "rpd": 16.31042}, {"t": 2231, "lpd": 15.74988, "rpd": 16.13846}, {"t": 2237, "lpd": 15.57888, "rpd": 15.95804}, {"t": 2244, "lpd": 15.81476, "rpd": 15.97578}, {"t": 2251, "lpd": 16.26165, "rpd": 15.80142}, {"t": 2258, "lpd": 16.1718, "rpd": 16.0479}, {"t": 2264, "lpd": 15.96185, "rpd": 16.00624}, {"t": 2271, "lpd": 16.85824, "rpd": 15.67576}, {"t": 2278, "lpd": 16.26795, "rpd": 15.71705}, {"t": 2284, "lpd": 16.20216, "rpd": 15.68207}, {"t": 2291, "lpd": 16.24777, "rpd": 15.83459}, {"t": 2298, "lpd": 16.34954, "rpd": 15.70639}, {"t": 2305, "lpd": 16.39772, "rpd": 15.70639}, {"t": 2311, "lpd": 16.37316, "rpd": 15.92361}, {"t": 2318, "lpd": 16.1218, "rpd": 15.92361}, {"t": 2325, "lpd": 16.37538, "rpd": 15.96331}, {"t": 2331, "lpd": 16.47091, "rpd": 15.82565}, {"t": 2338, "lpd": 16.2637, "rpd": 15.86684}, {"t": 2345, "lpd": 16.61751, "rpd": 15.88863}, {"t": 2352, "lpd": 16.17289, "rpd": 15.37976}, {"t": 2358, "lpd": 16.27464, "rpd": 15.53294}, {"t": 2365, "lpd": 15.97604, "rpd": 15.50133}, {"t": 2372, "lpd": 15.9114, "rpd": 16.28222}, {"t": 2378, "lpd": 15.92894, "rpd": 16.06021}, {"t": 2385, "lpd": 15.89771, "rpd": 16.15231}, {"t": 2392, "lpd": 15.84357, "rpd": 15.6049}, {"t": 2398, "lpd": 15.68151, "rpd": 15.59823}, {"t": 2405, "lpd": 15.39311, "rpd": 15.59823}, {"t": 2412, "lpd": 15.38781, "rpd": 15.59883}, {"t": 2418, "lpd": 15.26849, "rpd": 15.6049}, {"t": 2425, "lpd": 15.65915, "rpd": 15.73203}, {"t": 2432, "lpd": 15.58039, "rpd": 15.56285}, {"t": 2439, "lpd": 15.58039, "rpd": 15.71404}, {"t": 2445, "lpd": 15.72021, "rpd": 15.71404}, {"t": 2452, "lpd": 15.69504, "rpd": 15.71404}, {"t": 2458, "lpd": 15.20224, "rpd": 15.71404}, {"t": 2465, "lpd": 15.20224, "rpd": 15.6953}, {"t": 2472, "lpd": 15.20224, "rpd": 15.56285}, {"t": 2479, "lpd": 15.73135, "rpd": 16.10861}, {"t": 2486, "lpd": 15.05964, "rpd": 15.73203}, {"t": 2492, "lpd": 15.0523, "rpd": 15.71404}, {"t": 2499, "lpd": 15.0523, "rpd": 15.79794}, {"t": 2506, "lpd": 15.02648, "rpd": 16.06009}, {"t": 2512, "lpd": 15.6806, "rpd": 15.91606}, {"t": 2519, "lpd": 15.48499, "rpd": 15.52193}, {"t": 2526, "lpd": 16.06841, "rpd": 15.21283}, {"t": 2532, "lpd": 16.00552, "rpd": 15.10183}, {"t": 2539, "lpd": 15.31019, "rpd": 15.15519}, {"t": 2545, "lpd": 16.01559, "rpd": 15.8987}, {"t": 2553, "lpd": 16.2758, "rpd": 15.76664}, {"t": 2559, "lpd": 15.96339, "rpd": 15.27656}, {"t": 2566, "lpd": 15.98792, "rpd": 15.22383}, {"t": 2572, "lpd": 16.37351, "rpd": 15.6302}, {"t": 2580, "lpd": 16.32023, "rpd": 15.91583}, {"t": 2586, "lpd": 16.02751, "rpd": 16.06641}, {"t": 2593, "lpd": 15.62031, "rpd": 16.03495}, {"t": 2599, "lpd": 15.39984, "rpd": 16.05825}, {"t": 2606, "lpd": 15.35954, "rpd": 16.02664}, {"t": 2612, "lpd": 16.08897, "rpd": 15.72599}, {"t": 2620, "lpd": 16.51089, "rpd": 15.70927}, {"t": 2626, "lpd": 16.61616, "rpd": 15.74744}, {"t": 2633, "lpd": 16.63403, "rpd": 15.90527}, {"t": 2639, "lpd": 16.62746, "rpd": 14.95843}, {"t": 2646, "lpd": 16.63366, "rpd": 15.74728}, {"t": 2653, "lpd": 15.94626, "rpd": 14.84533}, {"t": 2659, "lpd": 15.94626, "rpd": 15.36559}, {"t": 2666, "lpd": 16.0981, "rpd": 15.44831}, {"t": 2673, "lpd": 15.99593, "rpd": 15.45076}, {"t": 2680, "lpd": 15.64397, "rpd": 15.93835}, {"t": 2687, "lpd": 15.66703, "rpd": 16.24117}, {"t": 2693, "lpd": 15.83833, "rpd": 16.08999}, {"t": 2700, "lpd": 16.0513, "rpd": 16.08311}, {"t": 2706, "lpd": 15.92904, "rpd": 16.06256}, {"t": 2713, "lpd": 16.06346, "rpd": 16.32164}, {"t": 2720, "lpd": 16.0513, "rpd": 16.23418}, {"t": 2726, "lpd": 16.09684, "rpd": 16.18742}, {"t": 2733, "lpd": 15.96322, "rpd": 16.2902}, {"t": 2740, "lpd": 15.87751, "rpd": 15.9504}, {"t": 2747, "lpd": 15.74125, "rpd": 16.40887}, {"t": 2753, "lpd": 15.90493, "rpd": 16.48537}, {"t": 2760, "lpd": 15.89155, "rpd": 16.51727}, {"t": 2766, "lpd": 15.79559, "rpd": 16.51224}, {"t": 2774, "lpd": 16.2229, "rpd": 15.7567}, {"t": 2780, "lpd": 16.08942, "rpd": 15.55311}, {"t": 2787, "lpd": 15.85149, "rpd": 15.55311}, {"t": 2794, "lpd": 16.35198, "rpd": 15.67694}, {"t": 2800, "lpd": 16.83421, "rpd": 15.79083}, {"t": 2807, "lpd": 16.20638, "rpd": 15.89645}, {"t": 2814, "lpd": 16.25496, "rpd": 16.45567}, {"t": 2821, "lpd": 15.97931, "rpd": 16.22727}, {"t": 2827, "lpd": 15.60746, "rpd": 16.14392}, {"t": 2834, "lpd": 15.67765, "rpd": 16.09886}, {"t": 2841, "lpd": 15.60746, "rpd": 16.20164}, {"t": 2847, "lpd": 15.60746, "rpd": 16.07776}, {"t": 2854, "lpd": 15.7893, "rpd": 16.12106}, {"t": 2861, "lpd": 15.7893, "rpd": 16.16965}, {"t": 2867, "lpd": 15.85312, "rpd": 16.02664}, {"t": 2874, "lpd": 15.77341, "rpd": 15.81606}, {"t": 2881, "lpd": 15.77341, "rpd": 16.00373}, {"t": 2887, "lpd": 15.77341, "rpd": 15.85947}, {"t": 2894, "lpd": 15.83939, "rpd": 16.02609}, {"t": 2901, "lpd": 16.03639, "rpd": 15.99387}, {"t": 2907, "lpd": 16.29141, "rpd": 16.01843}, {"t": 2914, "lpd": 16.32438, "rpd": 15.88487}, {"t": 2921, "lpd": 16.26071, "rpd": 15.6553}, {"t": 2928, "lpd": 16.26573, "rpd": 15.40129}, {"t": 2934, "lpd": 16.26573, "rpd": 15.85156}, {"t": 2941, "lpd": 16.26573, "rpd": 15.44755}, {"t": 2948, "lpd": 16.2758, "rpd": 15.63315}, {"t": 2955, "lpd": 16.25879, "rpd": 16.28762}, {"t": 2961, "lpd": 16.26319, "rpd": 15.85679}, {"t": 2968, "lpd": 16.33077, "rpd": 16.72202}, {"t": 2974, "lpd": 16.22657, "rpd": 16.08352}, {"t": 2981, "lpd": 15.9166, "rpd": 16.23926}, {"t": 2988, "lpd": 17.10761, "rpd": 16.08161}, {"t": 2994, "lpd": 17.10519, "rpd": 16.03553}, {"t": 3001, "lpd": 16.56351, "rpd": 16.48203}, {"t": 3008, "lpd": 16.39153, "rpd": 16.71819}, {"t": 3015, "lpd": 16.65591, "rpd": 16.51878}, {"t": 3021, "lpd": 16.14038, "rpd": 16.52793}, {"t": 3028, "lpd": 16.19821, "rpd": 16.03609}, {"t": 3035, "lpd": 16.22748, "rpd": 16.26084}, {"t": 3042, "lpd": 16.48022, "rpd": 16.6143}, {"t": 3048, "lpd": 16.48022, "rpd": 16.19846}, {"t": 3055, "lpd": 16.54318, "rpd": 16.25893}, {"t": 3062, "lpd": 16.45874, "rpd": 16.25893}, {"t": 3068, "lpd": 16.45874, "rpd": 16.2282}, {"t": 3075, "lpd": 16.47034, "rpd": 16.2282}, {"t": 3082, "lpd": 16.92872, "rpd": 16.43903}, {"t": 3088, "lpd": 16.79389, "rpd": 16.22535}, {"t": 3095, "lpd": 17.15632, "rpd": 16.12115}, {"t": 3102, "lpd": 17.09626, "rpd": 16.22535}, {"t": 3108, "lpd": 17.25339, "rpd": 16.2107}, {"t": 3115, "lpd": 17.21892, "rpd": 16.38147}, {"t": 3122, "lpd": 16.65137, "rpd": 16.59197}, {"t": 3128, "lpd": 16.69796, "rpd": 16.35362}, {"t": 3135, "lpd": 16.83666, "rpd": 16.63523}, {"t": 3142, "lpd": 16.83635, "rpd": 16.77653}, {"t": 3149, "lpd": 16.74305, "rpd": 16.68392}, {"t": 3155, "lpd": 16.83859, "rpd": 16.72341}, {"t": 3162, "lpd": 16.1914, "rpd": 15.88319}, {"t": 3169, "lpd": 16.49019, "rpd": 16.42885}, {"t": 3175, "lpd": 16.70671, "rpd": 16.69422}, {"t": 3182, "lpd": 16.59398, "rpd": 16.54563}, {"t": 3190, "lpd": 16.60082, "rpd": 16.52516}, {"t": 3195, "lpd": 16.59379, "rpd": 16.52516}, {"t": 3202, "lpd": 16.65363, "rpd": 16.52516}, {"t": 3209, "lpd": 16.62578, "rpd": 16.52516}, {"t": 3216, "lpd": 17.18726, "rpd": 16.40206}, {"t": 3222, "lpd": 17.29452, "rpd": 16.45581}, {"t": 3229, "lpd": 16.75852, "rpd": 16.37422}, {"t": 3236, "lpd": 16.64449, "rpd": 16.32655}, {"t": 3242, "lpd": 16.65751, "rpd": 16.16775}, {"t": 3249, "lpd": 16.66641, "rpd": 16.24032}, {"t": 3256, "lpd": 16.8947, "rpd": 16.58875}, {"t": 3263, "lpd": 17.01374, "rpd": 16.50891}, {"t": 3269, "lpd": 16.86562, "rpd": 16.40548}, {"t": 3276, "lpd": 16.49306, "rpd": 16.52772}, {"t": 3283, "lpd": 16.56643, "rpd": 16.31491}, {"t": 3290, "lpd": 16.56921, "rpd": 16.54748}, {"t": 3296, "lpd": 16.08156, "rpd": 16.71722}, {"t": 3304, "lpd": 15.88996, "rpd": 16.48438}, {"t": 3309, "lpd": 16.60175, "rpd": 16.50947}, {"t": 3316, "lpd": 16.64954, "rpd": 16.50396}, {"t": 3323, "lpd": 16.75577, "rpd": 16.2969}, {"t": 3330, "lpd": 16.54379, "rpd": 16.56263}, {"t": 3336, "lpd": 16.74725, "rpd": 16.84591}, {"t": 3343, "lpd": 16.57038, "rpd": 16.85303}, {"t": 3350, "lpd": 16.66029, "rpd": 16.62363}, {"t": 3356, "lpd": 16.37946, "rpd": 16.53211}, {"t": 3363, "lpd": 16.23357, "rpd": 16.5366}, {"t": 3370, "lpd": 16.62079, "rpd": 16.65401}, {"t": 3377, "lpd": 16.56806, "rpd": 16.7237}, {"t": 3383, "lpd": 16.98305, "rpd": 16.32307}, {"t": 3390, "lpd": 16.90779, "rpd": 16.38648}, {"t": 3397, "lpd": 16.63811, "rpd": 16.53212}, {"t": 3403, "lpd": 16.69441, "rpd": 16.54627}, {"t": 3410, "lpd": 16.66117, "rpd": 16.66957}, {"t": 3417, "lpd": 16.73068, "rpd": 16.82976}, {"t": 3423, "lpd": 16.95754, "rpd": 16.72981}, {"t": 3430, "lpd": 17.03931, "rpd": 16.52316}, {"t": 3436, "lpd": 16.53532, "rpd": 16.71404}, {"t": 3444, "lpd": 16.78489, "rpd": 16.47268}, {"t": 3450, "lpd": 16.78508, "rpd": 16.5592}, {"t": 3457, "lpd": 16.64562, "rpd": 16.40029}, {"t": 3464, "lpd": 16.64562, "rpd": 16.37345}, {"t": 3470, "lpd": 16.69804, "rpd": 16.4553}, {"t": 3477, "lpd": 16.60252, "rpd": 16.29409}, {"t": 3484, "lpd": 16.64811, "rpd": 16.2598}, {"t": 3490, "lpd": 16.44987, "rpd": 16.11228}, {"t": 3497, "lpd": 16.61001, "rpd": 16.1274}, {"t": 3504, "lpd": 17.12271, "rpd": 16.18616}, {"t": 3511, "lpd": 17.12271, "rpd": 16.19082}, {"t": 3518, "lpd": 16.64009, "rpd": 16.03994}, {"t": 3524, "lpd": 16.17742, "rpd": 16.03372}, {"t": 3530, "lpd": 16.29991, "rpd": 16.02739}, {"t": 3537, "lpd": 16.24622, "rpd": 16.09799}, {"t": 3544, "lpd": 16.12889, "rpd": 16.18085}, {"t": 3551, "lpd": 16.24471, "rpd": 16.2017}, {"t": 3557, "lpd": 15.83747, "rpd": 16.2017}, {"t": 3564, "lpd": 15.83747, "rpd": 16.17279}, {"t": 3571, "lpd": 15.83747, "rpd": 16.17279}, {"t": 3577, "lpd": 15.93074, "rpd": 16.23248}, {"t": 3584, "lpd": 16.37223, "rpd": 16.21412}, {"t": 3591, "lpd": 16.37223, "rpd": 16.21412}, {"t": 3598, "lpd": 16.5487, "rpd": 16.21412}, {"t": 3604, "lpd": 16.70466, "rpd": 16.17707}, {"t": 3611, "lpd": 16.29424, "rpd": 16.17707}, {"t": 3618, "lpd": 16.59528, "rpd": 16.19278}, {"t": 3624, "lpd": 16.52934, "rpd": 16.20452}, {"t": 3631, "lpd": 16.38087, "rpd": 16.18358}, {"t": 3638, "lpd": 16.00253, "rpd": 16.17492}, {"t": 3644, "lpd": 16.24033, "rpd": 16.16974}, {"t": 3651, "lpd": 16.25721, "rpd": 16.30002}, {"t": 3658, "lpd": 16.36403, "rpd": 16.27925}, {"t": 3665, "lpd": 16.67686, "rpd": 16.90001}, {"t": 3671, "lpd": 16.47721, "rpd": 16.78144}, {"t": 3678, "lpd": 16.70752, "rpd": 16.22725}, {"t": 3685, "lpd": 16.98535, "rpd": 16.17499}, {"t": 3691, "lpd": 16.94254, "rpd": 16.67105}, {"t": 3698, "lpd": 16.845, "rpd": 16.64557}, {"t": 3705, "lpd": 16.88688, "rpd": 16.66401}, {"t": 3712, "lpd": 16.37544, "rpd": 16.83757}, {"t": 3718, "lpd": 17.0937, "rpd": 16.37268}, {"t": 3725, "lpd": 17.04685, "rpd": 16.23994}, {"t": 3731, "lpd": 17.02676, "rpd": 15.60873}, {"t": 3738, "lpd": 17.10172, "rpd": 16.08077}, {"t": 3745, "lpd": 17.0736, "rpd": 16.07812}, {"t": 3752, "lpd": 17.13548, "rpd": 15.66678}, {"t": 3758, "lpd": 16.89544, "rpd": 15.69315}, {"t": 3765, "lpd": 16.5809, "rpd": 15.72215}, {"t": 3772, "lpd": 16.24188, "rpd": 15.77137}, {"t": 3778, "lpd": 16.44118, "rpd": 15.7708}, {"t": 3785, "lpd": 16.37083, "rpd": 15.83431}, {"t": 3792, "lpd": 17.18192, "rpd": 16.42985}, {"t": 3798, "lpd": 17.30002, "rpd": 16.62696}, {"t": 3805, "lpd": 17.30686, "rpd": 16.73854}, {"t": 3812, "lpd": 17.14399, "rpd": 16.66411}, {"t": 3818, "lpd": 17.48222, "rpd": 16.59318}, {"t": 3825, "lpd": 17.35443, "rpd": 16.54676}, {"t": 3832, "lpd": 17.48946, "rpd": 16.67328}, {"t": 3839, "lpd": 16.80628, "rpd": 16.3934}, {"t": 3846, "lpd": 16.80628, "rpd": 16.95016}, {"t": 3852, "lpd": 16.83905, "rpd": 16.53008}, {"t": 3859, "lpd": 16.79494, "rpd": 16.53008}, {"t": 3865, "lpd": 16.70121, "rpd": 16.3934}, {"t": 3872, "lpd": 16.70121, "rpd": 16.38474}, {"t": 3879, "lpd": 16.71941, "rpd": 16.98584}, {"t": 3886, "lpd": 16.647, "rpd": 16.93334}, {"t": 3892, "lpd": 16.61848, "rpd": 17.02035}, {"t": 3899, "lpd": 16.67591, "rpd": 16.43813}, {"t": 3906, "lpd": 16.67591, "rpd": 16.94695}, {"t": 3913, "lpd": 16.67591, "rpd": 16.91364}, {"t": 3919, "lpd": 16.7542, "rpd": 16.36548}, {"t": 3926, "lpd": 17.02846, "rpd": 16.1053}, {"t": 3932, "lpd": 17.32632, "rpd": 16.49815}, {"t": 3939, "lpd": 16.71061, "rpd": 16.39245}, {"t": 3946, "lpd": 16.83867, "rpd": 16.40763}, {"t": 3953, "lpd": 17.47952, "rpd": 16.00348}, {"t": 3959, "lpd": 16.83598, "rpd": 16.19508}, {"t": 3966, "lpd": 16.69695, "rpd": 15.93921}, {"t": 3973, "lpd": 16.58103, "rpd": 16.31766}, {"t": 3979, "lpd": 16.58103, "rpd": 16.56493}, {"t": 3986, "lpd": 16.73462, "rpd": 16.43179}, {"t": 3993, "lpd": 16.6541, "rpd": 16.3787}, {"t": 3999, "lpd": 17.54721, "rpd": 16.28274}, {"t": 4006, "lpd": 17.6666, "rpd": 16.45514}, {"t": 4013, "lpd": 17.50098, "rpd": 16.36794}, {"t": 4020, "lpd": 17.47945, "rpd": 16.10196}, {"t": 4026, "lpd": 17.47945, "rpd": 16.04275}, {"t": 4033, "lpd": 17.48106, "rpd": 15.9147}, {"t": 4040, "lpd": 17.71295, "rpd": 16.11171}, {"t": 4046, "lpd": 17.51177, "rpd": 16.13056}, {"t": 4053, "lpd": 17.65555, "rpd": 15.96069}, {"t": 4060, "lpd": 17.6923, "rpd": 16.40105}, {"t": 4066, "lpd": 17.57369, "rpd": 16.33846}, {"t": 4073, "lpd": 17.70491, "rpd": 16.57788}, {"t": 4080, "lpd": 17.20745, "rpd": 16.67274}, {"t": 4086, "lpd": 16.85141, "rpd": 16.61133}, {"t": 4093, "lpd": 16.969, "rpd": 17.01241}, {"t": 4100, "lpd": 17.33156, "rpd": 17.30412}, {"t": 4106, "lpd": 16.93686, "rpd": 17.26062}, {"t": 4113, "lpd": 16.92711, "rpd": 17.29842}, {"t": 4120, "lpd": 17.19225, "rpd": 16.94519}, {"t": 4126, "lpd": 17.95628, "rpd": 15.85098}, {"t": 4133, "lpd": 17.05077, "rpd": 16.46011}, {"t": 4140, "lpd": 18.0032, "rpd": 16.62002}, {"t": 4146, "lpd": 17.33783, "rpd": 16.62496}, {"t": 4153, "lpd": 17.18532, "rpd": 16.62496}, {"t": 4160, "lpd": 17.40907, "rpd": 17.1245}, {"t": 4167, "lpd": 17.40907, "rpd": 16.65764}, {"t": 4173, "lpd": 17.40907, "rpd": 16.65764}, {"t": 4180, "lpd": 17.61233, "rpd": 17.1245}, {"t": 4187, "lpd": 17.61233, "rpd": 16.63744}, {"t": 4194, "lpd": 17.67551, "rpd": 16.78587}, {"t": 4200, "lpd": 17.51584, "rpd": 16.968}, {"t": 4207, "lpd": 17.3962, "rpd": 16.75947}, {"t": 4213, "lpd": 17.57245, "rpd": 16.72721}, {"t": 4221, "lpd": 17.66424, "rpd": 16.83154}, {"t": 4227, "lpd": 17.16068, "rpd": 17.01267}, {"t": 4234, "lpd": 17.11749, "rpd": 16.47342}, {"t": 4241, "lpd": 17.10823, "rpd": 16.74005}, {"t": 4247, "lpd": 16.91728, "rpd": 16.85843}, {"t": 4254, "lpd": 17.05865, "rpd": 17.17154}, {"t": 4260, "lpd": 17.40254, "rpd": 17.19489}, {"t": 4267, "lpd": 17.34152, "rpd": 17.2033}, {"t": 4274, "lpd": 17.63539, "rpd": 16.72976}, {"t": 4281, "lpd": 17.76397, "rpd": 16.87086}, {"t": 4287, "lpd": 17.09873, "rpd": 16.56992}, {"t": 4294, "lpd": 17.5484, "rpd": 16.57484}, {"t": 4301, "lpd": 17.54372, "rpd": 16.57959}, {"t": 4308, "lpd": 17.62638, "rpd": 16.55197}, {"t": 4314, "lpd": 17.5431, "rpd": 16.85921}, {"t": 4321, "lpd": 17.62318, "rpd": 17.34989}, {"t": 4327, "lpd": 17.8222, "rpd": 17.15114}, {"t": 4334, "lpd": 17.96171, "rpd": 16.69805}, {"t": 4341, "lpd": 16.86873, "rpd": 16.95203}, {"t": 4348, "lpd": 17.34237, "rpd": 17.02563}, {"t": 4355, "lpd": 17.74611, "rpd": 17.07758}, {"t": 4361, "lpd": 17.39361, "rpd": 17.23745}, {"t": 4368, "lpd": 17.39023, "rpd": 17.39543}, {"t": 4374, "lpd": 17.3098, "rpd": 17.18448}, {"t": 4381, "lpd": 17.06427, "rpd": 17.06699}, {"t": 4388, "lpd": 17.77524, "rpd": 16.99907}, {"t": 4394, "lpd": 17.54185, "rpd": 17.20627}, {"t": 4401, "lpd": 18.29512, "rpd": 16.87215}, {"t": 4408, "lpd": 17.94437, "rpd": 16.65407}, {"t": 4415, "lpd": 18.02975, "rpd": 16.82285}, {"t": 4421, "lpd": 17.66417, "rpd": 17.26727}, {"t": 4428, "lpd": 17.25612, "rpd": 17.49684}, {"t": 4435, "lpd": 17.35402, "rpd": 17.31146}, {"t": 4441, "lpd": 17.32589, "rpd": 17.07927}, {"t": 4448, "lpd": 17.26558, "rpd": 17.09525}, {"t": 4455, "lpd": 17.29778, "rpd": 17.16011}, {"t": 4461, "lpd": 17.49554, "rpd": 17.27666}, {"t": 4468, "lpd": 17.63642, "rpd": 17.31254}, {"t": 4475, "lpd": 17.7095, "rpd": 17.22702}, {"t": 4482, "lpd": 17.3173, "rpd": 16.99704}, {"t": 4488, "lpd": 17.77834, "rpd": 17.18112}, {"t": 4494, "lpd": 18.07123, "rpd": 17.01307}, {"t": 4502, "lpd": 17.89244, "rpd": 17.24763}, {"t": 4508, "lpd": 17.79508, "rpd": 17.08845}, {"t": 4515, "lpd": 17.9865, "rpd": 17.12687}, {"t": 4522, "lpd": 17.9865, "rpd": 17.33634}, {"t": 4528, "lpd": 17.97736, "rpd": 17.49473}, {"t": 4535, "lpd": 18.04208, "rpd": 17.5482}, {"t": 4542, "lpd": 17.84597, "rpd": 17.1986}, {"t": 4549, "lpd": 17.7095, "rpd": 16.80806}, {"t": 4555, "lpd": 17.66569, "rpd": 16.9178}, {"t": 4562, "lpd": 17.71695, "rpd": 16.80806}, {"t": 4569, "lpd": 17.5526, "rpd": 16.9178}, {"t": 4575, "lpd": 17.63105, "rpd": 16.81594}, {"t": 4582, "lpd": 17.69274, "rpd": 17.13576}, {"t": 4589, "lpd": 17.6242, "rpd": 16.91346}, {"t": 4595, "lpd": 17.6242, "rpd": 17.15662}, {"t": 4602, "lpd": 17.13538, "rpd": 17.32241}, {"t": 4609, "lpd": 17.12609, "rpd": 16.60008}, {"t": 4615, "lpd": 16.87653, "rpd": 16.89634}, {"t": 4622, "lpd": 17.21423, "rpd": 16.84383}, {"t": 4629, "lpd": 17.42483, "rpd": 16.74878}, {"t": 4636, "lpd": 17.43075, "rpd": 17.00166}, {"t": 4643, "lpd": 17.36775, "rpd": 16.93664}, {"t": 4649, "lpd": 17.48603, "rpd": 17.02645}, {"t": 4656, "lpd": 17.44375, "rpd": 17.10341}, {"t": 4663, "lpd": 17.77354, "rpd": 17.51697}, {"t": 4669, "lpd": 17.82138, "rpd": 17.0077}, {"t": 4676, "lpd": 17.27859, "rpd": 17.36375}, {"t": 4682, "lpd": 17.73323, "rpd": 17.2505}, {"t": 4689, "lpd": 17.79625, "rpd": 16.98642}, {"t": 4696, "lpd": 17.57269, "rpd": 17.08112}, {"t": 4702, "lpd": 17.5381, "rpd": 17.05183}, {"t": 4709, "lpd": 17.97883, "rpd": 16.81746}, {"t": 4716, "lpd": 17.67297, "rpd": 16.63174}, {"t": 4723, "lpd": 18.12142, "rpd": 17.54614}, {"t": 4729, "lpd": 15.50531, "rpd": 15.24999}, {"t": 4736, "lpd": 17.90294, "rpd": 17.43702}, {"t": 4743, "lpd": 18.31461, "rpd": 16.77954}, {"t": 4750, "lpd": 17.81335, "rpd": 16.30335}, {"t": 4756, "lpd": 18.51006, "rpd": 17.59936}, {"t": 4763, "lpd": 18.16117, "rpd": 17.20441}, {"t": 4770, "lpd": 18.16117, "rpd": 16.84481}, {"t": 4776, "lpd": 18.03335, "rpd": 16.96896}, {"t": 4783, "lpd": 17.7136, "rpd": 17.30729}, {"t": 4790, "lpd": 17.83422, "rpd": 17.18157}, {"t": 4796, "lpd": 18.23006, "rpd": 17.53321}, {"t": 4803, "lpd": 17.94477, "rpd": 16.66603}, {"t": 4810, "lpd": 17.7832, "rpd": 16.86804}, {"t": 4817, "lpd": 18.19834, "rpd": 16.75707}, {"t": 4823, "lpd": 18.1083, "rpd": 17.20291}, {"t": 4830, "lpd": 17.83046, "rpd": 17.2757}, {"t": 4836, "lpd": 17.33871, "rpd": 16.84688}, {"t": 4843, "lpd": 17.79118, "rpd": 16.86804}, {"t": 4850, "lpd": 17.71906, "rpd": 16.54248}, {"t": 4857, "lpd": 17.43238, "rpd": 17.41962}, {"t": 4863, "lpd": 17.74515, "rpd": 17.1745}, {"t": 4870, "lpd": 17.71799, "rpd": 17.24739}, {"t": 4877, "lpd": 17.40507, "rpd": 17.17042}, {"t": 4884, "lpd": 17.13223, "rpd": 16.92398}, {"t": 4890, "lpd": 17.19886, "rpd": 16.92398}, {"t": 4897, "lpd": 17.04419, "rpd": 17.18364}, {"t": 4903, "lpd": 17.46504, "rpd": 17.49052}, {"t": 4910, "lpd": 17.7414, "rpd": 17.49499}, {"t": 4917, "lpd": 17.97508, "rpd": 16.95744}, {"t": 4924, "lpd": 17.83862, "rpd": 16.85941}, {"t": 4930, "lpd": 17.78423, "rpd": 17.169}, {"t": 4937, "lpd": 17.94667, "rpd": 17.25595}, {"t": 4944, "lpd": 17.58777, "rpd": 16.98664}, {"t": 4950, "lpd": 17.64256, "rpd": 16.84076}, {"t": 4957, "lpd": 17.63085, "rpd": 16.82455}, {"t": 4964, "lpd": 17.55619, "rpd": 16.49027}, {"t": 4971, "lpd": 17.18253, "rpd": 16.82759}, {"t": 4977, "lpd": 16.97955, "rpd": 16.81681}, {"t": 4984, "lpd": 17.0271, "rpd": 16.79555}, {"t": 4991, "lpd": 17.42076, "rpd": 16.31437}, {"t": 4997, "lpd": 17.17992, "rpd": 17.11135}, {"t": 5004, "lpd": 17.48381, "rpd": 17.24246}, {"t": 5011, "lpd": 17.08821, "rpd": 17.18917}, {"t": 5018, "lpd": 17.68028, "rpd": 17.49604}, {"t": 5024, "lpd": 17.60624, "rpd": 16.97673}, {"t": 5031, "lpd": 17.48886, "rpd": 16.62291}, {"t": 5038, "lpd": 17.64402, "rpd": 16.48494}, {"t": 5045, "lpd": 17.27765, "rpd": 17.06565}, {"t": 5051, "lpd": 17.32055, "rpd": 17.13335}, {"t": 5058, "lpd": 16.79773, "rpd": 16.75397}, {"t": 5064, "lpd": 16.75385, "rpd": 16.16848}, {"t": 5071, "lpd": 15.0302, "rpd": 13.09378}, {"t": 5078, "lpd": 10.81056, "rpd": null}, {"t": 5205, "lpd": 17.03154, "rpd": 16.05445}, {"t": 5212, "lpd": 16.69886, "rpd": 16.36155}, {"t": 5219, "lpd": 16.77059, "rpd": 16.69782}, {"t": 5225, "lpd": 16.59815, "rpd": 17.02773}, {"t": 5232, "lpd": 16.85921, "rpd": 16.59411}, {"t": 5238, "lpd": 17.27311, "rpd": 16.70832}, {"t": 5245, "lpd": 17.35369, "rpd": 16.763}, {"t": 5252, "lpd": 16.41873, "rpd": 16.54381}, {"t": 5258, "lpd": 17.30221, "rpd": 16.57808}, {"t": 5265, "lpd": 17.24355, "rpd": 16.56222}, {"t": 5272, "lpd": 17.5692, "rpd": 16.6783}, {"t": 5279, "lpd": 17.17227, "rpd": 16.763}, {"t": 5285, "lpd": 16.81865, "rpd": 17.24145}, {"t": 5291, "lpd": 16.57333, "rpd": 17.15825}, {"t": 5299, "lpd": 16.59925, "rpd": 16.62909}, {"t": 5305, "lpd": 17.23914, "rpd": 17.10351}, {"t": 5312, "lpd": 16.82947, "rpd": 16.96261}, {"t": 5319, "lpd": 16.92419, "rpd": 17.12514}, {"t": 5325, "lpd": 16.96527, "rpd": 16.82251}, {"t": 5332, "lpd": 17.1708, "rpd": 16.81078}, {"t": 5339, "lpd": 17.06291, "rpd": 16.73145}, {"t": 5345, "lpd": 16.62664, "rpd": 16.41989}, {"t": 5352, "lpd": 16.87032, "rpd": 17.42937}, {"t": 5358, "lpd": 17.28134, "rpd": 16.51339}, {"t": 5365, "lpd": 17.10735, "rpd": 16.74256}, {"t": 5373, "lpd": 17.29141, "rpd": 16.37983}, {"t": 5379, "lpd": 16.70908, "rpd": 15.61791}, {"t": 5386, "lpd": 16.93982, "rpd": 16.95518}, {"t": 5392, "lpd": 16.70196, "rpd": 16.56326}, {"t": 5399, "lpd": 17.00455, "rpd": 15.90398}, {"t": 5406, "lpd": 17.12118, "rpd": 16.00242}, {"t": 5412, "lpd": 16.90999, "rpd": 15.84959}, {"t": 5419, "lpd": 16.86228, "rpd": 16.10704}, {"t": 5426, "lpd": 17.08916, "rpd": 16.04495}, {"t": 5432, "lpd": 17.63842, "rpd": 16.12041}, {"t": 5439, "lpd": 17.41891, "rpd": 16.26957}, {"t": 5446, "lpd": 17.15688, "rpd": 16.77194}, {"t": 5452, "lpd": 17.40247, "rpd": 16.71308}, {"t": 5459, "lpd": 17.36098, "rpd": 16.42271}, {"t": 5466, "lpd": 17.77694, "rpd": 16.55972}, {"t": 5472, "lpd": 17.606, "rpd": 16.38754}, {"t": 5479, "lpd": 17.60763, "rpd": 17.11488}, {"t": 5486, "lpd": 17.68417, "rpd": 17.18082}, {"t": 5492, "lpd": 17.45957, "rpd": 17.03253}, {"t": 5499, "lpd": 17.23933, "rpd": 17.25704}, {"t": 5506, "lpd": 17.06993, "rpd": 17.35637}, {"t": 5513, "lpd": 17.01809, "rpd": 16.98781}, {"t": 5519, "lpd": 16.90887, "rpd": 16.61254}, {"t": 5526, "lpd": 17.5123, "rpd": 16.91659}, {"t": 5533, "lpd": 17.51515, "rpd": 16.26275}, {"t": 5540, "lpd": 17.44108, "rpd": 16.67388}, {"t": 5546, "lpd": 17.567, "rpd": 17.14215}, {"t": 5553, "lpd": 17.65837, "rpd": 16.48115}, {"t": 5560, "lpd": 17.72366, "rpd": 17.14774}, {"t": 5566, "lpd": 18.56905, "rpd": 17.12541}, {"t": 5573, "lpd": 17.89691, "rpd": 17.28797}, {"t": 5580, "lpd": 18.21485, "rpd": 17.42243}, {"t": 5586, "lpd": 18.46688, "rpd": 17.96673}, {"t": 5593, "lpd": 18.54884, "rpd": 17.05369}, {"t": 5600, "lpd": 18.22053, "rpd": 17.179}, {"t": 5607, "lpd": 17.85772, "rpd": 18.08161}, {"t": 5613, "lpd": 17.76901, "rpd": 17.71576}, {"t": 5620, "lpd": 18.19849, "rpd": 17.53629}, {"t": 5627, "lpd": 18.16597, "rpd": 18.34788}, {"t": 5634, "lpd": 17.98932, "rpd": 18.1285}, {"t": 5640, "lpd": 18.06101, "rpd": 18.03963}, {"t": 5647, "lpd": 17.99532, "rpd": 18.08727}, {"t": 5654, "lpd": 17.92435, "rpd": 17.81787}, {"t": 5661, "lpd": 17.99043, "rpd": 18.42298}, {"t": 5667, "lpd": 17.69313, "rpd": 18.14372}, {"t": 5674, "lpd": 17.27808, "rpd": 17.87658}, {"t": 5680, "lpd": 17.27808, "rpd": 17.90459}, {"t": 5688, "lpd": 18.04552, "rpd": 18.18031}, {"t": 5694, "lpd": 17.25117, "rpd": 18.26044}, {"t": 5700, "lpd": 17.52402, "rpd": 18.18958}, {"t": 5707, "lpd": 17.98047, "rpd": 18.20205}, {"t": 5714, "lpd": 17.66119, "rpd": 17.72405}, {"t": 5721, "lpd": 17.45942, "rpd": 17.72503}, {"t": 5728, "lpd": 18.27205, "rpd": 17.70602}, {"t": 5734, "lpd": 17.83557, "rpd": 17.77612}, {"t": 5741, "lpd": 18.47738, "rpd": 17.91299}, {"t": 5748, "lpd": 18.52798, "rpd": 17.90062}, {"t": 5754, "lpd": 18.32329, "rpd": 17.68811}, {"t": 5761, "lpd": 18.34219, "rpd": 17.78403}, {"t": 5768, "lpd": 17.8121, "rpd": 17.7942}, {"t": 5774, "lpd": 17.85869, "rpd": 17.62769}, {"t": 5781, "lpd": 18.42484, "rpd": 17.78242}, {"t": 5788, "lpd": 17.78319, "rpd": 17.74549}, {"t": 5795, "lpd": 17.86617, "rpd": 17.81835}, {"t": 5801, "lpd": 18.13655, "rpd": 17.81835}, {"t": 5808, "lpd": 18.42152, "rpd": 17.91201}, {"t": 5815, "lpd": 18.17137, "rpd": 17.94725}, {"t": 5821, "lpd": 17.92416, "rpd": 18.05976}, {"t": 5828, "lpd": 18.48014, "rpd": 17.88795}, {"t": 5834, "lpd": 18.13607, "rpd": 18.12556}, {"t": 5841, "lpd": 18.30787, "rpd": 17.69964}, {"t": 5848, "lpd": 18.57196, "rpd": 18.37602}, {"t": 5854, "lpd": 18.32898, "rpd": 17.59798}, {"t": 5862, "lpd": 18.31495, "rpd": 17.94761}, {"t": 5868, "lpd": 18.39992, "rpd": 18.06198}], "_meta": {"source": "AdSERP raw signals \u2014 no NB15 derivatives", "t0_unix_ms": 1678715325708, "n_cursor": 45, "n_fixations": 26, "n_pupil": 835}};
+const W = 1280;
+const DOC_H = TRIAL.doc_height;
+const DUR = Math.max(1, TRIAL.duration_ms);
+
+// Container sizing
+const serpImg = document.getElementById('serp-img');
+const aoiSvg = document.getElementById('aoi-svg');
+const overlaySvg = document.getElementById('overlay-svg');
+const cursor = document.getElementById('mouse-cursor');
+const viewer = document.getElementById('viewer');
+const playhead = document.getElementById('playhead');
+
+serpImg.addEventListener('load', () => {
+  const h = serpImg.naturalHeight;
+  for (const svg of [aoiSvg, overlaySvg]) {
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', h);
+    svg.setAttribute('viewBox', `0 0 ${W} ${h}`);
+  }
+  drawAOIs();
+  drawCursorTrail();
+  drawGazeFixations();
+});
+
+// ── AOI overlay ───────────────────────────────────────────────────────
+const AOI_STYLE = {
+  organic_result: { stroke: '#22c55e', fill: 'rgba(34,197,94,0.06)', label: '#22c55e' },
+  native_ad:      { stroke: '#dc2626', fill: 'rgba(220,38,38,0.06)', label: '#dc2626' },
+  dd_top:         { stroke: '#f97316', fill: 'rgba(249,115,22,0.06)', label: '#f97316' },
+  dd_right:       { stroke: '#a855f7', fill: 'rgba(168,85,247,0.06)', label: '#a855f7' },
+};
+function drawAOIs() {
+  aoiSvg.innerHTML = '';
+  for (const [kind, items] of Object.entries(TRIAL.bboxes)) {
+    const s = AOI_STYLE[kind]; if (!s) continue;
+    items.forEach((it, i) => {
+      const x = it.location.x, y = it.location.y;
+      const w = it.size.width, h = it.size.height;
+      const rect = mkSvg('rect', {x, y, width: w, height: h, fill: s.fill, stroke: s.stroke, 'stroke-width': 2});
+      aoiSvg.appendChild(rect);
+      const label = kind === 'organic_result' ? `O${it.position}` : kind.replace('_', ' ');
+      const tx = mkSvg('text', {x: x + 6, y: y + 18, fill: s.label, 'font-family': 'monospace', 'font-size': 12, 'font-weight': 'bold', stroke: '#000', 'stroke-width': 3, 'paint-order': 'stroke'});
+      tx.textContent = label;
+      aoiSvg.appendChild(tx);
+    });
+  }
+}
+
+// ── Window slider ─────────────────────────────────────────────────────
+// Slider 0..7: 250ms, 500ms, 1s, 2s, 5s, 10s, 30s, ALL
+const WINDOW_STEPS = [250, 500, 1000, 2000, 5000, 10000, 30000, Infinity];
+const WINDOW_LABELS = ['250ms', '500ms', '1s', '2s', '5s', '10s', '30s', 'All'];
+let windowMs = Infinity;     // current window
+let cursorVisible = true;
+let trailEnabled = true;
+
+function ensureGlowDef() {
+  let defs = overlaySvg.querySelector('defs');
+  if (defs) return;
+  defs = mkSvg('defs', {});
+  defs.innerHTML = `<filter id="trail-glow" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>`;
+  overlaySvg.appendChild(defs);
+}
+
+// ── Cursor trail (windowed: shows samples in [currentT - windowMs, currentT]) ─
+function drawCursorTrail() {
+  document.querySelectorAll('.cursor-trail').forEach(e => e.remove());
+  if (!trailEnabled || !TRIAL.cursor.length) return;
+  ensureGlowDef();
+  const tLo = currentT - windowMs;
+  const moves = TRIAL.cursor.filter(c => (c.event === 'mousemove' || c.event === 'click') && c.t <= currentT && c.t >= tLo);
+  if (moves.length < 2) return;
+  let d = `M ${moves[0].x} ${moves[0].y}`;
+  for (let i = 1; i < moves.length; i++) d += ` L ${moves[i].x} ${moves[i].y}`;
+  const halo = mkSvg('path', {d, stroke: '#000', 'stroke-width': 5, 'stroke-opacity': 0.45, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round'});
+  halo.classList.add('cursor-trail');
+  overlaySvg.appendChild(halo);
+  const path = mkSvg('path', {d, stroke: '#ff9933', 'stroke-width': 2.5, 'stroke-opacity': 0.95, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', filter: 'url(#trail-glow)'});
+  path.classList.add('cursor-trail');
+  overlaySvg.appendChild(path);
+  moves.forEach(m => {
+    const dot = mkSvg('circle', {cx: m.x, cy: m.y, r: 2, fill: '#fff', stroke: '#ff9933', 'stroke-width': 1, 'fill-opacity': 0.85});
+    dot.classList.add('cursor-trail');
+    overlaySvg.appendChild(dot);
+  });
+  // Click markers — only those within the window AND at-or-before currentT
+  TRIAL.cursor.filter(c => c.event === 'click' && c.t <= currentT && c.t >= tLo).forEach(c => {
+    const halo2 = mkSvg('circle', {cx: c.x, cy: c.y, r: 16, fill: 'rgba(239,68,68,0.2)', stroke: 'none'});
+    halo2.classList.add('cursor-trail');
+    overlaySvg.appendChild(halo2);
+    const star = mkSvg('circle', {cx: c.x, cy: c.y, r: 10, fill: 'none', stroke: '#ef4444', 'stroke-width': 3});
+    star.classList.add('cursor-trail');
+    overlaySvg.appendChild(star);
+  });
+}
+
+// ── Gaze fixations (optional secondary layer) ─────────────────────────
+let gazeVisible = false;
+function drawGazeFixations() {
+  document.querySelectorAll('.gaze-fix').forEach(e => e.remove());
+  if (!gazeVisible) return;
+  const tLo = currentT - windowMs;
+  TRIAL.fixations.forEach((f, i) => {
+    if (f.t > currentT || f.t < tLo) return;
+    const r = Math.max(8, Math.min(28, 8 + f.duration / 30));
+    const c = mkSvg('circle', {cx: f.x, cy: f.y, r, fill: 'rgba(80,192,224,0.18)', stroke: '#50c0e0', 'stroke-width': 1.5});
+    c.classList.add('gaze-fix');
+    overlaySvg.appendChild(c);
+    const t = mkSvg('text', {x: f.x, y: f.y + 4, 'text-anchor': 'middle', fill: '#fff', 'font-family': 'monospace', 'font-size': 10, 'font-weight': 'bold', stroke: '#000', 'stroke-width': 2, 'paint-order': 'stroke'});
+    t.textContent = i + 1;
+    t.classList.add('gaze-fix');
+    overlaySvg.appendChild(t);
+  });
+}
+
+// ── Timeline canvases ─────────────────────────────────────────────────
+function paintLineSeries(canvasId, samples, valFn, color) {
+  const cv = document.getElementById(canvasId);
+  if (!cv || !samples.length) return;
+  const rect = cv.getBoundingClientRect();
+  cv.width = Math.max(1, Math.floor(rect.width * devicePixelRatio));
+  cv.height = Math.max(1, Math.floor(rect.height * devicePixelRatio));
+  const ctx = cv.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  const vals = samples.map(valFn).filter(v => v != null && isFinite(v));
+  if (!vals.length) return;
+  const vmin = Math.min(...vals), vmax = Math.max(...vals);
+  const span = vmax - vmin || 1;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  let started = false;
+  for (const s of samples) {
+    const v = valFn(s);
+    if (v == null || !isFinite(v)) continue;
+    const x = s.t / DUR * rect.width;
+    const y = rect.height - ((v - vmin) / span) * (rect.height - 2) - 1;
+    if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+  }
+  ctx.stroke();
+}
+
+function paintAOIBands(canvasId) {
+  const cv = document.getElementById(canvasId);
+  if (!cv) return;
+  const rect = cv.getBoundingClientRect();
+  cv.width = Math.max(1, Math.floor(rect.width * devicePixelRatio));
+  cv.height = Math.max(1, Math.floor(rect.height * devicePixelRatio));
+  const ctx = cv.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  // For each cursor sample, find which AOI (if any) contains it; paint a band per run
+  let prev = null, runStart = 0;
+  for (let i = 0; i < TRIAL.cursor.length; i++) {
+    const s = TRIAL.cursor[i];
+    const aoi = aoiAt(s.x, s.y);
+    const key = aoi ? `${aoi.kind}:${aoi.label}` : null;
+    if (key !== prev) {
+      if (prev) drawBand(ctx, rect, runStart, s.t, prev);
+      runStart = s.t;
+      prev = key;
+    }
+  }
+  if (prev) drawBand(ctx, rect, runStart, DUR, prev);
+}
+function drawBand(ctx, rect, t0, t1, key) {
+  const [kind] = key.split(':');
+  const s = AOI_STYLE[kind]; if (!s) return;
+  const x0 = t0 / DUR * rect.width;
+  const x1 = t1 / DUR * rect.width;
+  ctx.fillStyle = s.stroke;
+  ctx.globalAlpha = 0.7;
+  ctx.fillRect(x0, 4, Math.max(1, x1 - x0), rect.height - 8);
+  ctx.globalAlpha = 1;
+}
+
+function aoiAt(x, y) {
+  for (const [kind, items] of Object.entries(TRIAL.bboxes)) {
+    for (const it of items) {
+      const ix = it.location.x, iy = it.location.y;
+      const iw = it.size.width, ih = it.size.height;
+      if (x >= ix && x <= ix + iw && y >= iy && y <= iy + ih) {
+        return { kind, label: it.position != null ? `${kind} ${it.position}` : kind };
+      }
+    }
+  }
+  return null;
+}
+
+// ── Time control ──────────────────────────────────────────────────────
+let currentT = 0;
+let playing = false;
+let lastFrameTime = 0;
+
+function setTime(t) {
+  currentT = Math.max(0, Math.min(DUR, t));
+  updateCursor();
+  updatePlayhead();
+  updateInfo();
+  // Re-draw windowed overlays (cheap; max ~400 SVG elems)
+  drawCursorTrail();
+  drawGazeFixations();
+}
+
+function updateCursor() {
+  // Find nearest cursor sample at or before currentT
+  if (!TRIAL.cursor.length) return;
+  let s = TRIAL.cursor[0];
+  for (const c of TRIAL.cursor) {
+    if (c.t <= currentT) s = c; else break;
+  }
+  cursor.style.left = s.x + 'px';
+  cursor.style.top = s.y + 'px';
+  cursor.classList.toggle('clicking', s.event === 'click' || s.event === 'mousedown');
+
+  // Auto-scroll viewer to keep cursor in view
+  const vrect = viewer.getBoundingClientRect();
+  const fy = s.y - viewer.scrollTop;
+  if (fy < 60 || fy > vrect.height - 60) {
+    viewer.scrollTo({top: s.y - vrect.height / 2, behavior: 'smooth'});
+  }
+}
+
+function updatePlayhead() {
+  const tracks = document.getElementById('timeline-tracks');
+  const firstTrack = tracks.querySelector('.timeline-track');
+  if (!firstTrack) return;
+  const tr = firstTrack.getBoundingClientRect();
+  const tc = tracks.getBoundingClientRect();
+  const off = tr.left - tc.left;
+  playhead.style.left = (off + (currentT / DUR) * tr.width) + 'px';
+}
+
+function updateInfo() {
+  document.getElementById('time-label').textContent = `${(currentT / 1000).toFixed(2)}s / ${(DUR / 1000).toFixed(2)}s`;
+  let s = TRIAL.cursor[0];
+  for (const c of TRIAL.cursor) { if (c.t <= currentT) s = c; else break; }
+  if (s) {
+    document.getElementById('info-pos').textContent = `(${Math.round(s.x)}, ${Math.round(s.y)})`;
+    const aoi = aoiAt(s.x, s.y);
+    document.getElementById('aoi-label').textContent = aoi ? aoi.label : 'no AOI';
+  }
+}
+
+// Playback animation
+function tick(now) {
+  if (!playing) return;
+  const dt = lastFrameTime ? now - lastFrameTime : 16;
+  lastFrameTime = now;
+  setTime(currentT + dt);
+  if (currentT >= DUR) { stopPlay(); return; }
+  requestAnimationFrame(tick);
+}
+function startPlay() {
+  if (currentT >= DUR) currentT = 0;
+  playing = true;
+  lastFrameTime = 0;
+  document.getElementById('play-btn').textContent = '⏸ Pause';
+  document.getElementById('play-btn').classList.add('active');
+  requestAnimationFrame(tick);
+}
+function stopPlay() {
+  playing = false;
+  document.getElementById('play-btn').textContent = '▶ Play';
+  document.getElementById('play-btn').classList.remove('active');
+}
+
+// ── Wire up controls ──────────────────────────────────────────────────
+document.getElementById('play-btn').addEventListener('click', () => {
+  if (playing) stopPlay(); else startPlay();
+});
+document.getElementById('reset-btn').addEventListener('click', () => {
+  stopPlay(); setTime(DUR); viewer.scrollTo({top: 0});
+});
+document.getElementById('aoi-btn').addEventListener('click', (e) => {
+  aoiSvg.style.display = aoiSvg.style.display === 'none' ? '' : 'none';
+  e.target.classList.toggle('active');
+});
+document.getElementById('cursor-btn').addEventListener('click', (e) => {
+  trailEnabled = !trailEnabled;
+  drawCursorTrail();
+  e.target.classList.toggle('active');
+});
+document.getElementById('gaze-btn').addEventListener('click', (e) => {
+  gazeVisible = !gazeVisible;
+  drawGazeFixations();
+  e.target.classList.toggle('active');
+});
+// Window slider
+const wSlider = document.getElementById('window-slider');
+const wLabel = document.getElementById('window-label');
+wSlider.addEventListener('input', () => {
+  const idx = parseInt(wSlider.value);
+  windowMs = WINDOW_STEPS[idx];
+  wLabel.textContent = WINDOW_LABELS[idx];
+  drawCursorTrail();
+  drawGazeFixations();
+});
+
+// Timeline scrub: click + drag
+const tracks = document.getElementById('timeline-tracks');
+let scrubbing = false;
+function tlScrub(e) {
+  const firstTrack = tracks.querySelector('.timeline-track');
+  const r = firstTrack.getBoundingClientRect();
+  const p = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  setTime(p * DUR);
+}
+tracks.addEventListener('mousedown', (e) => {
+  scrubbing = true;
+  stopPlay();
+  tlScrub(e);
+  e.preventDefault();
+});
+window.addEventListener('mousemove', (e) => { if (scrubbing) tlScrub(e); });
+window.addEventListener('mouseup', () => { scrubbing = false; });
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); if (playing) stopPlay(); else startPlay(); }
+  if (e.key === 'ArrowRight') { setTime(currentT + 100); stopPlay(); }
+  if (e.key === 'ArrowLeft') { setTime(currentT - 100); stopPlay(); }
+  if (e.key === 'Home') { setTime(0); }
+  if (e.key === 'End') { setTime(DUR); }
+});
+
+// ── Initial paint ─────────────────────────────────────────────────────
+function paintAllTracks() {
+  paintAOIBands('cv-aoi');
+  paintLineSeries('cv-cursor', TRIAL.cursor.filter(c => c.event === 'mousemove'), s => Math.hypot(s.x, s.y), '#ff9933');
+  paintLineSeries('cv-xy', TRIAL.xy_delta, s => s.speed, '#ffd040');
+  paintLineSeries('cv-pupil', TRIAL.pupil, s => (s.lpd != null && s.rpd != null) ? (s.lpd + s.rpd) / 2 : (s.lpd || s.rpd), '#40e0ff');
+  paintLineSeries('cv-gaze-x', TRIAL.fixations, s => s.x, '#e0e050');
+  paintLineSeries('cv-gaze-y', TRIAL.fixations, s => s.y, '#50c0e0');
+}
+
+// Info panel populates immediately
+document.getElementById('info-doc').textContent = `${W} × ${DOC_H}`;
+document.getElementById('info-cursor').textContent = TRIAL.cursor.length;
+document.getElementById('info-fix').textContent = TRIAL.fixations.length;
+document.getElementById('info-pupil').textContent = TRIAL.pupil.length;
+
+// Wait for image to size svgs, then paint everything.
+// Default: park playhead at end so the full trail is visible up-front.
+window.addEventListener('load', () => {
+  setTimeout(() => { paintAllTracks(); setTime(DUR); }, 50);
+});
+window.addEventListener('resize', paintAllTracks);
+
+// SVG helper
+function mkSvg(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+</script></body></html>

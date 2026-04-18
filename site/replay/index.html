@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>AR Replay — AdSERP trial viewer</title>
+<style>
+body { background: #111; color: #eee; font-family: system-ui, -apple-system, sans-serif; padding: 32px; max-width: 1280px; margin: 0 auto; }
+h1 { font-size: 22px; margin-bottom: 6px; }
+.lede { color: #aaa; font-size: 13px; margin-bottom: 24px; line-height: 1.5; }
+.lede a { color: #6af; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+.card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; text-decoration: none; color: #eee; transition: border-color 0.15s, transform 0.15s; }
+.card:hover { border-color: #4a8aca; transform: translateY(-1px); }
+.card h2 { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #ff9933; }
+.card .query { font-size: 12px; color: #aaa; margin-bottom: 12px; min-height: 32px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11px; color: #888; }
+.stats .v { color: #ddd; font-weight: 600; display: block; font-size: 13px; }
+.crumbs { color: #666; font-size: 11px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #222; }
+</style></head><body>
+<h1>AdSERP Replay</h1>
+<p class="lede">Cursor-first replay of the <a href="https://github.com/kayhan-latifzadeh/AdSERP">AdSERP dataset</a> on its shipped 1280-wide screenshots. Pupil + gaze + cursor + |Δ|/ms timeline. Sibling to the <a href="../index.html">live testbed</a>.</p>
+<div class="grid">
+  
+        <a class="card" href="trials/p007-b6-t8.html">
+          <h2>p007-b6-t8</h2>
+          <div class="query">buy-dermalogica-dermalogica-active-moist-3-5oz</div>
+          <div class="stats">
+            <span><span class="v">20.3s</span>duration</span>
+            <span><span class="v">363</span>cursor</span>
+            <span><span class="v">9</span>organic</span>
+            <span><span class="v">5</span>ads</span>
+          </div>
+        </a>
+        
+        <a class="card" href="trials/p013-b2-t3.html">
+          <h2>p013-b2-t3</h2>
+          <div class="query">buy-romantic-music-for-cello</div>
+          <div class="stats">
+            <span><span class="v">3.3s</span>duration</span>
+            <span><span class="v">46</span>cursor</span>
+            <span><span class="v">9</span>organic</span>
+            <span><span class="v">5</span>ads</span>
+          </div>
+        </a>
+        
+        <a class="card" href="trials/p024-b3-t5.html">
+          <h2>p024-b3-t5</h2>
+          <div class="query">buy-lego-lego-dinosaurs-mosasaurus-6721</div>
+          <div class="stats">
+            <span><span class="v">16.7s</span>duration</span>
+            <span><span class="v">196</span>cursor</span>
+            <span><span class="v">11</span>organic</span>
+            <span><span class="v">4</span>ads</span>
+          </div>
+        </a>
+        
+        <a class="card" href="trials/p032-b6-t8.html">
+          <h2>p032-b6-t8</h2>
+          <div class="query">buy-hartleys-hartleys-lemon-jelly-135g</div>
+          <div class="stats">
+            <span><span class="v">2.3s</span>duration</span>
+            <span><span class="v">49</span>cursor</span>
+            <span><span class="v">10</span>organic</span>
+            <span><span class="v">3</span>ads</span>
+          </div>
+        </a>
+        
+        <a class="card" href="trials/p047-b1-t9.html">
+          <h2>p047-b1-t9</h2>
+          <div class="query">buy-dayco-dayco-wp259k2a-timing-belt-kit</div>
+          <div class="stats">
+            <span><span class="v">16.4s</span>duration</span>
+            <span><span class="v">412</span>cursor</span>
+            <span><span class="v">5</span>organic</span>
+            <span><span class="v">8</span>ads</span>
+          </div>
+        </a>
+        
+        <a class="card" href="trials/p049-b2-t6.html">
+          <h2>p049-b2-t6</h2>
+          <div class="query">buy-robert-sorby-robert-sorby-410-sandmaster</div>
+          <div class="stats">
+            <span><span class="v">5.9s</span>duration</span>
+            <span><span class="v">45</span>cursor</span>
+            <span><span class="v">11</span>organic</span>
+            <span><span class="v">3</span>ads</span>
+          </div>
+        </a>
+        
+</div>
+<div class="crumbs">Built from raw AdSERP signals — no NB15 derivatives. Organic AOIs from CV row-projection (see <code>attentional-foraging/scripts/extract_organic_bboxes.py</code>).</div>
+</body></html>

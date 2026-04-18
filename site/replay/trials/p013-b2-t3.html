@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>AR Replay: p013-b2-t3</title>
+<meta name="viewport" content="width=1280">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #111; color: #eee; font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; }
+.header { width: 1280px; padding: 10px 16px; background: #1a1a1a; border-bottom: 1px solid #333;
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.header h1 { font-size: 14px; font-weight: 600; }
+.header h1 span { color: #aaa; font-weight: 400; }
+.controls { display: flex; gap: 12px; align-items: center; font-size: 12px; }
+.btn { background: #333; border: 1px solid #555; color: #eee; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+.btn:hover { background: #444; }
+.btn.active { background: #2a5a8a; border-color: #4a8aca; }
+.viewer { position: relative; width: 1280px; height: 70vh; overflow-y: auto; overflow-x: hidden; background: #000; }
+.serp-container { position: relative; width: 1280px; }
+#serp-img { width: 1280px; display: block; }
+.overlay-svg { position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; }
+.aoi-svg { position: absolute; top: 0; left: 0; z-index: 5; pointer-events: none; }
+.mouse-cursor { position: absolute; z-index: 999; pointer-events: none;
+  width: 20px; height: 28px; transition: left 0.05s linear, top 0.05s linear; }
+.mouse-cursor svg { width: 20px; height: 28px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.7)); }
+.mouse-cursor.clicking svg path { fill: #ff3333; }
+.timeline { width: 1280px; background: #1a1a1a; padding: 6px 16px; border-top: 1px solid #333; }
+.timeline-tracks { position: relative; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.timeline-row { display: flex; align-items: stretch; height: 26px; margin-bottom: 1px; }
+.timeline-row:last-child { margin-bottom: 0; }
+.timeline-label { width: 70px; flex-shrink: 0; font-size: 9px; font-weight: 700; display: flex; align-items: center; padding-right: 6px; text-align: right; justify-content: flex-end; text-transform: uppercase; letter-spacing: 0.5px; position: relative; z-index: 3; background: #1a1a1a; }
+.timeline-label.lbl-cursor { color: #ff9933; text-shadow: 0 0 6px rgba(255,153,51,0.4); }
+.timeline-label.lbl-xy-delta { color: #ffd040; text-shadow: 0 0 6px rgba(255,208,64,0.4); }
+.timeline-label.lbl-pupil { color: #40e0ff; text-shadow: 0 0 6px rgba(64,224,255,0.4); }
+.timeline-label.lbl-gaze-x { color: #e0e050; text-shadow: 0 0 6px rgba(224,224,80,0.4); }
+.timeline-label.lbl-gaze-y { color: #50c0e0; text-shadow: 0 0 6px rgba(80,192,224,0.4); }
+.timeline-label.lbl-aoi { color: #c8a8f0; text-shadow: 0 0 6px rgba(200,168,240,0.4); }
+.timeline-track { position: relative; flex: 1; background: #222; border-radius: 2px; overflow: hidden; }
+.timeline-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.timeline-playhead { position: absolute; top: 0; width: 2px; height: 100%; background: #ff4444; z-index: 4; pointer-events: none; }
+.timeline-info { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: #aaa; padding-left: 76px; }
+.info-panel { width: 1280px; padding: 6px 16px; background: #1a1a1a; font-size: 11px; color: #aaa;
+  display: flex; gap: 20px; border-top: 1px solid #222; flex-wrap: wrap; }
+.info-panel .val { color: #ccc; }
+.info-panel a { color: #ff9933; text-decoration: none; font-weight: 600; }
+.info-panel a:hover { text-decoration: underline; }
+.back { font-size: 12px; }
+.back a { color: #6af; text-decoration: none; }
+.footer-note { width: 1280px; padding: 6px 16px; background: #1a1a1a; font-size: 10px; color: #666; border-top: 1px solid #222; }
+</style></head><body>
+<div class="header">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span class="back"><a href="index.html">&larr; All trials</a></span>
+    <h1>p013-b2-t3 <span>— buy-romantic-music-for-cello</span></h1>
+  </div>
+  <div class="controls">
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;">
+      Window <input type="range" id="window-slider" min="0" max="7" value="7" style="width:90px;vertical-align:middle;">
+      <span id="window-label" style="min-width:36px;display:inline-block;">All</span>
+    </label>
+    <button class="btn active" id="aoi-btn">AOIs</button>
+    <button class="btn active" id="cursor-btn">Cursor trail</button>
+    <button class="btn" id="gaze-btn">Gaze fixations</button>
+    <button class="btn" id="play-btn">&#9654; Play</button>
+    <button class="btn" id="reset-btn">Reset</button>
+  </div>
+</div>
+<div class="viewer" id="viewer">
+  <div class="serp-container" id="serp-container">
+    <img id="serp-img" src="../data/png/p013-b2-t3.png" />
+    <svg class="aoi-svg" id="aoi-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <svg class="overlay-svg" id="overlay-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="mouse-cursor" id="mouse-cursor"><svg viewBox="0 0 20 28"><path d="M0,0 L0,22 L5.5,17 L10,28 L14,26 L9,16 L16,16 Z" fill="#ff9933" stroke="#000" stroke-width="1"/></svg></div>
+  </div>
+</div>
+<div class="timeline">
+  <div class="timeline-tracks" id="timeline-tracks">
+    <div class="timeline-row"><div class="timeline-label lbl-aoi">AOI</div><div class="timeline-track" id="track-aoi"><canvas class="timeline-canvas" id="cv-aoi"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-cursor">Cursor</div><div class="timeline-track" id="track-cursor"><canvas class="timeline-canvas" id="cv-cursor"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-xy-delta">|Δ| / ms</div><div class="timeline-track" id="track-xy"><canvas class="timeline-canvas" id="cv-xy"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-pupil">Pupil</div><div class="timeline-track" id="track-pupil"><canvas class="timeline-canvas" id="cv-pupil"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-gaze-x">Gaze X</div><div class="timeline-track" id="track-gaze-x"><canvas class="timeline-canvas" id="cv-gaze-x"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-gaze-y">Gaze Y</div><div class="timeline-track" id="track-gaze-y"><canvas class="timeline-canvas" id="cv-gaze-y"></canvas></div></div>
+    <div class="timeline-playhead" id="playhead"></div>
+  </div>
+  <div class="timeline-info">
+    <span id="time-label">0.00s / 0.00s</span>
+    <span id="aoi-label">—</span>
+  </div>
+</div>
+<div class="info-panel">
+  <span>Doc: <span class="val" id="info-doc">—</span></span>
+  <span>Cursor samples: <span class="val" id="info-cursor">—</span></span>
+  <span>Fixations: <span class="val" id="info-fix">—</span></span>
+  <span>Pupil samples: <span class="val" id="info-pupil">—</span></span>
+  <span>Cursor pos: <span class="val" id="info-pos">—</span></span>
+  <span><a href="../data/png/p013-b2-t3.png" download>Download SERP PNG</a></span>
+</div>
+<div class="footer-note">
+  AdSERP raw signals replayed over the dataset's shipped 1280-wide screenshot. Cursor xpos scaled by 1280/win_width; ypos is document-space. AOIs: ads from <code>ad-boundary-data</code> (shipped), organic results from row-projection CV detection (see <code>attentional-foraging/scripts/extract_organic_bboxes.py</code>).
+</div>
+<script>
+const TRIAL = {"trial_id": "p013-b2-t3", "screenshot": "png/p013-b2-t3.png", "screenshot_width": 1280, "doc_height": 3150, "win_width": 1422, "ratio_x": 0.9001, "duration_ms": 3336, "task": "batch_75_trial_3 | buy-romantic-music-for-cello", "url": "http://localhost/page.php?q=buy-romantic-music-for-cello#cns=1&cns=1&cns=1&cns=1&cns=1&cns=1", "bboxes": {"organic_result": [{"position": 1, "location": {"x": 162, "y": 708}, "size": {"height": 207, "width": 586}}, {"position": 2, "location": {"x": 162, "y": 946}, "size": {"height": 109, "width": 586}}, {"position": 3, "location": {"x": 162, "y": 1095}, "size": {"height": 81, "width": 586}}, {"position": 4, "location": {"x": 162, "y": 1211}, "size": {"height": 81, "width": 586}}, {"position": 5, "location": {"x": 162, "y": 1323}, "size": {"height": 83, "width": 586}}, {"position": 6, "location": {"x": 162, "y": 1439}, "size": {"height": 122, "width": 586}}, {"position": 7, "location": {"x": 162, "y": 1594}, "size": {"height": 85, "width": 586}}, {"position": 8, "location": {"x": 162, "y": 1714}, "size": {"height": 203, "width": 586}}, {"position": 9, "location": {"x": 162, "y": 2472}, "size": {"height": 130, "width": 586}}], "native_ad": [{"location": {"x": 162, "y": 470}, "size": {"height": 211, "width": 540}}, {"location": {"x": 162, "y": 1948}, "size": {"height": 128, "width": 540}}, {"location": {"x": 162, "y": 2103}, "size": {"height": 149, "width": 540}}, {"location": {"x": 162, "y": 2278}, "size": {"height": 149, "width": 540}}], "dd_top": [{"location": {"x": 162, "y": 158}, "size": {"height": 296, "width": 586}}], "dd_right": []}, "cursor": [{"t": 624, "x": 474, "y": 375, "event": "mousemove"}, {"t": 654, "x": 473, "y": 375, "event": "mousemove"}, {"t": 671, "x": 473, "y": 376, "event": "mousemove"}, {"t": 688, "x": 473, "y": 376, "event": "mousemove"}, {"t": 721, "x": 472, "y": 378, "event": "mousemove"}, {"t": 755, "x": 471, "y": 378, "event": "mousemove"}, {"t": 771, "x": 469, "y": 380, "event": "mousemove"}, {"t": 787, "x": 468, "y": 382, "event": "mousemove"}, {"t": 804, "x": 468, "y": 383, "event": "mousemove"}, {"t": 821, "x": 465, "y": 386, "event": "mousemove"}, {"t": 838, "x": 464, "y": 387, "event": "mousemove"}, {"t": 854, "x": 464, "y": 390, "event": "mousemove"}, {"t": 871, "x": 462, "y": 393, "event": "mousemove"}, {"t": 888, "x": 460, "y": 395, "event": "mousemove"}, {"t": 904, "x": 456, "y": 402, "event": "mousemove"}, {"t": 921, "x": 454, "y": 404, "event": "mousemove"}, {"t": 938, "x": 451, "y": 408, "event": "mousemove"}, {"t": 954, "x": 447, "y": 414, "event": "mousemove"}, {"t": 971, "x": 443, "y": 421, "event": "mousemove"}, {"t": 987, "x": 437, "y": 432, "event": "mousemove"}, {"t": 1004, "x": 433, "y": 442, "event": "mousemove"}, {"t": 1021, "x": 425, "y": 454, "event": "mousemove"}, {"t": 1038, "x": 416, "y": 466, "event": "mousemove"}, {"t": 1054, "x": 410, "y": 474, "event": "mousemove"}, {"t": 1071, "x": 402, "y": 485, "event": "mousemove"}, {"t": 1087, "x": 397, "y": 496, "event": "mousemove"}, {"t": 1104, "x": 388, "y": 510, "event": "mousemove"}, {"t": 1121, "x": 384, "y": 515, "event": "mousemove"}, {"t": 1137, "x": 382, "y": 523, "event": "mousemove"}, {"t": 1154, "x": 378, "y": 530, "event": "mousemove"}, {"t": 1170, "x": 372, "y": 537, "event": "mousemove"}, {"t": 1187, "x": 365, "y": 543, "event": "mousemove"}, {"t": 1205, "x": 358, "y": 548, "event": "mousemove"}, {"t": 1221, "x": 353, "y": 553, "event": "mousemove"}, {"t": 1237, "x": 348, "y": 554, "event": "mousemove"}, {"t": 1254, "x": 346, "y": 557, "event": "mousemove"}, {"t": 1270, "x": 343, "y": 558, "event": "mousemove"}, {"t": 1287, "x": 342, "y": 558, "event": "mousemove"}, {"t": 1304, "x": 340, "y": 560, "event": "mousemove"}, {"t": 1321, "x": 339, "y": 560, "event": "mousemove"}, {"t": 1371, "x": 338, "y": 560, "event": "mousemove"}, {"t": 1404, "x": 338, "y": 560, "event": "mousemove"}, {"t": 1504, "x": 337, "y": 560, "event": "mousemove"}, {"t": 1537, "x": 336, "y": 558, "event": "mousemove"}, {"t": 1834, "x": 336, "y": 557, "event": "mousemove"}, {"t": 3336, "x": 336, "y": 557, "event": "click"}], "xy_delta": [{"t": 654, "speed": 0.03}, {"t": 671, "speed": 0.06}, {"t": 688, "speed": 0.0}, {"t": 721, "speed": 0.07}, {"t": 755, "speed": 0.03}, {"t": 771, "speed": 0.18}, {"t": 787, "speed": 0.14}, {"t": 804, "speed": 0.06}, {"t": 821, "speed": 0.25}, {"t": 838, "speed": 0.08}, {"t": 854, "speed": 0.19}, {"t": 871, "speed": 0.21}, {"t": 888, "speed": 0.17}, {"t": 904, "speed": 0.5}, {"t": 921, "speed": 0.17}, {"t": 938, "speed": 0.29}, {"t": 954, "speed": 0.45}, {"t": 971, "speed": 0.47}, {"t": 987, "speed": 0.78}, {"t": 1004, "speed": 0.63}, {"t": 1021, "speed": 0.85}, {"t": 1038, "speed": 0.88}, {"t": 1054, "speed": 0.62}, {"t": 1071, "speed": 0.8}, {"t": 1087, "speed": 0.76}, {"t": 1104, "speed": 0.98}, {"t": 1121, "speed": 0.38}, {"t": 1137, "speed": 0.52}, {"t": 1154, "speed": 0.47}, {"t": 1170, "speed": 0.58}, {"t": 1187, "speed": 0.54}, {"t": 1205, "speed": 0.48}, {"t": 1221, "speed": 0.44}, {"t": 1237, "speed": 0.32}, {"t": 1254, "speed": 0.21}, {"t": 1270, "speed": 0.2}, {"t": 1287, "speed": 0.06}, {"t": 1304, "speed": 0.17}, {"t": 1321, "speed": 0.06}, {"t": 1371, "speed": 0.02}, {"t": 1404, "speed": 0.0}, {"t": 1504, "speed": 0.01}, {"t": 1537, "speed": 0.07}, {"t": 1834, "speed": 0.0}], "fixations": [{"t": 0, "x": 705, "y": 244, "duration": 261}, {"t": 114, "x": 651, "y": 268, "duration": 107}, {"t": 335, "x": 587, "y": 309, "duration": 214}, {"t": 516, "x": 381, "y": 390, "duration": 153}, {"t": 804, "x": 243, "y": 486, "duration": 260}, {"t": 924, "x": 281, "y": 445, "duration": 113}, {"t": 1307, "x": 349, "y": 432, "duration": 374}, {"t": 1594, "x": 341, "y": 429, "duration": 280}, {"t": 1842, "x": 352, "y": 476, "duration": 241}, {"t": 2204, "x": 354, "y": 452, "duration": 354}, {"t": 2392, "x": 581, "y": 183, "duration": 160}, {"t": 2693, "x": 737, "y": 24, "duration": 275}, {"t": 2981, "x": 747, "y": 29, "duration": 280}, {"t": 3195, "x": 738, "y": 81, "duration": 207}], "pupil": [{"t": 0, "lpd": 15.13427, "rpd": 16.11087}, {"t": 7, "lpd": 15.13427, "rpd": 16.68184}, {"t": 13, "lpd": 15.23574, "rpd": 16.73045}, {"t": 20, "lpd": 15.41302, "rpd": 16.74494}, {"t": 26, "lpd": 15.41302, "rpd": 16.73045}, {"t": 33, "lpd": 15.41302, "rpd": 16.6719}, {"t": 40, "lpd": 15.10827, "rpd": 16.66079}, {"t": 47, "lpd": 14.99858, "rpd": 16.87671}, {"t": 54, "lpd": 15.08282, "rpd": 16.94181}, {"t": 60, "lpd": 14.63524, "rpd": 16.84191}, {"t": 67, "lpd": 14.5991, "rpd": 16.53652}, {"t": 74, "lpd": 14.80984, "rpd": 16.72295}, {"t": 80, "lpd": 14.82373, "rpd": 16.41902}, {"t": 87, "lpd": 15.36591, "rpd": 16.41902}, {"t": 94, "lpd": 15.1767, "rpd": 16.60529}, {"t": 102, "lpd": 14.43666, "rpd": 16.04996}, {"t": 107, "lpd": 14.70076, "rpd": 16.57027}, {"t": 114, "lpd": 15.24164, "rpd": 16.418}, {"t": 121, "lpd": 15.19105, "rpd": 16.60332}, {"t": 127, "lpd": 14.84906, "rpd": 16.82113}, {"t": 134, "lpd": 15.18868, "rpd": 16.72961}, {"t": 141, "lpd": 14.93098, "rpd": 16.6728}, {"t": 148, "lpd": 15.08856, "rpd": 17.12089}, {"t": 154, "lpd": 15.36223, "rpd": 17.12102}, {"t": 161, "lpd": 15.20179, "rpd": 17.0779}, {"t": 168, "lpd": 15.23973, "rpd": 16.62641}, {"t": 174, "lpd": 15.28175, "rpd": 17.04489}, {"t": 181, "lpd": 15.26256, "rpd": 16.63904}, {"t": 187, "lpd": 15.30585, "rpd": 16.51072}, {"t": 194, "lpd": 15.32121, "rpd": 16.69469}, {"t": 201, "lpd": 15.1743, "rpd": 17.16047}, {"t": 209, "lpd": 15.21582, "rpd": 16.59942}, {"t": 216, "lpd": 15.35483, "rpd": 16.43049}, {"t": 221, "lpd": 15.41634, "rpd": 17.09858}, {"t": 228, "lpd": 15.32065, "rpd": 17.04674}, {"t": 235, "lpd": 15.34457, "rpd": 17.09352}, {"t": 241, "lpd": 15.35796, "rpd": 17.10583}, {"t": 248, "lpd": 15.37634, "rpd": 16.66104}, {"t": 255, "lpd": 15.3777, "rpd": 16.66055}, {"t": 262, "lpd": 15.36943, "rpd": 16.69505}, {"t": 268, "lpd": 15.30491, "rpd": 16.63002}, {"t": 275, "lpd": 15.14758, "rpd": 16.70708}, {"t": 282, "lpd": 15.34378, "rpd": 16.692}, {"t": 288, "lpd": 15.36602, "rpd": 16.38242}, {"t": 295, "lpd": 15.55467, "rpd": 16.58419}, {"t": 302, "lpd": 15.23534, "rpd": 16.64753}, {"t": 308, "lpd": 15.45102, "rpd": 16.40748}, {"t": 315, "lpd": 15.40344, "rpd": 16.38935}, {"t": 321, "lpd": 15.25545, "rpd": 16.3925}, {"t": 328, "lpd": 15.28869, "rpd": 16.44566}, {"t": 335, "lpd": 14.94787, "rpd": 16.41374}, {"t": 341, "lpd": 15.12781, "rpd": 16.44207}, {"t": 348, "lpd": 15.03028, "rpd": 16.44207}, {"t": 355, "lpd": 15.34774, "rpd": 15.91963}, {"t": 361, "lpd": 14.74353, "rpd": 16.40669}, {"t": 368, "lpd": 15.08753, "rpd": 15.63234}, {"t": 375, "lpd": 14.44183, "rpd": 15.84426}, {"t": 382, "lpd": 13.90617, "rpd": 16.04448}, {"t": 389, "lpd": 14.71447, "rpd": 15.56979}, {"t": 395, "lpd": 14.34555, "rpd": 15.54009}, {"t": 402, "lpd": 14.39207, "rpd": 15.60574}, {"t": 409, "lpd": 14.18478, "rpd": 15.55389}, {"t": 415, "lpd": 14.33816, "rpd": 14.98807}, {"t": 421, "lpd": 14.1764, "rpd": 15.16796}, {"t": 429, "lpd": 14.18478, "rpd": 14.97297}, {"t": 435, "lpd": 14.18478, "rpd": 15.34633}, {"t": 441, "lpd": 14.37543, "rpd": 15.19199}, {"t": 449, "lpd": 14.17177, "rpd": 15.75316}, {"t": 455, "lpd": 14.32936, "rpd": 15.82973}, {"t": 462, "lpd": 13.91053, "rpd": 15.46465}, {"t": 469, "lpd": 13.96794, "rpd": 15.84235}, {"t": 476, "lpd": 13.85565, "rpd": 15.56293}, {"t": 483, "lpd": 13.88021, "rpd": 15.64444}, {"t": 489, "lpd": 13.98086, "rpd": 15.8667}, {"t": 496, "lpd": 14.34345, "rpd": 15.58306}, {"t": 502, "lpd": 14.26491, "rpd": 15.53286}, {"t": 509, "lpd": 14.31616, "rpd": 15.70956}, {"t": 516, "lpd": 14.35444, "rpd": 15.76189}, {"t": 523, "lpd": 14.5556, "rpd": 15.67458}, {"t": 529, "lpd": 14.45757, "rpd": 16.03541}, {"t": 536, "lpd": 14.3599, "rpd": 15.80121}, {"t": 544, "lpd": 13.8284, "rpd": 14.89499}, {"t": 549, "lpd": 14.13438, "rpd": 14.55838}, {"t": 556, "lpd": 14.19333, "rpd": 16.1106}, {"t": 563, "lpd": 13.94628, "rpd": 16.48268}, {"t": 569, "lpd": 13.69978, "rpd": 16.19977}, {"t": 576, "lpd": 13.86014, "rpd": 15.81916}, {"t": 583, "lpd": 13.60273, "rpd": 16.12002}, {"t": 590, "lpd": 13.70797, "rpd": 16.1437}, {"t": 596, "lpd": 13.8878, "rpd": 16.25574}, {"t": 603, "lpd": 13.82987, "rpd": 16.01117}, {"t": 610, "lpd": 13.77553, "rpd": 16.12121}, {"t": 616, "lpd": 14.02255, "rpd": 15.9894}, {"t": 623, "lpd": 13.68537, "rpd": 16.08926}, {"t": 630, "lpd": 13.77344, "rpd": 15.91653}, {"t": 636, "lpd": 14.02071, "rpd": 15.34805}, {"t": 644, "lpd": 13.86136, "rpd": 15.53939}, {"t": 649, "lpd": 13.71038, "rpd": 15.57056}, {"t": 657, "lpd": 13.87467, "rpd": 15.35692}, {"t": 663, "lpd": 13.54756, "rpd": 15.25818}, {"t": 670, "lpd": 13.50486, "rpd": 15.44654}, {"t": 677, "lpd": 13.40284, "rpd": 15.50453}, {"t": 683, "lpd": 13.68093, "rpd": 15.34526}, {"t": 690, "lpd": 13.61392, "rpd": 15.43004}, {"t": 697, "lpd": 13.61991, "rpd": 15.107}, {"t": 703, "lpd": 13.46852, "rpd": 15.22278}, {"t": 710, "lpd": 13.60862, "rpd": 15.95033}, {"t": 717, "lpd": 13.92688, "rpd": 15.0612}, {"t": 723, "lpd": 13.4833, "rpd": 15.16685}, {"t": 730, "lpd": 13.33174, "rpd": 15.21108}, {"t": 737, "lpd": 13.42558, "rpd": 15.17858}, {"t": 744, "lpd": 13.1368, "rpd": 15.47345}, {"t": 750, "lpd": 13.37673, "rpd": 15.30008}, {"t": 758, "lpd": 13.35448, "rpd": 15.38143}, {"t": 764, "lpd": 13.57394, "rpd": 15.2905}, {"t": 770, "lpd": 13.62569, "rpd": 15.22941}, {"t": 777, "lpd": 13.45764, "rpd": 15.26834}, {"t": 784, "lpd": 13.31201, "rpd": 15.10529}, {"t": 790, "lpd": 13.16112, "rpd": 15.1377}, {"t": 797, "lpd": 13.32211, "rpd": 15.40421}, {"t": 803, "lpd": 13.50336, "rpd": 15.2145}, {"t": 811, "lpd": 13.52044, "rpd": 15.03969}, {"t": 817, "lpd": 13.4535, "rpd": 15.07809}, {"t": 824, "lpd": 13.47804, "rpd": 15.33566}, {"t": 830, "lpd": 13.73334, "rpd": 15.24553}, {"t": 837, "lpd": 13.83768, "rpd": 15.0946}, {"t": 844, "lpd": 13.07693, "rpd": 14.99801}, {"t": 851, "lpd": 13.22842, "rpd": 14.79156}, {"t": 858, "lpd": 13.75036, "rpd": 14.84987}, {"t": 864, "lpd": 13.74862, "rpd": 15.05018}, {"t": 871, "lpd": 13.27526, "rpd": 15.00345}, {"t": 878, "lpd": 13.50461, "rpd": 14.73091}, {"t": 884, "lpd": 13.3124, "rpd": 14.56463}, {"t": 891, "lpd": 13.07417, "rpd": 14.88597}, {"t": 898, "lpd": 13.06024, "rpd": 14.87449}, {"t": 904, "lpd": 13.24062, "rpd": 14.42341}, {"t": 911, "lpd": 13.00499, "rpd": 14.46557}, {"t": 918, "lpd": 13.12751, "rpd": 14.62659}, {"t": 924, "lpd": 13.25434, "rpd": 14.39137}, {"t": 930, "lpd": 12.89304, "rpd": 14.6698}, {"t": 938, "lpd": 13.26113, "rpd": 14.01093}, {"t": 944, "lpd": 13.48413, "rpd": 14.17924}, {"t": 951, "lpd": 12.76804, "rpd": 13.70391}, {"t": 958, "lpd": 12.97835, "rpd": 14.21961}, {"t": 964, "lpd": 12.99389, "rpd": 14.32022}, {"t": 972, "lpd": 12.74416, "rpd": 14.17943}, {"t": 978, "lpd": 12.76153, "rpd": 14.25564}, {"t": 985, "lpd": 12.73367, "rpd": 14.21961}, {"t": 991, "lpd": 12.91985, "rpd": 14.15517}, {"t": 998, "lpd": 13.00596, "rpd": 14.11873}, {"t": 1004, "lpd": 13.04584, "rpd": 14.11873}, {"t": 1011, "lpd": 13.08128, "rpd": 14.11873}, {"t": 1018, "lpd": 12.77035, "rpd": 14.1289}, {"t": 1025, "lpd": 12.99515, "rpd": 14.45716}, {"t": 1031, "lpd": 13.12305, "rpd": 14.45716}, {"t": 1038, "lpd": 13.01467, "rpd": 14.06487}, {"t": 1045, "lpd": 12.91963, "rpd": 14.10399}, {"t": 1052, "lpd": 13.07232, "rpd": 13.95067}, {"t": 1058, "lpd": 13.10726, "rpd": 13.47902}, {"t": 1065, "lpd": 13.4483, "rpd": 13.44336}, {"t": 1072, "lpd": 13.23268, "rpd": 13.53688}, {"t": 1079, "lpd": 12.72031, "rpd": 13.19645}, {"t": 1085, "lpd": 12.94847, "rpd": 13.37869}, {"t": 1092, "lpd": 12.89491, "rpd": 13.39834}, {"t": 1100, "lpd": 13.03232, "rpd": 13.30342}, {"t": 1105, "lpd": 13.11364, "rpd": 13.77605}, {"t": 1112, "lpd": 13.4408, "rpd": 13.25549}, {"t": 1119, "lpd": 12.64926, "rpd": 13.24469}, {"t": 1125, "lpd": 12.58744, "rpd": 13.11622}, {"t": 1132, "lpd": 12.65863, "rpd": 13.64386}, {"t": 1139, "lpd": 12.88683, "rpd": 13.91156}, {"t": 1145, "lpd": 12.81917, "rpd": 13.85462}, {"t": 1152, "lpd": 13.13291, "rpd": 14.08092}, {"t": 1159, "lpd": 12.24543, "rpd": 14.35277}, {"t": 1165, "lpd": 12.1798, "rpd": 14.13623}, {"t": 1172, "lpd": 12.20998, "rpd": 13.49914}, {"t": 1179, "lpd": 12.96214, "rpd": 13.82288}, {"t": 1186, "lpd": 12.54074, "rpd": 13.69685}, {"t": 1193, "lpd": 12.33361, "rpd": 13.73639}, {"t": 1198, "lpd": 12.69942, "rpd": 13.71678}, {"t": 1206, "lpd": 12.68509, "rpd": 13.74808}, {"t": 1212, "lpd": 12.49585, "rpd": 13.40628}, {"t": 1219, "lpd": 12.5893, "rpd": 13.45182}, {"t": 1226, "lpd": 12.69637, "rpd": 13.43952}, {"t": 1233, "lpd": 12.60566, "rpd": 13.90681}, {"t": 1239, "lpd": 12.72454, "rpd": 13.96819}, {"t": 1246, "lpd": 12.68083, "rpd": 13.48293}, {"t": 1253, "lpd": 12.81027, "rpd": 13.26987}, {"t": 1259, "lpd": 12.51463, "rpd": 13.38893}, {"t": 1266, "lpd": 12.79761, "rpd": 13.20233}, {"t": 1273, "lpd": 12.96866, "rpd": 13.31225}, {"t": 1280, "lpd": 13.00375, "rpd": 13.2278}, {"t": 1286, "lpd": 12.93975, "rpd": 13.49256}, {"t": 1293, "lpd": 12.84352, "rpd": 13.29619}, {"t": 1300, "lpd": 12.84352, "rpd": 13.14306}, {"t": 1306, "lpd": 12.35781, "rpd": 13.25314}, {"t": 1313, "lpd": 12.18222, "rpd": 13.41731}, {"t": 1320, "lpd": 11.86856, "rpd": 13.91755}, {"t": 1326, "lpd": 12.32866, "rpd": 13.78819}, {"t": 1333, "lpd": 11.94939, "rpd": 13.75336}, {"t": 1339, "lpd": 12.70139, "rpd": 13.47718}, {"t": 1347, "lpd": 12.19159, "rpd": 13.64371}, {"t": 1353, "lpd": 12.531, "rpd": 14.16177}, {"t": 1360, "lpd": 12.57996, "rpd": 13.93119}, {"t": 1367, "lpd": 12.48533, "rpd": 13.83405}, {"t": 1373, "lpd": 12.6448, "rpd": 13.46678}, {"t": 1380, "lpd": 12.36404, "rpd": 13.22966}, {"t": 1387, "lpd": 12.48525, "rpd": 12.96806}, {"t": 1393, "lpd": 12.35067, "rpd": 12.9372}, {"t": 1400, "lpd": 12.98202, "rpd": 13.21845}, {"t": 1407, "lpd": 12.33281, "rpd": 13.27768}, {"t": 1413, "lpd": 12.04115, "rpd": 13.40765}, {"t": 1420, "lpd": 12.27581, "rpd": 13.41368}, {"t": 1427, "lpd": 11.91729, "rpd": 13.41368}, {"t": 1433, "lpd": 11.99427, "rpd": 13.25097}, {"t": 1440, "lpd": 12.84593, "rpd": 13.50979}, {"t": 1447, "lpd": 12.36221, "rpd": 13.12823}, {"t": 1454, "lpd": 12.3181, "rpd": 13.53658}, {"t": 1460, "lpd": 12.24512, "rpd": 13.68505}, {"t": 1467, "lpd": 12.12898, "rpd": 13.18078}, {"t": 1473, "lpd": 12.17132, "rpd": 13.18078}, {"t": 1480, "lpd": 12.00313, "rpd": 13.04356}, {"t": 1487, "lpd": 11.6979, "rpd": 13.21614}, {"t": 1494, "lpd": 12.01913, "rpd": 13.10818}, {"t": 1501, "lpd": 12.29214, "rpd": 13.15448}, {"t": 1507, "lpd": 12.30888, "rpd": 12.98842}, {"t": 1514, "lpd": 12.42537, "rpd": 12.92307}, {"t": 1521, "lpd": 12.67403, "rpd": 13.14717}, {"t": 1527, "lpd": 12.46989, "rpd": 13.05139}, {"t": 1534, "lpd": 12.23541, "rpd": 13.26031}, {"t": 1541, "lpd": 12.43942, "rpd": 13.15557}, {"t": 1547, "lpd": 12.3252, "rpd": 12.85867}, {"t": 1554, "lpd": 11.59893, "rpd": 12.69539}, {"t": 1563, "lpd": 11.56526, "rpd": 12.58295}, {"t": 1567, "lpd": 11.71016, "rpd": 12.65386}, {"t": 1574, "lpd": 12.1963, "rpd": 13.01553}, {"t": 1580, "lpd": 11.85364, "rpd": 13.09235}, {"t": 1587, "lpd": 11.93156, "rpd": 13.33083}, {"t": 1594, "lpd": 12.14192, "rpd": 13.60529}, {"t": 1601, "lpd": 12.02141, "rpd": 13.01871}, {"t": 1608, "lpd": 11.70775, "rpd": 13.61079}, {"t": 1614, "lpd": 11.89071, "rpd": 13.08563}, {"t": 1621, "lpd": 11.87621, "rpd": 13.23637}, {"t": 1628, "lpd": 12.45602, "rpd": 13.36823}, {"t": 1634, "lpd": 12.0947, "rpd": 13.39539}, {"t": 1641, "lpd": 12.06372, "rpd": 13.14912}, {"t": 1648, "lpd": 11.95224, "rpd": 13.54168}, {"t": 1654, "lpd": 12.17476, "rpd": 13.18792}, {"t": 1661, "lpd": 12.13495, "rpd": 13.32817}, {"t": 1668, "lpd": 12.19628, "rpd": 13.16595}, {"t": 1675, "lpd": 11.60466, "rpd": 13.1636}, {"t": 1681, "lpd": 11.67122, "rpd": 13.46382}, {"t": 1688, "lpd": 11.94573, "rpd": 13.43148}, {"t": 1695, "lpd": 11.91903, "rpd": 12.94498}, {"t": 1701, "lpd": 12.26371, "rpd": 12.74922}, {"t": 1708, "lpd": 11.65553, "rpd": 12.94498}, {"t": 1714, "lpd": 11.81206, "rpd": 12.70779}, {"t": 1721, "lpd": 12.24306, "rpd": 12.92426}, {"t": 1728, "lpd": 11.93003, "rpd": 12.5178}, {"t": 1742, "lpd": 12.21062, "rpd": 12.88264}, {"t": 1745, "lpd": 12.20077, "rpd": 13.33676}, {"t": 1748, "lpd": 12.12618, "rpd": 13.4119}, {"t": 1755, "lpd": 11.93204, "rpd": 13.23342}, {"t": 1761, "lpd": 11.64625, "rpd": 13.01671}, {"t": 1768, "lpd": 11.71335, "rpd": 13.17567}, {"t": 1775, "lpd": 11.4922, "rpd": 12.92556}, {"t": 1782, "lpd": 11.65354, "rpd": 12.9167}, {"t": 1788, "lpd": 11.82876, "rpd": 12.76213}, {"t": 1795, "lpd": 11.82472, "rpd": 12.60487}, {"t": 1802, "lpd": 11.85565, "rpd": 12.91046}, {"t": 1808, "lpd": 12.48887, "rpd": 12.71937}, {"t": 1815, "lpd": 12.05981, "rpd": 12.86434}, {"t": 1822, "lpd": 12.02797, "rpd": 13.15381}, {"t": 1829, "lpd": 11.84744, "rpd": 12.523}, {"t": 1835, "lpd": 11.94441, "rpd": 12.55951}, {"t": 1842, "lpd": 11.9401, "rpd": 12.83275}, {"t": 1849, "lpd": 12.2115, "rpd": 12.35574}, {"t": 1855, "lpd": 12.1956, "rpd": 13.11137}, {"t": 1862, "lpd": 11.83536, "rpd": 13.38484}, {"t": 1869, "lpd": 11.6809, "rpd": 13.3139}, {"t": 1876, "lpd": 11.35602, "rpd": 13.15554}, {"t": 1882, "lpd": 12.03007, "rpd": 13.01852}, {"t": 1889, "lpd": 11.80722, "rpd": 12.94785}, {"t": 1896, "lpd": 11.55322, "rpd": 13.1401}, {"t": 1902, "lpd": 11.82359, "rpd": 12.96714}, {"t": 1909, "lpd": 11.91764, "rpd": 12.96714}, {"t": 1915, "lpd": 11.58156, "rpd": 13.38769}, {"t": 1923, "lpd": 12.39618, "rpd": 13.02924}, {"t": 1929, "lpd": 12.2471, "rpd": 12.94171}, {"t": 1936, "lpd": 11.80172, "rpd": 12.83251}, {"t": 1943, "lpd": 12.05585, "rpd": 13.09243}, {"t": 1950, "lpd": 12.0855, "rpd": 12.66855}, {"t": 1956, "lpd": 11.81384, "rpd": 12.68188}, {"t": 1963, "lpd": 11.6837, "rpd": 12.62581}, {"t": 1969, "lpd": 12.24117, "rpd": 12.78833}, {"t": 1976, "lpd": 11.76352, "rpd": 13.16799}, {"t": 1983, "lpd": 11.91882, "rpd": 13.40047}, {"t": 1990, "lpd": 12.02943, "rpd": 13.46411}, {"t": 1996, "lpd": 12.11439, "rpd": 13.36888}, {"t": 2003, "lpd": 12.33867, "rpd": 13.19115}, {"t": 2010, "lpd": 11.76299, "rpd": 12.97499}, {"t": 2016, "lpd": 11.88262, "rpd": 13.0546}, {"t": 2023, "lpd": 12.37386, "rpd": 12.89999}, {"t": 2030, "lpd": 11.71896, "rpd": 12.7542}, {"t": 2036, "lpd": 11.96279, "rpd": 13.02936}, {"t": 2043, "lpd": 11.49298, "rpd": 12.94234}, {"t": 2050, "lpd": 12.41326, "rpd": 13.09831}, {"t": 2057, "lpd": 12.26419, "rpd": 12.79812}, {"t": 2063, "lpd": 12.55083, "rpd": 12.80553}, {"t": 2070, "lpd": 12.58388, "rpd": 12.8065}, {"t": 2076, "lpd": 12.29149, "rpd": 12.53927}, {"t": 2083, "lpd": 12.44309, "rpd": 12.80101}, {"t": 2091, "lpd": 12.03547, "rpd": 12.87393}, {"t": 2097, "lpd": 12.0072, "rpd": 12.86065}, {"t": 2103, "lpd": 12.06229, "rpd": 13.06935}, {"t": 2110, "lpd": 11.95365, "rpd": 12.82855}, {"t": 2117, "lpd": 12.25205, "rpd": 12.46658}, {"t": 2123, "lpd": 12.36508, "rpd": 12.97979}, {"t": 2130, "lpd": 12.46827, "rpd": 13.15981}, {"t": 2137, "lpd": 11.87888, "rpd": 13.10851}, {"t": 2143, "lpd": 12.12653, "rpd": 13.16759}, {"t": 2150, "lpd": 12.26402, "rpd": 13.05655}, {"t": 2157, "lpd": 12.41927, "rpd": 12.45839}, {"t": 2164, "lpd": 12.04897, "rpd": 13.13694}, {"t": 2170, "lpd": 12.51914, "rpd": 12.8277}, {"t": 2177, "lpd": 12.26305, "rpd": 13.42333}, {"t": 2183, "lpd": 12.25253, "rpd": 13.5035}, {"t": 2191, "lpd": 12.54333, "rpd": 13.35867}, {"t": 2197, "lpd": 12.38358, "rpd": 13.52655}, {"t": 2204, "lpd": 12.48623, "rpd": 13.36546}, {"t": 2211, "lpd": 12.38358, "rpd": 13.1088}, {"t": 2217, "lpd": 12.3043, "rpd": 13.18911}, {"t": 2224, "lpd": 12.15334, "rpd": 13.72557}, {"t": 2231, "lpd": 12.10394, "rpd": 13.34032}, {"t": 2237, "lpd": 12.13237, "rpd": 13.57879}, {"t": 2244, "lpd": 12.59094, "rpd": 13.73018}, {"t": 2251, "lpd": 11.55342, "rpd": 13.45715}, {"t": 2257, "lpd": 13.17964, "rpd": 13.72643}, {"t": 2264, "lpd": 13.42692, "rpd": 13.78873}, {"t": 2271, "lpd": 13.5231, "rpd": 13.94596}, {"t": 2277, "lpd": 13.17298, "rpd": 13.44017}, {"t": 2284, "lpd": 13.60333, "rpd": 14.05687}, {"t": 2291, "lpd": 13.40896, "rpd": 14.6717}, {"t": 2298, "lpd": 13.72687, "rpd": 13.90368}, {"t": 2304, "lpd": 14.29083, "rpd": 14.1446}, {"t": 2311, "lpd": 13.49827, "rpd": 13.81963}, {"t": 2318, "lpd": 13.42569, "rpd": 14.27478}, {"t": 2324, "lpd": 13.61374, "rpd": 14.15563}, {"t": 2331, "lpd": 13.53657, "rpd": 14.16246}, {"t": 2338, "lpd": 13.47033, "rpd": 14.63861}, {"t": 2345, "lpd": 14.03566, "rpd": 14.92695}, {"t": 2351, "lpd": 13.94869, "rpd": 14.54338}, {"t": 2358, "lpd": 13.81122, "rpd": 14.88246}, {"t": 2365, "lpd": 13.82999, "rpd": 14.74757}, {"t": 2371, "lpd": 13.80114, "rpd": 14.46894}, {"t": 2378, "lpd": 13.29606, "rpd": 14.434}, {"t": 2386, "lpd": 13.27464, "rpd": 14.47717}, {"t": 2391, "lpd": 13.82277, "rpd": 14.30913}, {"t": 2398, "lpd": 13.22604, "rpd": 14.08787}, {"t": 2404, "lpd": 14.25931, "rpd": 14.88672}, {"t": 2411, "lpd": 13.34016, "rpd": 14.63122}, {"t": 2418, "lpd": 13.05789, "rpd": 14.65049}, {"t": 2425, "lpd": 14.0205, "rpd": 14.99521}, {"t": 2432, "lpd": 13.30523, "rpd": 14.1358}, {"t": 2438, "lpd": 14.45941, "rpd": 14.14914}, {"t": 2445, "lpd": 14.0467, "rpd": 14.84708}, {"t": 2451, "lpd": 14.26781, "rpd": 14.99385}, {"t": 2458, "lpd": 14.19104, "rpd": 15.17569}, {"t": 2465, "lpd": 14.27219, "rpd": 14.32251}, {"t": 2472, "lpd": 13.97778, "rpd": 14.4563}, {"t": 2479, "lpd": 14.09037, "rpd": 14.8114}, {"t": 2485, "lpd": 14.12622, "rpd": 14.95957}, {"t": 2492, "lpd": 13.90262, "rpd": 14.02046}, {"t": 2499, "lpd": 13.95597, "rpd": 14.27308}, {"t": 2505, "lpd": 14.30269, "rpd": 14.04939}, {"t": 2515, "lpd": 14.49402, "rpd": 14.06741}, {"t": 2519, "lpd": 14.53607, "rpd": 14.51139}, {"t": 2525, "lpd": 14.61291, "rpd": 15.55015}, {"t": 2532, "lpd": 14.16766, "rpd": 15.89368}, {"t": 2539, "lpd": 14.28718, "rpd": 15.57468}, {"t": 2546, "lpd": 14.62451, "rpd": 15.37491}, {"t": 2552, "lpd": 14.7086, "rpd": 15.41657}, {"t": 2559, "lpd": 14.22461, "rpd": 15.39006}, {"t": 2566, "lpd": 14.62967, "rpd": 15.34201}, {"t": 2572, "lpd": 14.29088, "rpd": 15.04429}, {"t": 2579, "lpd": 14.67173, "rpd": 15.22858}, {"t": 2586, "lpd": 14.39289, "rpd": 15.35177}, {"t": 2593, "lpd": 14.29166, "rpd": 15.61106}, {"t": 2599, "lpd": 14.24493, "rpd": 15.56568}, {"t": 2605, "lpd": 14.08288, "rpd": 15.36342}, {"t": 2612, "lpd": 14.06917, "rpd": 15.44731}, {"t": 2619, "lpd": 13.82246, "rpd": 15.38524}, {"t": 2626, "lpd": 13.93417, "rpd": 14.96111}, {"t": 2632, "lpd": 14.1243, "rpd": 15.65555}, {"t": 2639, "lpd": 13.87556, "rpd": 15.92129}, {"t": 2646, "lpd": 14.48706, "rpd": 14.81234}, {"t": 2674, "lpd": 14.24167, "rpd": 14.4059}, {"t": 2679, "lpd": 14.48606, "rpd": 14.54575}, {"t": 2686, "lpd": 14.63398, "rpd": 15.45183}, {"t": 2693, "lpd": 14.18041, "rpd": 15.52004}, {"t": 2700, "lpd": 14.38889, "rpd": 15.65939}, {"t": 2706, "lpd": 14.67339, "rpd": 15.90671}, {"t": 2713, "lpd": 13.89583, "rpd": 15.96894}, {"t": 2720, "lpd": 14.00625, "rpd": 15.63532}, {"t": 2726, "lpd": 14.56783, "rpd": 15.60293}, {"t": 2733, "lpd": 13.96049, "rpd": 15.65248}, {"t": 2740, "lpd": 13.90038, "rpd": 15.73805}, {"t": 2747, "lpd": 14.16894, "rpd": 15.97676}, {"t": 2753, "lpd": 13.98427, "rpd": 15.57468}, {"t": 2760, "lpd": 13.77756, "rpd": 15.03305}, {"t": 2767, "lpd": 14.25716, "rpd": 15.58889}, {"t": 2774, "lpd": 13.77756, "rpd": 15.01913}, {"t": 2780, "lpd": 13.99477, "rpd": 15.53651}, {"t": 2787, "lpd": 14.11612, "rpd": 15.58777}, {"t": 2793, "lpd": 13.77562, "rpd": 15.23383}, {"t": 2800, "lpd": 13.58913, "rpd": 15.15884}, {"t": 2806, "lpd": 14.28111, "rpd": 15.50074}, {"t": 2814, "lpd": 14.07012, "rpd": 15.19263}, {"t": 2820, "lpd": 14.4785, "rpd": 15.13412}, {"t": 2827, "lpd": 14.53051, "rpd": 15.13691}, {"t": 2833, "lpd": 14.12374, "rpd": 15.44961}, {"t": 2840, "lpd": 14.02738, "rpd": 15.82435}, {"t": 2847, "lpd": 13.82246, "rpd": 15.84981}, {"t": 2854, "lpd": 13.82246, "rpd": 15.84981}, {"t": 2860, "lpd": 13.8492, "rpd": 15.8372}, {"t": 2867, "lpd": 13.85732, "rpd": 15.21501}, {"t": 2874, "lpd": 14.0603, "rpd": 15.27869}, {"t": 2880, "lpd": 14.01596, "rpd": 15.13821}, {"t": 2887, "lpd": 13.89764, "rpd": 15.0252}, {"t": 2893, "lpd": 14.04262, "rpd": 15.19654}, {"t": 2900, "lpd": 14.18654, "rpd": 14.91437}, {"t": 2907, "lpd": 14.35377, "rpd": 15.10856}, {"t": 2914, "lpd": 14.13348, "rpd": 14.98947}, {"t": 2920, "lpd": 14.35377, "rpd": 15.00179}, {"t": 2927, "lpd": 14.00627, "rpd": 15.18107}, {"t": 2939, "lpd": 13.93304, "rpd": 15.11362}, {"t": 2941, "lpd": 14.41518, "rpd": 15.13013}, {"t": 2947, "lpd": 14.68418, "rpd": 14.95843}, {"t": 2954, "lpd": 14.33685, "rpd": 14.83374}, {"t": 2961, "lpd": 14.19662, "rpd": 14.85676}, {"t": 2967, "lpd": 14.66211, "rpd": 15.56527}, {"t": 2974, "lpd": 14.63362, "rpd": 15.59362}, {"t": 2981, "lpd": 14.70069, "rpd": 15.24757}, {"t": 2987, "lpd": 14.70069, "rpd": 14.77777}, {"t": 2994, "lpd": 14.68245, "rpd": 15.09925}, {"t": 3001, "lpd": 14.51104, "rpd": 14.93185}, {"t": 3007, "lpd": 14.62103, "rpd": 14.7435}, {"t": 3014, "lpd": 14.47828, "rpd": 14.68235}, {"t": 3021, "lpd": 14.54931, "rpd": 14.74695}, {"t": 3028, "lpd": 14.01568, "rpd": 15.52507}, {"t": 3035, "lpd": 14.41891, "rpd": 14.80784}, {"t": 3041, "lpd": 14.10959, "rpd": 15.29037}, {"t": 3048, "lpd": 13.74852, "rpd": 15.04318}, {"t": 3054, "lpd": 14.07016, "rpd": 15.36179}, {"t": 3061, "lpd": 13.93896, "rpd": 14.80788}, {"t": 3068, "lpd": 13.75544, "rpd": 15.27723}, {"t": 3075, "lpd": 13.79311, "rpd": 14.71413}, {"t": 3082, "lpd": 14.00277, "rpd": 14.32476}, {"t": 3088, "lpd": 14.10021, "rpd": 14.82942}, {"t": 3095, "lpd": 13.92426, "rpd": 14.46006}, {"t": 3102, "lpd": 13.9122, "rpd": 14.65301}, {"t": 3108, "lpd": 14.53289, "rpd": 14.69561}, {"t": 3115, "lpd": 14.39511, "rpd": 14.48295}, {"t": 3122, "lpd": 13.91922, "rpd": 15.14555}, {"t": 3128, "lpd": 13.981, "rpd": 15.13342}, {"t": 3135, "lpd": 14.0792, "rpd": 15.13342}, {"t": 3141, "lpd": 14.23681, "rpd": 15.1581}, {"t": 3149, "lpd": 14.91462, "rpd": 15.13342}, {"t": 3155, "lpd": 14.36508, "rpd": 15.03511}, {"t": 3162, "lpd": 14.61606, "rpd": 15.16817}, {"t": 3169, "lpd": 14.78734, "rpd": 14.89399}, {"t": 3175, "lpd": 14.70647, "rpd": 15.07117}, {"t": 3182, "lpd": 14.79376, "rpd": 14.78171}, {"t": 3188, "lpd": 14.86897, "rpd": 14.31884}, {"t": 3195, "lpd": 14.75618, "rpd": 14.40889}, {"t": 3201, "lpd": 14.24634, "rpd": 14.59272}, {"t": 3208, "lpd": 13.85674, "rpd": 14.9502}, {"t": 3215, "lpd": 13.97906, "rpd": 15.21959}, {"t": 3221, "lpd": 14.05144, "rpd": 15.54728}, {"t": 3228, "lpd": 13.99441, "rpd": 15.26537}, {"t": 3235, "lpd": 14.50205, "rpd": 15.28999}, {"t": 3242, "lpd": 14.23156, "rpd": 15.06143}, {"t": 3249, "lpd": 14.1352, "rpd": 15.46325}, {"t": 3255, "lpd": 14.18393, "rpd": 15.37767}, {"t": 3262, "lpd": 14.176, "rpd": 15.26121}, {"t": 3269, "lpd": 13.86824, "rpd": 15.35012}, {"t": 3276, "lpd": 14.13414, "rpd": 15.13455}, {"t": 3282, "lpd": 13.99627, "rpd": 14.50477}, {"t": 3289, "lpd": 14.55831, "rpd": 14.50502}, {"t": 3296, "lpd": 14.75154, "rpd": 15.36014}, {"t": 3303, "lpd": 14.7333, "rpd": 15.12948}, {"t": 3309, "lpd": 14.67608, "rpd": 15.29969}, {"t": 3316, "lpd": 14.82761, "rpd": 15.29969}, {"t": 3323, "lpd": 14.97426, "rpd": 15.4865}, {"t": 3329, "lpd": 14.39878, "rpd": 15.57879}], "_meta": {"source": "AdSERP raw signals \u2014 no NB15 derivatives", "t0_unix_ms": 1675245165328, "n_cursor": 46, "n_fixations": 14, "n_pupil": 495}};
+const W = 1280;
+const DOC_H = TRIAL.doc_height;
+const DUR = Math.max(1, TRIAL.duration_ms);
+
+// Container sizing
+const serpImg = document.getElementById('serp-img');
+const aoiSvg = document.getElementById('aoi-svg');
+const overlaySvg = document.getElementById('overlay-svg');
+const cursor = document.getElementById('mouse-cursor');
+const viewer = document.getElementById('viewer');
+const playhead = document.getElementById('playhead');
+
+serpImg.addEventListener('load', () => {
+  const h = serpImg.naturalHeight;
+  for (const svg of [aoiSvg, overlaySvg]) {
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', h);
+    svg.setAttribute('viewBox', `0 0 ${W} ${h}`);
+  }
+  drawAOIs();
+  drawCursorTrail();
+  drawGazeFixations();
+});
+
+// ── AOI overlay ───────────────────────────────────────────────────────
+const AOI_STYLE = {
+  organic_result: { stroke: '#22c55e', fill: 'rgba(34,197,94,0.06)', label: '#22c55e' },
+  native_ad:      { stroke: '#dc2626', fill: 'rgba(220,38,38,0.06)', label: '#dc2626' },
+  dd_top:         { stroke: '#f97316', fill: 'rgba(249,115,22,0.06)', label: '#f97316' },
+  dd_right:       { stroke: '#a855f7', fill: 'rgba(168,85,247,0.06)', label: '#a855f7' },
+};
+function drawAOIs() {
+  aoiSvg.innerHTML = '';
+  for (const [kind, items] of Object.entries(TRIAL.bboxes)) {
+    const s = AOI_STYLE[kind]; if (!s) continue;
+    items.forEach((it, i) => {
+      const x = it.location.x, y = it.location.y;
+      const w = it.size.width, h = it.size.height;
+      const rect = mkSvg('rect', {x, y, width: w, height: h, fill: s.fill, stroke: s.stroke, 'stroke-width': 2});
+      aoiSvg.appendChild(rect);
+      const label = kind === 'organic_result' ? `O${it.position}` : kind.replace('_', ' ');
+      const tx = mkSvg('text', {x: x + 6, y: y + 18, fill: s.label, 'font-family': 'monospace', 'font-size': 12, 'font-weight': 'bold', stroke: '#000', 'stroke-width': 3, 'paint-order': 'stroke'});
+      tx.textContent = label;
+      aoiSvg.appendChild(tx);
+    });
+  }
+}
+
+// ── Window slider ─────────────────────────────────────────────────────
+// Slider 0..7: 250ms, 500ms, 1s, 2s, 5s, 10s, 30s, ALL
+const WINDOW_STEPS = [250, 500, 1000, 2000, 5000, 10000, 30000, Infinity];
+const WINDOW_LABELS = ['250ms', '500ms', '1s', '2s', '5s', '10s', '30s', 'All'];
+let windowMs = Infinity;     // current window
+let cursorVisible = true;
+let trailEnabled = true;
+
+function ensureGlowDef() {
+  let defs = overlaySvg.querySelector('defs');
+  if (defs) return;
+  defs = mkSvg('defs', {});
+  defs.innerHTML = `<filter id="trail-glow" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>`;
+  overlaySvg.appendChild(defs);
+}
+
+// ── Cursor trail (windowed: shows samples in [currentT - windowMs, currentT]) ─
+function drawCursorTrail() {
+  document.querySelectorAll('.cursor-trail').forEach(e => e.remove());
+  if (!trailEnabled || !TRIAL.cursor.length) return;
+  ensureGlowDef();
+  const tLo = currentT - windowMs;
+  const moves = TRIAL.cursor.filter(c => (c.event === 'mousemove' || c.event === 'click') && c.t <= currentT && c.t >= tLo);
+  if (moves.length < 2) return;
+  let d = `M ${moves[0].x} ${moves[0].y}`;
+  for (let i = 1; i < moves.length; i++) d += ` L ${moves[i].x} ${moves[i].y}`;
+  const halo = mkSvg('path', {d, stroke: '#000', 'stroke-width': 5, 'stroke-opacity': 0.45, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round'});
+  halo.classList.add('cursor-trail');
+  overlaySvg.appendChild(halo);
+  const path = mkSvg('path', {d, stroke: '#ff9933', 'stroke-width': 2.5, 'stroke-opacity': 0.95, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', filter: 'url(#trail-glow)'});
+  path.classList.add('cursor-trail');
+  overlaySvg.appendChild(path);
+  moves.forEach(m => {
+    const dot = mkSvg('circle', {cx: m.x, cy: m.y, r: 2, fill: '#fff', stroke: '#ff9933', 'stroke-width': 1, 'fill-opacity': 0.85});
+    dot.classList.add('cursor-trail');
+    overlaySvg.appendChild(dot);
+  });
+  // Click markers — only those within the window AND at-or-before currentT
+  TRIAL.cursor.filter(c => c.event === 'click' && c.t <= currentT && c.t >= tLo).forEach(c => {
+    const halo2 = mkSvg('circle', {cx: c.x, cy: c.y, r: 16, fill: 'rgba(239,68,68,0.2)', stroke: 'none'});
+    halo2.classList.add('cursor-trail');
+    overlaySvg.appendChild(halo2);
+    const star = mkSvg('circle', {cx: c.x, cy: c.y, r: 10, fill: 'none', stroke: '#ef4444', 'stroke-width': 3});
+    star.classList.add('cursor-trail');
+    overlaySvg.appendChild(star);
+  });
+}
+
+// ── Gaze fixations (optional secondary layer) ─────────────────────────
+let gazeVisible = false;
+function drawGazeFixations() {
+  document.querySelectorAll('.gaze-fix').forEach(e => e.remove());
+  if (!gazeVisible) return;
+  const tLo = currentT - windowMs;
+  TRIAL.fixations.forEach((f, i) => {
+    if (f.t > currentT || f.t < tLo) return;
+    const r = Math.max(8, Math.min(28, 8 + f.duration / 30));
+    const c = mkSvg('circle', {cx: f.x, cy: f.y, r, fill: 'rgba(80,192,224,0.18)', stroke: '#50c0e0', 'stroke-width': 1.5});
+    c.classList.add('gaze-fix');
+    overlaySvg.appendChild(c);
+    const t = mkSvg('text', {x: f.x, y: f.y + 4, 'text-anchor': 'middle', fill: '#fff', 'font-family': 'monospace', 'font-size': 10, 'font-weight': 'bold', stroke: '#000', 'stroke-width': 2, 'paint-order': 'stroke'});
+    t.textContent = i + 1;
+    t.classList.add('gaze-fix');
+    overlaySvg.appendChild(t);
+  });
+}
+
+// ── Timeline canvases ─────────────────────────────────────────────────
+function paintLineSeries(canvasId, samples, valFn, color) {
+  const cv = document.getElementById(canvasId);
+  if (!cv || !samples.length) return;
+  const rect = cv.getBoundingClientRect();
+  cv.width = Math.max(1, Math.floor(rect.width * devicePixelRatio));
+  cv.height = Math.max(1, Math.floor(rect.height * devicePixelRatio));
+  const ctx = cv.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  const vals = samples.map(valFn).filter(v => v != null && isFinite(v));
+  if (!vals.length) return;
+  const vmin = Math.min(...vals), vmax = Math.max(...vals);
+  const span = vmax - vmin || 1;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  let started = false;
+  for (const s of samples) {
+    const v = valFn(s);
+    if (v == null || !isFinite(v)) continue;
+    const x = s.t / DUR * rect.width;
+    const y = rect.height - ((v - vmin) / span) * (rect.height - 2) - 1;
+    if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+  }
+  ctx.stroke();
+}
+
+function paintAOIBands(canvasId) {
+  const cv = document.getElementById(canvasId);
+  if (!cv) return;
+  const rect = cv.getBoundingClientRect();
+  cv.width = Math.max(1, Math.floor(rect.width * devicePixelRatio));
+  cv.height = Math.max(1, Math.floor(rect.height * devicePixelRatio));
+  const ctx = cv.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  // For each cursor sample, find which AOI (if any) contains it; paint a band per run
+  let prev = null, runStart = 0;
+  for (let i = 0; i < TRIAL.cursor.length; i++) {
+    const s = TRIAL.cursor[i];
+    const aoi = aoiAt(s.x, s.y);
+    const key = aoi ? `${aoi.kind}:${aoi.label}` : null;
+    if (key !== prev) {
+      if (prev) drawBand(ctx, rect, runStart, s.t, prev);
+      runStart = s.t;
+      prev = key;
+    }
+  }
+  if (prev) drawBand(ctx, rect, runStart, DUR, prev);
+}
+function drawBand(ctx, rect, t0, t1, key) {
+  const [kind] = key.split(':');
+  const s = AOI_STYLE[kind]; if (!s) return;
+  const x0 = t0 / DUR * rect.width;
+  const x1 = t1 / DUR * rect.width;
+  ctx.fillStyle = s.stroke;
+  ctx.globalAlpha = 0.7;
+  ctx.fillRect(x0, 4, Math.max(1, x1 - x0), rect.height - 8);
+  ctx.globalAlpha = 1;
+}
+
+function aoiAt(x, y) {
+  for (const [kind, items] of Object.entries(TRIAL.bboxes)) {
+    for (const it of items) {
+      const ix = it.location.x, iy = it.location.y;
+      const iw = it.size.width, ih = it.size.height;
+      if (x >= ix && x <= ix + iw && y >= iy && y <= iy + ih) {
+        return { kind, label: it.position != null ? `${kind} ${it.position}` : kind };
+      }
+    }
+  }
+  return null;
+}
+
+// ── Time control ──────────────────────────────────────────────────────
+let currentT = 0;
+let playing = false;
+let lastFrameTime = 0;
+
+function setTime(t) {
+  currentT = Math.max(0, Math.min(DUR, t));
+  updateCursor();
+  updatePlayhead();
+  updateInfo();
+  // Re-draw windowed overlays (cheap; max ~400 SVG elems)
+  drawCursorTrail();
+  drawGazeFixations();
+}
+
+function updateCursor() {
+  // Find nearest cursor sample at or before currentT
+  if (!TRIAL.cursor.length) return;
+  let s = TRIAL.cursor[0];
+  for (const c of TRIAL.cursor) {
+    if (c.t <= currentT) s = c; else break;
+  }
+  cursor.style.left = s.x + 'px';
+  cursor.style.top = s.y + 'px';
+  cursor.classList.toggle('clicking', s.event === 'click' || s.event === 'mousedown');
+
+  // Auto-scroll viewer to keep cursor in view
+  const vrect = viewer.getBoundingClientRect();
+  const fy = s.y - viewer.scrollTop;
+  if (fy < 60 || fy > vrect.height - 60) {
+    viewer.scrollTo({top: s.y - vrect.height / 2, behavior: 'smooth'});
+  }
+}
+
+function updatePlayhead() {
+  const tracks = document.getElementById('timeline-tracks');
+  const firstTrack = tracks.querySelector('.timeline-track');
+  if (!firstTrack) return;
+  const tr = firstTrack.getBoundingClientRect();
+  const tc = tracks.getBoundingClientRect();
+  const off = tr.left - tc.left;
+  playhead.style.left = (off + (currentT / DUR) * tr.width) + 'px';
+}
+
+function updateInfo() {
+  document.getElementById('time-label').textContent = `${(currentT / 1000).toFixed(2)}s / ${(DUR / 1000).toFixed(2)}s`;
+  let s = TRIAL.cursor[0];
+  for (const c of TRIAL.cursor) { if (c.t <= currentT) s = c; else break; }
+  if (s) {
+    document.getElementById('info-pos').textContent = `(${Math.round(s.x)}, ${Math.round(s.y)})`;
+    const aoi = aoiAt(s.x, s.y);
+    document.getElementById('aoi-label').textContent = aoi ? aoi.label : 'no AOI';
+  }
+}
+
+// Playback animation
+function tick(now) {
+  if (!playing) return;
+  const dt = lastFrameTime ? now - lastFrameTime : 16;
+  lastFrameTime = now;
+  setTime(currentT + dt);
+  if (currentT >= DUR) { stopPlay(); return; }
+  requestAnimationFrame(tick);
+}
+function startPlay() {
+  if (currentT >= DUR) currentT = 0;
+  playing = true;
+  lastFrameTime = 0;
+  document.getElementById('play-btn').textContent = '⏸ Pause';
+  document.getElementById('play-btn').classList.add('active');
+  requestAnimationFrame(tick);
+}
+function stopPlay() {
+  playing = false;
+  document.getElementById('play-btn').textContent = '▶ Play';
+  document.getElementById('play-btn').classList.remove('active');
+}
+
+// ── Wire up controls ──────────────────────────────────────────────────
+document.getElementById('play-btn').addEventListener('click', () => {
+  if (playing) stopPlay(); else startPlay();
+});
+document.getElementById('reset-btn').addEventListener('click', () => {
+  stopPlay(); setTime(DUR); viewer.scrollTo({top: 0});
+});
+document.getElementById('aoi-btn').addEventListener('click', (e) => {
+  aoiSvg.style.display = aoiSvg.style.display === 'none' ? '' : 'none';
+  e.target.classList.toggle('active');
+});
+document.getElementById('cursor-btn').addEventListener('click', (e) => {
+  trailEnabled = !trailEnabled;
+  drawCursorTrail();
+  e.target.classList.toggle('active');
+});
+document.getElementById('gaze-btn').addEventListener('click', (e) => {
+  gazeVisible = !gazeVisible;
+  drawGazeFixations();
+  e.target.classList.toggle('active');
+});
+// Window slider
+const wSlider = document.getElementById('window-slider');
+const wLabel = document.getElementById('window-label');
+wSlider.addEventListener('input', () => {
+  const idx = parseInt(wSlider.value);
+  windowMs = WINDOW_STEPS[idx];
+  wLabel.textContent = WINDOW_LABELS[idx];
+  drawCursorTrail();
+  drawGazeFixations();
+});
+
+// Timeline scrub: click + drag
+const tracks = document.getElementById('timeline-tracks');
+let scrubbing = false;
+function tlScrub(e) {
+  const firstTrack = tracks.querySelector('.timeline-track');
+  const r = firstTrack.getBoundingClientRect();
+  const p = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  setTime(p * DUR);
+}
+tracks.addEventListener('mousedown', (e) => {
+  scrubbing = true;
+  stopPlay();
+  tlScrub(e);
+  e.preventDefault();
+});
+window.addEventListener('mousemove', (e) => { if (scrubbing) tlScrub(e); });
+window.addEventListener('mouseup', () => { scrubbing = false; });
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); if (playing) stopPlay(); else startPlay(); }
+  if (e.key === 'ArrowRight') { setTime(currentT + 100); stopPlay(); }
+  if (e.key === 'ArrowLeft') { setTime(currentT - 100); stopPlay(); }
+  if (e.key === 'Home') { setTime(0); }
+  if (e.key === 'End') { setTime(DUR); }
+});
+
+// ── Initial paint ─────────────────────────────────────────────────────
+function paintAllTracks() {
+  paintAOIBands('cv-aoi');
+  paintLineSeries('cv-cursor', TRIAL.cursor.filter(c => c.event === 'mousemove'), s => Math.hypot(s.x, s.y), '#ff9933');
+  paintLineSeries('cv-xy', TRIAL.xy_delta, s => s.speed, '#ffd040');
+  paintLineSeries('cv-pupil', TRIAL.pupil, s => (s.lpd != null && s.rpd != null) ? (s.lpd + s.rpd) / 2 : (s.lpd || s.rpd), '#40e0ff');
+  paintLineSeries('cv-gaze-x', TRIAL.fixations, s => s.x, '#e0e050');
+  paintLineSeries('cv-gaze-y', TRIAL.fixations, s => s.y, '#50c0e0');
+}
+
+// Info panel populates immediately
+document.getElementById('info-doc').textContent = `${W} × ${DOC_H}`;
+document.getElementById('info-cursor').textContent = TRIAL.cursor.length;
+document.getElementById('info-fix').textContent = TRIAL.fixations.length;
+document.getElementById('info-pupil').textContent = TRIAL.pupil.length;
+
+// Wait for image to size svgs, then paint everything.
+// Default: park playhead at end so the full trail is visible up-front.
+window.addEventListener('load', () => {
+  setTimeout(() => { paintAllTracks(); setTime(DUR); }, 50);
+});
+window.addEventListener('resize', paintAllTracks);
+
+// SVG helper
+function mkSvg(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+</script></body></html>
