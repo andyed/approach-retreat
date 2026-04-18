@@ -44,6 +44,11 @@ body { background: #111; color: #eee; font-family: system-ui, -apple-system, san
 .back { font-size: 12px; }
 .back a { color: #6af; text-decoration: none; }
 .footer-note { width: 1280px; padding: 6px 16px; background: #1a1a1a; font-size: 10px; color: #666; border-top: 1px solid #222; }
+.lbl-pill { display: inline-block; font-family: monospace; font-size: 10px; font-weight: bold; padding: 2px 7px; border-radius: 10px; margin-left: 6px; border: 1px solid rgba(255,255,255,0.1); }
+.lbl-pill.lbl-clk { background: #16a34a; color: #fff; }
+.lbl-pill.lbl-def { background: #f59e0b; color: #000; }
+.lbl-pill.lbl-rej { background: #ef4444; color: #fff; }
+.lbl-pill.lbl-not { background: #2a2a2a; color: #888; }
 </style></head><body>
 <div class="header">
   <div style="display:flex;align-items:center;gap:12px;">
@@ -87,11 +92,18 @@ body { background: #111; color: #eee; font-family: system-ui, -apple-system, san
 </div>
 <div class="info-panel">
   <span>Doc: <span class="val" id="info-doc">—</span></span>
-  <span>Cursor samples: <span class="val" id="info-cursor">—</span></span>
+  <span>Cursor: <span class="val" id="info-cursor">—</span></span>
   <span>Fixations: <span class="val" id="info-fix">—</span></span>
-  <span>Pupil samples: <span class="val" id="info-pupil">—</span></span>
+  <span>Pupil: <span class="val" id="info-pupil">—</span></span>
   <span>Cursor pos: <span class="val" id="info-pos">—</span></span>
-  <span><a href="__SCREENSHOT__" download>Download SERP PNG</a></span>
+  <span style="border-left:1px solid #333;padding-left:14px;">
+    Labels:
+    <span class="lbl-pill lbl-clk" id="lbl-clk">CLICKED 0</span>
+    <span class="lbl-pill lbl-def" id="lbl-def">DEFERRED 0</span>
+    <span class="lbl-pill lbl-rej" id="lbl-rej">EVAL-REJ 0</span>
+    <span class="lbl-pill lbl-not" id="lbl-not">NOT-APP 0</span>
+  </span>
+  <span style="margin-left:auto;"><a href="__SCREENSHOT__" download>Download SERP PNG</a></span>
 </div>
 <div class="footer-note">
   AdSERP raw signals replayed over the dataset's shipped 1280-wide screenshot. Cursor xpos scaled by 1280/win_width; ypos is document-space. AOIs: ads from <code>ad-boundary-data</code> (shipped), organic results from row-projection CV detection (see <code>attentional-foraging/scripts/extract_organic_bboxes.py</code>).
@@ -129,19 +141,49 @@ const AOI_STYLE = {
   dd_top:         { stroke: '#f97316', fill: 'rgba(249,115,22,0.06)', label: '#f97316' },
   dd_right:       { stroke: '#a855f7', fill: 'rgba(168,85,247,0.06)', label: '#a855f7' },
 };
+const LABEL_STYLE = {
+  CLICKED:            { fill: '#16a34a', text: '#fff', short: 'CLICKED' },
+  DEFERRED:           { fill: '#f59e0b', text: '#000', short: 'DEFERRED' },
+  EVALUATED_REJECTED: { fill: '#ef4444', text: '#fff', short: 'EVAL-REJ' },
+  NOT_APPROACHED:     { fill: '#444',    text: '#aaa', short: '·' },  // hidden by default
+};
 function drawAOIs() {
   aoiSvg.innerHTML = '';
   for (const [kind, items] of Object.entries(TRIAL.bboxes)) {
     const s = AOI_STYLE[kind]; if (!s) continue;
+    const labels = (TRIAL.aoi_labels || {})[kind] || [];
     items.forEach((it, i) => {
       const x = it.location.x, y = it.location.y;
       const w = it.size.width, h = it.size.height;
-      const rect = mkSvg('rect', {x, y, width: w, height: h, fill: s.fill, stroke: s.stroke, 'stroke-width': 2});
+      const lbl = labels[i] || { label: 'NOT_APPROACHED' };
+      const isApproached = lbl.label !== 'NOT_APPROACHED';
+      // Bbox rect — emphasize approached AOIs with thicker stroke
+      const rect = mkSvg('rect', {
+        x, y, width: w, height: h,
+        fill: s.fill, stroke: s.stroke,
+        'stroke-width': isApproached ? 3 : 1.5,
+        'stroke-opacity': isApproached ? 0.95 : 0.6,
+      });
       aoiSvg.appendChild(rect);
-      const label = kind === 'organic_result' ? `O${it.position}` : kind.replace('_', ' ');
+      // Position/kind tag (top-left corner)
+      const tag = kind === 'organic_result' ? `O${it.position}` : kind.replace('_', ' ');
       const tx = mkSvg('text', {x: x + 6, y: y + 18, fill: s.label, 'font-family': 'monospace', 'font-size': 12, 'font-weight': 'bold', stroke: '#000', 'stroke-width': 3, 'paint-order': 'stroke'});
-      tx.textContent = label;
+      tx.textContent = tag;
       aoiSvg.appendChild(tx);
+      // Four-class label badge (top-right corner) — skip NOT_APPROACHED
+      if (isApproached) {
+        const ls = LABEL_STYLE[lbl.label];
+        const badgeText = `${ls.short} · ${lbl.episodes}ep · ${Math.round(lbl.total_dwell_ms)}ms`;
+        const badgeW = badgeText.length * 6.5 + 12;
+        const badgeH = 18;
+        const bx = x + w - badgeW - 4;
+        const by = y + 4;
+        const badge = mkSvg('rect', {x: bx, y: by, width: badgeW, height: badgeH, rx: 3, ry: 3, fill: ls.fill, 'fill-opacity': 0.95, stroke: '#000', 'stroke-width': 1});
+        aoiSvg.appendChild(badge);
+        const btx = mkSvg('text', {x: bx + 6, y: by + 13, fill: ls.text, 'font-family': 'monospace', 'font-size': 10, 'font-weight': 'bold'});
+        btx.textContent = badgeText;
+        aoiSvg.appendChild(btx);
+      }
     });
   }
 }
@@ -441,6 +483,11 @@ document.getElementById('info-doc').textContent = `${W} × ${DOC_H}`;
 document.getElementById('info-cursor').textContent = TRIAL.cursor.length;
 document.getElementById('info-fix').textContent = TRIAL.fixations.length;
 document.getElementById('info-pupil').textContent = TRIAL.pupil.length;
+const summary = (TRIAL._meta && TRIAL._meta.label_summary) || {};
+document.getElementById('lbl-clk').textContent = `CLICKED ${summary.CLICKED || 0}`;
+document.getElementById('lbl-def').textContent = `DEFERRED ${summary.DEFERRED || 0}`;
+document.getElementById('lbl-rej').textContent = `EVAL-REJ ${summary.EVALUATED_REJECTED || 0}`;
+document.getElementById('lbl-not').textContent = `NOT-APP ${summary.NOT_APPROACHED || 0}`;
 
 // Wait for image to size svgs, then paint everything.
 // Default: park playhead at end so the full trail is visible up-front.

@@ -121,6 +121,75 @@ def trial_t0(trial_id: str) -> int:
     return min(candidates)
 
 
+def derive_aoi_labels(cursor: list[dict], bboxes: dict, min_dwell_ms: int = 100) -> dict:
+    """For each AOI, compute episodes and assign a four-class label.
+
+    Episodes = enter→exit traversals. An episode is kept if dwell ≥ min_dwell_ms
+    (filters drive-by crossings). Labels:
+      CLICKED            — any episode contains a click event
+      DEFERRED           — ≥2 kept episodes (re-approach happened)
+      EVALUATED_REJECTED — exactly 1 kept episode
+      NOT_APPROACHED     — 0 kept episodes
+    """
+    def hit(x: float, y: float, b: dict) -> bool:
+        bx, by = b["location"]["x"], b["location"]["y"]
+        bw, bh = b["size"]["width"], b["size"]["height"]
+        return bx <= x <= bx + bw and by <= y <= by + bh
+
+    out: dict[str, list[dict]] = {}
+    for kind, items in bboxes.items():
+        out[kind] = []
+        for idx, item in enumerate(items):
+            episodes = []
+            inside = False
+            enter_t = None
+            had_click = False
+            for s in cursor:
+                in_now = hit(s["x"], s["y"], item)
+                if in_now and not inside:
+                    enter_t = s["t"]
+                    inside = True
+                    had_click_this_ep = False
+                elif inside and (s.get("event") == "click" or s.get("event") == "mousedown") and in_now:
+                    had_click_this_ep = True
+                elif inside and not in_now:
+                    dwell = s["t"] - (enter_t or s["t"])
+                    if dwell >= min_dwell_ms:
+                        episodes.append({"enter_t": enter_t, "exit_t": s["t"], "dwell": dwell, "click": had_click_this_ep})
+                        if had_click_this_ep:
+                            had_click = True
+                    inside = False
+                    had_click_this_ep = False
+            if inside:  # never exited
+                dwell = (cursor[-1]["t"] if cursor else 0) - (enter_t or 0)
+                if dwell >= min_dwell_ms:
+                    episodes.append({"enter_t": enter_t, "exit_t": None, "dwell": dwell, "click": had_click_this_ep})
+                    if had_click_this_ep:
+                        had_click = True
+
+            n = len(episodes)
+            if had_click:
+                label = "CLICKED"
+            elif n >= 2:
+                label = "DEFERRED"
+            elif n == 1:
+                label = "EVALUATED_REJECTED"
+            else:
+                label = "NOT_APPROACHED"
+
+            entry = {
+                "kind": kind,
+                "label": label,
+                "episodes": n,
+                "total_dwell_ms": sum(e["dwell"] for e in episodes),
+            }
+            if "position" in item:
+                entry["position"] = item["position"]
+            entry["bbox_index"] = idx
+            out[kind].append(entry)
+    return out
+
+
 def build_trial(trial_id: str) -> dict | None:
     png = AF_ROOT / "full-page-screenshots" / f"{trial_id}.png"
     ad_json = AF_ROOT / "ad-boundary-data" / f"{trial_id}.json"
@@ -151,6 +220,13 @@ def build_trial(trial_id: str) -> dict | None:
     shutil.copy2(png, PNG_OUT / png.name)
 
     organic = json.loads(organic_json.read_text())
+    bboxes = {
+        "organic_result": organic.get("organic_result", []),
+        "native_ad":  organic.get("native_ad", []),
+        "dd_top":     organic.get("dd_top", []),
+        "dd_right":   organic.get("dd_right", []),
+    }
+    aoi_labels = derive_aoi_labels(cursor, bboxes)
 
     return {
         "trial_id": trial_id,
@@ -162,12 +238,8 @@ def build_trial(trial_id: str) -> dict | None:
         "duration_ms": duration_ms,
         "task": meta["task"],
         "url": meta["url"],
-        "bboxes": {
-            "organic_result": organic.get("organic_result", []),
-            "native_ad":  organic.get("native_ad", []),
-            "dd_top":     organic.get("dd_top", []),
-            "dd_right":   organic.get("dd_right", []),
-        },
+        "bboxes": bboxes,
+        "aoi_labels": aoi_labels,
         "cursor": cursor,
         "xy_delta": xy_delta,
         "fixations": fixations,
@@ -178,6 +250,10 @@ def build_trial(trial_id: str) -> dict | None:
             "n_cursor": len(cursor),
             "n_fixations": len(fixations),
             "n_pupil": len(pupil),
+            "label_summary": {
+                lbl: sum(1 for kind in aoi_labels.values() for it in kind if it["label"] == lbl)
+                for lbl in ("CLICKED", "DEFERRED", "EVALUATED_REJECTED", "NOT_APPROACHED")
+            },
         },
     }
 
