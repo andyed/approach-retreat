@@ -36,6 +36,13 @@ h1 { font-size: 22px; margin-bottom: 6px; }
 .pill.def { background: #f59e0b; color: #000; }
 .pill.rej { background: #ef4444; color: #fff; }
 .pill.not { background: #2a2a2a; color: #888; }
+section.group { margin-top: 36px; }
+.group-title { font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+.badge { background: #2a5a8a; color: #fff; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+.group-blurb { font-size: 12px; color: #888; margin-bottom: 14px; }
+.group-extended .badge { background: #444; }
+.caption { font-size: 11px; color: #ccc; margin-bottom: 10px; line-height: 1.4; padding-left: 8px; border-left: 2px solid #2a5a8a; }
+.group-extended .caption { display: none; }
 """
 
 
@@ -58,41 +65,101 @@ def build_trial_page(trial_path: Path, template: str) -> Path:
     return out_path
 
 
+CURATION_JSON = REPLAY / "data/curation.json"
+
+GROUP_TITLES = {
+    "E":     ("Multi-AOI dramas", "3+ active label classes in one SERP — comparative inference"),
+    "B-DEF": ("Canonical DEFERRED", "cursor entered, retreated, returned"),
+    "B-REJ": ("Canonical EVALUATED-REJECTED", "approached and dropped, no re-approach"),
+    "C":     ("Boundary cases", "dwell near the 100ms classification threshold"),
+    "D":     ("Cursor-vs-gaze divergence", "gaze-fixated AOIs that cursor missed entirely"),
+    "A":     ("Trivial calls", "one click, no other approached AOIs"),
+}
+GROUP_ORDER = ["E", "B-DEF", "B-REJ", "C", "D", "A"]
+
+
+def trial_card(t: dict, caption: str = "") -> str:
+    tid = t["trial_id"]
+    query = (t.get("task", "").split("|")[-1].strip() or tid)
+    n_organic = len(t["bboxes"].get("organic_result", []))
+    n_ad = sum(len(t["bboxes"].get(k, [])) for k in ("native_ad", "dd_top", "dd_right"))
+    s = t["_meta"].get("label_summary", {})
+    pills = (
+        f'<span class="pill clk">CLK {s.get("CLICKED", 0)}</span>'
+        f'<span class="pill def">DEF {s.get("DEFERRED", 0)}</span>'
+        f'<span class="pill rej">REJ {s.get("EVALUATED_REJECTED", 0)}</span>'
+        f'<span class="pill not">NA {s.get("NOT_APPROACHED", 0)}</span>'
+    )
+    cap_html = f'<div class="caption">{caption}</div>' if caption else ""
+    return f"""
+    <a class="card" href="trials/{tid}.html">
+      <h2>{tid}</h2>
+      <div class="query">{query}</div>
+      {cap_html}
+      <div class="pills">{pills}</div>
+      <div class="stats">
+        <span><span class="v">{(t['duration_ms']/1000):.1f}s</span>duration</span>
+        <span><span class="v">{t['_meta']['n_cursor']}</span>cursor</span>
+        <span><span class="v">{n_organic}</span>organic</span>
+        <span><span class="v">{n_ad}</span>ads</span>
+      </div>
+    </a>
+    """
+
+
 def build_index(trials: list[dict]) -> Path:
-    cards = []
-    for t in trials:
-        tid = t["trial_id"]
-        query = t.get("task", "").split("|")[-1].strip() or tid
-        n_organic = len(t["bboxes"].get("organic_result", []))
-        n_ad = sum(len(t["bboxes"].get(k, [])) for k in ("native_ad", "dd_top", "dd_right"))
-        s = t["_meta"].get("label_summary", {})
-        pills = (
-            f'<span class="pill clk">CLK {s.get("CLICKED", 0)}</span>'
-            f'<span class="pill def">DEF {s.get("DEFERRED", 0)}</span>'
-            f'<span class="pill rej">REJ {s.get("EVALUATED_REJECTED", 0)}</span>'
-            f'<span class="pill not">NA {s.get("NOT_APPROACHED", 0)}</span>'
-        )
-        cards.append(f"""
-        <a class="card" href="trials/{tid}.html">
-          <h2>{tid}</h2>
-          <div class="query">{query}</div>
-          <div class="pills">{pills}</div>
-          <div class="stats">
-            <span><span class="v">{(t['duration_ms']/1000):.1f}s</span>duration</span>
-            <span><span class="v">{t['_meta']['n_cursor']}</span>cursor</span>
-            <span><span class="v">{n_organic}</span>organic</span>
-            <span><span class="v">{n_ad}</span>ads</span>
-          </div>
-        </a>
+    by_id = {t["trial_id"]: t for t in trials}
+    curation = json.loads(CURATION_JSON.read_text()) if CURATION_JSON.exists() else None
+
+    sections = []
+    assigned: set[str] = set()
+    if curation:
+        groups = curation.get("groups", {})
+        for key in GROUP_ORDER:
+            items = groups.get(key, [])
+            if not items:
+                continue
+            title, blurb = GROUP_TITLES[key]
+            cards = []
+            for it in items:
+                tid = it["trial_id"]
+                if tid not in by_id:
+                    continue
+                cards.append(trial_card(by_id[tid], it.get("caption", "")))
+                assigned.add(tid)
+            sections.append(f"""
+              <section class="group">
+                <h2 class="group-title"><span class="badge">Group {key}</span> {title}</h2>
+                <p class="group-blurb">{blurb}</p>
+                <div class="grid">{"".join(cards)}</div>
+              </section>
+            """)
+
+    extended = [t for t in trials if t["trial_id"] not in assigned]
+    if extended:
+        ext_cards = "".join(trial_card(t) for t in sorted(extended, key=lambda x: x["trial_id"]))
+        sections.append(f"""
+          <section class="group group-extended">
+            <h2 class="group-title">Extended candidate pool ({len(extended)})</h2>
+            <p class="group-blurb">High-scoring trials not yet assigned to a pedagogical group. Browse to spot-check the curation or surface trials worth promoting.</p>
+            <div class="grid">{ext_cards}</div>
+          </section>
         """)
+
+    if not sections:
+        sections.append(f'<div class="grid">{"".join(trial_card(t) for t in trials)}</div>')
+
+    n_assigned = len(assigned)
+    n_total = len(trials)
+    summary = f"{n_assigned} grouped + {n_total - n_assigned} extended = {n_total} total trials" if curation else f"{n_total} trials"
+
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>AR Replay — AdSERP signal testbed</title>
 <style>{INDEX_CSS}</style></head><body>
 <h1>AdSERP Signal Testbed</h1>
-<p class="lede">Replay of the <a href="https://github.com/kayhan-latifzadeh/AdSERP">AdSERP dataset</a> with per-AOI <strong>four-class taxonomy labels</strong> overlaid: <span class="pill clk">CLICKED</span> <span class="pill def">DEFERRED</span> <span class="pill rej">EVALUATED-REJECTED</span> <span class="pill not">NOT-APPROACHED</span>. Labels derived from cursor enter/dwell/exit episodes against AOI bboxes — the inference task the AR library performs in production. Sibling to the <a href="../index.html">live testbed</a>.</p>
-<div class="grid">
-  {"".join(cards)}
-</div>
+<p class="lede">Replay of the <a href="https://github.com/kayhan-latifzadeh/AdSERP">AdSERP dataset</a> with per-AOI <strong>four-class taxonomy labels</strong> overlaid: <span class="pill clk">CLICKED</span> <span class="pill def">DEFERRED</span> <span class="pill rej">EVALUATED-REJECTED</span> <span class="pill not">NOT-APPROACHED</span>. Labels derived from cursor enter/dwell/exit episodes against AOI bboxes — the inference task the AR library performs in production.</p>
+<p class="lede" style="font-size:12px;color:#888;">Curation rubric: <a href="https://github.com/andyed/approach-retreat/blob/main/docs/CURATION.md">docs/CURATION.md</a> · Sibling: <a href="../index.html">live testbed</a> · Pool: {summary}</p>
+{"".join(sections)}
 <div class="crumbs">Built from raw AdSERP signals — no NB15 derivatives. Organic AOIs from CV row-projection (see <code>attentional-foraging/scripts/extract_organic_bboxes.py</code>). AOI labels from <code>derive_aoi_labels()</code> in <code>scripts/build_replay_trial.py</code>.</div>
 </body></html>
 """
