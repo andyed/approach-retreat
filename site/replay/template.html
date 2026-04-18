@@ -57,7 +57,7 @@ body { background: #111; color: #eee; font-family: system-ui, -apple-system, san
     </label>
     <button class="btn active" id="aoi-btn">AOIs</button>
     <button class="btn active" id="cursor-btn">Cursor trail</button>
-    <button class="btn" id="gaze-btn">Gaze fixations</button>
+    <button class="btn active" id="gaze-btn">Gaze fixations</button>
     <button class="btn" id="play-btn">&#9654; Play</button>
     <button class="btn" id="reset-btn">Reset</button>
   </div>
@@ -198,7 +198,7 @@ function drawCursorTrail() {
 }
 
 // ── Gaze fixations (optional secondary layer) ─────────────────────────
-let gazeVisible = false;
+let gazeVisible = true;
 function drawGazeFixations() {
   document.querySelectorAll('.gaze-fix').forEach(e => e.remove());
   if (!gazeVisible) return;
