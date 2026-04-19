@@ -125,26 +125,43 @@ export function computeViewportBandsPure(timeline, aois, scrH) {
 
 /**
  * Pure-function computation of continuous viewport analytics + scroll-
- * trajectory features (NB30's minimal B∪C' set) for parity testing
- * against the Python reference in
- * attentional-foraging/scripts/nb30_scroll_trajectory.py.
+ * trajectory features (NB30's minimal B∪C' set) + an IAB/MRC-aligned
+ * viewable-impression pair. Parity-tested against the Python reference
+ * in attentional-foraging/scripts/nb30_scroll_trajectory.py.
  *
  * For each AOI: compute vt_any_ms, vt_center_ms, avg_viewport_y_px,
- * max_overlap_frac, min_abs_velocity_px_per_s, n_reversals from a
- * pre-built scroll timeline. Piecewise-constant: each interval
- * [timeline[i], timeline[i+1]) is attributed using the scrollY at
- * timeline[i] (matches the band computation convention).
+ * max_overlap_frac, min_abs_velocity_px_per_s, n_reversals,
+ * ms_at_50pct_or_more, iab_viewable from a pre-built scroll timeline.
+ * Piecewise-constant: each interval [timeline[i], timeline[i+1]) is
+ * attributed using the scrollY at timeline[i].
+ *
+ * IAB viewability rule (MRC/IAB Viewable Impression Measurement
+ * Guidelines): a display AOI is "viewable" if ≥ 50 % of its pixels
+ * are in view for ≥ 1 continuous second. `ms_at_50pct_or_more` is the
+ * continuous-valued analogue (no time-continuity constraint);
+ * `iab_viewable` is the boolean that implements the full rule. Video
+ * AOIs requiring a 2 s threshold should override via the caller
+ * rather than the library.
  *
  * @param {Array<{t: number, scrollY: number}>} timeline — sorted by t.
  * @param {Array<{position: number, page_top: number, page_bot: number}>} aois
  * @param {number} scrH — viewport height (assumed constant).
  * @param {number} [centerTolPx=100] — ±px from viewport center defining
  *   "near center" for vt_center_ms.
+ * @param {number} [iabViewableThresholdMs=1000] — continuous-duration
+ *   threshold for the IAB viewable-impression rule (default: 1000 ms
+ *   per MRC display guideline; set 2000 for video).
  * @returns {Array<{position, vt_any_ms, vt_center_ms, avg_viewport_y_px,
- *   max_overlap_frac, min_abs_velocity_px_per_s, n_reversals}>} sorted
- *   by position. Values rounded to match the session-level emission.
+ *   max_overlap_frac, min_abs_velocity_px_per_s, n_reversals,
+ *   ms_at_50pct_or_more, iab_viewable}>} sorted by position.
  */
-export function computeViewportAnalyticsPure(timeline, aois, scrH, centerTolPx = 100) {
+export function computeViewportAnalyticsPure(
+  timeline,
+  aois,
+  scrH,
+  centerTolPx = 100,
+  iabViewableThresholdMs = 1000
+) {
   const centerY = scrH / 2;
   const accum = aois.map((a) => ({
     position: a.position,
@@ -155,6 +172,10 @@ export function computeViewportAnalyticsPure(timeline, aois, scrH, centerTolPx =
     min_abs_v: Infinity,
     n_reversals: 0,
     last_v_sign: 0,
+    // IAB/MRC impression tracking
+    ms_at_50pct_or_more: 0,
+    current_50pct_stretch_ms: 0,
+    iab_viewable: false,
   }));
   for (let i = 0; i < timeline.length - 1; i++) {
     const dt = timeline[i + 1].t - timeline[i].t;
@@ -169,11 +190,15 @@ export function computeViewportAnalyticsPure(timeline, aois, scrH, centerTolPx =
       const vpTop = scrollY;
       const vpBot = scrollY + scrH;
       const overlap = Math.min(a.page_bot, vpBot) - Math.max(a.page_top, vpTop);
-      if (overlap <= 0) continue;
+      const ac = accum[j];
+      if (overlap <= 0) {
+        // Dropping out of view resets the current IAB continuity stretch.
+        ac.current_50pct_stretch_ms = 0;
+        continue;
+      }
       const centerVpY = (a.page_top + a.page_bot) / 2 - scrollY;
       const aoiH = a.page_bot - a.page_top;
       const overlapFrac = aoiH > 0 ? overlap / aoiH : 0;
-      const ac = accum[j];
       ac.any_ms += dt;
       ac.sum_center_y_ms += centerVpY * dt;
       if (overlapFrac > ac.max_overlap_frac) ac.max_overlap_frac = overlapFrac;
@@ -183,6 +208,16 @@ export function computeViewportAnalyticsPure(timeline, aois, scrH, centerTolPx =
         ac.n_reversals += 1;
       }
       if (sign !== 0) ac.last_v_sign = sign;
+      // IAB: accumulate ms-above-50% and track the current continuous stretch.
+      if (overlapFrac >= 0.5) {
+        ac.ms_at_50pct_or_more += dt;
+        ac.current_50pct_stretch_ms += dt;
+        if (ac.current_50pct_stretch_ms >= iabViewableThresholdMs) {
+          ac.iab_viewable = true;
+        }
+      } else {
+        ac.current_50pct_stretch_ms = 0;
+      }
     }
   }
   const out = accum.map((a) => ({
@@ -193,6 +228,8 @@ export function computeViewportAnalyticsPure(timeline, aois, scrH, centerTolPx =
     max_overlap_frac: a.max_overlap_frac,
     min_abs_velocity_px_per_s: a.min_abs_v === Infinity ? 0 : a.min_abs_v,
     n_reversals: a.n_reversals,
+    ms_at_50pct_or_more: a.ms_at_50pct_or_more,
+    iab_viewable: a.iab_viewable,
   }));
   out.sort((a, b) => a.position - b.position);
   return out;
@@ -272,6 +309,13 @@ const DEFAULTS = {
   // NB30 K22 sweep shows the feature is flat across {25, 50, 100, 200,
   // 400} px (pooled AUC spread 0.001); 100 px is the defensible default.
   viewportCenterTolPx: 100,
+
+  // IAB/MRC Viewable Impression continuity threshold (ms). The
+  // `iab_viewable` flag goes true when an AOI sustains ≥ 50 % pixel
+  // overlap with the viewport for ≥ this many ms continuously.
+  // 1000 ms is the MRC display-ad rule; set 2000 for video AOIs per
+  // the MRC video rule.
+  iabViewableThresholdMs: 1000,
 
   // Observe layout reflow via ResizeObserver on documentElement. When
   // available, reflow invalidates cached page-Y centers and schedules a
@@ -1020,6 +1064,11 @@ export class ApproachRetreat {
           min_abs_velocity: Infinity,
           n_reversals: 0,
           last_v_sign: 0,
+          // D — IAB/MRC Viewable Impression (≥ 50 % pixels in view for
+          // ≥ iabViewableThresholdMs continuously)
+          ms_at_50pct_or_more: 0,
+          current_50pct_stretch_ms: 0,
+          iab_viewable: false,
           // State carried into the next interval (the geometry IS the
           // state during the closing interval, piecewise-constant)
           lastSnapshotT: now,
@@ -1062,6 +1111,25 @@ export class ApproachRetreat {
               rec.n_reversals += 1;
             }
             if (sign !== 0) rec.last_v_sign = sign;
+
+            // D — IAB/MRC Viewable Impression: ≥ 50 % pixel overlap
+            // maintained for ≥ iabViewableThresholdMs continuously.
+            if (rec.lastOverlapFrac >= 0.5) {
+              rec.ms_at_50pct_or_more += dt;
+              rec.current_50pct_stretch_ms += dt;
+              if (
+                rec.current_50pct_stretch_ms >=
+                this.config.iabViewableThresholdMs
+              ) {
+                rec.iab_viewable = true;
+              }
+            } else {
+              rec.current_50pct_stretch_ms = 0;
+            }
+          } else {
+            // AOI was not intersecting during the closing interval —
+            // any IAB continuity stretch is broken.
+            rec.current_50pct_stretch_ms = 0;
           }
         }
       }
@@ -1177,19 +1245,23 @@ export class ApproachRetreat {
         max_overlap_frac: Number(rec.max_overlap_frac.toFixed(4)),
         min_abs_velocity_px_per_s: Number(minAbsV.toFixed(2)),
         n_reversals: rec.n_reversals,
+        ms_at_50pct_or_more: Math.round(rec.ms_at_50pct_or_more),
+        iab_viewable: rec.iab_viewable,
       });
     }
     return out.sort((a, b) => a.position - b.position);
   }
 
   /**
-   * Metadata describing how analytics totals were computed — schema tag
-   * and the threshold used for vt_center_ms.
+   * Metadata describing how analytics totals were computed — schema tag,
+   * the threshold used for vt_center_ms, and the IAB viewability
+   * continuity threshold.
    */
   getViewportAnalyticsContext() {
     return {
       viewport_h: this._viewportH,
       viewport_center_tol_px: this.config.viewportCenterTolPx,
+      iab_viewable_threshold_ms: this.config.iabViewableThresholdMs,
       schema: 'edmonds-2026-vpanalytics-v1',
     };
   }

@@ -1,11 +1,14 @@
 # Approach/Retreat
 
-Two motor signals for **ranked list layouts** (search result pages, recommendation feeds, comparison tables):
+Two motor signal families for **ranked list layouts** (search result pages, recommendation feeds, comparison tables, product grids):
 
-1. **Approach-retreat episodes** — per-result enter / dwell / exit behavior, classified into a four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached).
-2. **Viewport bands** *(v0.2.0, 2026-04-19)* — per-AOI cumulative milliseconds in the top / middle / bottom third of the visible viewport, piecewise-constant across scroll, resize, and reflow.
+1. **Approach-retreat episodes** — per-result enter / dwell / exit behavior, classified into a four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached). Cursor-based; desktop-only.
+2. **Viewport dynamics** *(v0.3.0, 2026-04-19)* — per-AOI session-level measurement of how each result sits in, and moves through, the viewport. Cursor-free; works wherever scroll events + DOM bounding boxes are available (mobile, feeds, grids included). Emitted across three tiers:
+    - **Impression** — MRC/IAB-aligned: was the AOI viewable (≥ 50 % pixels in view for ≥ 1 continuous second)? Plus `ms_at_50pct_or_more` as the continuous analogue without the continuity constraint.
+    - **Residence** — continuous viewport analytics: `vt_any_ms`, `vt_center_ms`, `avg_viewport_y_px` (plus `max_overlap_frac` as a peak-of-overlap straddler between Impression and Residence). The banded decomposition (`vp_top_ms`, `vp_mid_ms`, `vp_bot_ms`) lives in the same tier and is retained for dashboards and explainability — band-time heatmaps and top/mid/bot residency strips are human-readable in ways `avg_viewport_y_px` alone is not. K14 shows bands add no detectable classifier AUC on top of the continuous six at n = 47 (dropped for parsimony, not ruled out).
+    - **Kinematics** — scroll trajectory while the AOI is visible: `min_abs_velocity_px_per_s`, `n_reversals`. Traces external-working-memory management actions.
 
-Either alone discriminates the hard **deferred vs evaluated-rejected** split on AdSERP-LAB (n=2,351); **together they reach AUC 0.837** (retreat-alone 0.792, bands-alone 0.799). See [`docs/validation/viewport-bands-calibration.md`](docs/validation/viewport-bands-calibration.md).
+On AdSERP-LAB (n = 2,351) against the gaze-derived deferred-vs-evaluated-rejected label `[LAB, NB30]`: approach-retreat M4 alone reaches AUC 0.796 [0.759, 0.830]; banded viewport residence alone 0.800 [0.774, 0.828]; **retreat + bands combined 0.842 [0.818, 0.864]** (source: [`docs/validation/viewport-bands-calibration.md`](docs/validation/viewport-bands-calibration.md), bootstrapped 95 % CIs). The NB30 six-feature B∪C′ minimal set (continuous viewport residence + `min_abs_velocity` + `n_reversals`) reaches AUC 0.8143 on the same split alone, and adds +0.0185 (paired Wilcoxon p = 0.003, 36/47 participants) on top of the continuous-viewport baseline (`[LAB, NB30:K13/K19]`). The banded decomposition adds no detectable AUC on top of that at n = 47 (NB30:K14, Δ = +0.003, p = 0.22, ns) — bands are retained for explainability/dashboards, not the classifier. Mobile / feed / grid transfer is capability-claimed but untested; cross-surface validation is future work.
 
 Sister library to [ClickSense](https://github.com/andyed/clicksense).
 
@@ -41,6 +44,8 @@ Both libraries compose — a page can run both. ClickSense sees each click as a 
 
 ### Signals
 
+Cursor / approach-retreat channel:
+
 | Signal | What it means |
 |--------|---------------|
 | **Approach velocity** | Fast = scanning. Slow = evaluating. |
@@ -50,7 +55,20 @@ Both libraries compose — a page can run both. ClickSense sees each click as a 
 | **Arc ratio** | Path length / direct distance — curved retreats (arc ratio > 1.5) predict re-approach |
 | **Re-approach** | Cursor returns to a previously visited result — reconsideration |
 | **Commitment depth** | How far down the SERP before first click |
-| **Viewport bands** | Per-AOI cumulative ms in top / middle / bottom third of the viewport. Calibrated against gaze-derived deferred-vs-rejected labels (AUC 0.799 alone, 0.837 combined with retreat). See [docs/validation/viewport-bands-calibration.md](docs/validation/viewport-bands-calibration.md). |
+
+Viewport dynamics channel (cursor-free; scroll + DOM bboxes only):
+
+| Tier | Signal | What it means |
+|------|--------|---------------|
+| **Impression** (MRC/IAB) | `iab_viewable` | True iff the AOI held ≥ 50 % pixel overlap with the viewport for ≥ 1 continuous second (display rule; configurable via `iabViewableThresholdMs`). |
+| **Impression** | `ms_at_50pct_or_more` | Cumulative ms during which ≥ 50 % of the AOI was in view — continuous-valued analogue of the IAB threshold without the time-continuity constraint. |
+| **Residence** | `vt_any_ms` | Cumulative ms the AOI had any pixel-overlap with the viewport. Lax "did the user ever see it?" — strictly more inclusive than the IAB rule. |
+| **Residence** | `vt_center_ms` | Cumulative ms the AOI center was within ±100 px of the viewport center (foveal-access zone). |
+| **Residence** | `avg_viewport_y_px` | Mean AOI-center viewport-y during visibility. Positional signal: near top vs near bottom. |
+| **Impression / peak** | `max_overlap_frac` | Peak fraction of the AOI visible — 1.0 = fully in view at some point. Sits between impression and residence: it's the *extreme* of overlap fraction without the time-continuity constraint of `iab_viewable`. |
+| **Residence (bands)** | `vp_any_ms` / `vp_top_ms` / `vp_mid_ms` / `vp_bot_ms` | Banded decomposition of residence time across top/middle/bottom thirds. Dropped from the classifier feature set for parsimony (NB30:K14) but retained for dashboards and explainability — band-time heatmaps and top/mid/bot residency strips are human-readable in ways `avg_viewport_y_px` is not. |
+| **Kinematics** | `min_abs_velocity_px_per_s` | Slowest scroll velocity observed while the AOI was visible. Viewport stabilization marker. |
+| **Kinematics** | `n_reversals` | Count of scroll direction reversals while the AOI was visible. External-working-memory reload signal. |
 
 ## Install
 
@@ -93,7 +111,7 @@ Mark your SERP results:
 
 ## Episode data
 
-Every completed cursor visit to a result produces a 19-field episode from `Episode.toJSON()`. Grouped by purpose:
+Every completed cursor visit to a result produces a 23-field episode from `Episode.toJSON()` (19 cursor fields + 4 banded-viewport fields, the latter null when `trackViewportBands: false`). Grouped by purpose:
 
 ```js
 {
@@ -174,7 +192,7 @@ CIKM paper (*Cognitive Task Models Recover SERP Examination Signal Invisible
 to Atheoretic Cursor Feature Extraction*). One vector per result position
 per session, aggregated over the whole-trial cursor stream against each
 result's page-space Y center. These are the features M4 (click prediction,
-LOSO AUC 0.821) and M5 (deferred-class detection, calibration methodology)
+`[LAB, NB21:K4]` LOSO AUC 0.861 and `[WILD, ACD]` LOSO AUC 0.821) and M5 (deferred-class detection, calibration methodology)
 consume.
 
 ```js
@@ -205,6 +223,50 @@ lives at `scripts/test_feature_tracker_parity.{js,py}`.
 **Calibration for the deferred-class detector (M5).** See
 [`docs/validation/m5-calibration.md`](docs/validation/m5-calibration.md) for
 the end-to-end calibration methodology.
+
+### Viewport dynamics vector (cursor-free)
+
+The second feature family the library emits is viewport dynamics — one
+record per AOI at session granularity, computed from scroll events plus
+DOM bounding boxes alone. No cursor dependency, so this channel runs
+anywhere the page logs `scroll` events (including mobile and feed
+surfaces where cursor telemetry is unavailable).
+
+```js
+ar.getViewportAnalytics();
+// [
+//   { position: 0,
+//     // Impression (MRC/IAB)
+//     iab_viewable: true,              // ≥ 50 % pixels visible for ≥ 1 s continuous
+//     ms_at_50pct_or_more: 2400,       // cumulative ms at ≥ 50 % overlap
+//     // Residence (continuous)
+//     vt_any_ms: 6200,                 // cumulative ms with any viewport overlap
+//     vt_center_ms: 1800,              // cumulative ms with AOI center near viewport center
+//     avg_viewport_y_px: 340,          // mean AOI-center viewport-y during visibility
+//     max_overlap_frac: 1.0,           // peak fraction of AOI visible
+//     // Kinematics (scroll trajectory while visible)
+//     min_abs_velocity_px_per_s: 0,    // slowest |scroll velocity| during visibility
+//     n_reversals: 2 },                // scroll direction reversals during visibility
+//   { position: 1, ... },
+//   ...
+// ]
+
+ar.getViewportAnalyticsContext();
+// { viewport_h: 900,
+//   viewport_center_tol_px: 100,
+//   iab_viewable_threshold_ms: 1000,
+//   schema: 'edmonds-2026-vpanalytics-v1' }
+
+ar.getViewportBands();
+// [{ position, vp_any_ms, vp_top_ms, vp_mid_ms, vp_bot_ms }, ...]
+// Banded decomposition of residence time — retained for dashboards.
+```
+
+**Feature-family selection.** The six-feature minimal set (residence + kinematics, `vt_any_ms` / `vt_center_ms` / `avg_viewport_y_px` / `max_overlap_frac` / `min_abs_velocity_px_per_s` / `n_reversals`) was picked by forward selection (NB30:K18, `min_abs_velocity` at *p* = 0.039 and `n_reversals` at *p* = 0.038; step 3 fails at *p* = 0.28) and recovers the full NB30 11-feature deferred-vs-rejected lift within +0.001 AUC (NB30:K19 minimal-vs-full, Δ = +0.0011 per-p, *p* = 0.356 ns); the other five trajectory features add no detectable AUC once these two are present. `pause_ms` is not emitted — collinear with `vt_any_ms` at *r* = 0.995 (NB30:K17).
+
+**Config:** `trackViewportAnalytics` (default `true`), `viewportCenterTolPx` (default 100, NB30:K22 sweep flat across 16× range), `iabViewableThresholdMs` (default 1000 for the MRC display rule; set 2000 for video).
+
+**Parity.** `computeViewportAnalyticsPure` is bit-compatible with the Python reference in `attentional-foraging/scripts/nb30_scroll_trajectory.py`; all 8 analytics fields match within 1e-6 on identical input. The parity test lives at `scripts/test_viewport_analytics_parity.{js,py}`.
 
 ## Relevance scoring
 
@@ -259,7 +321,7 @@ Each Q&A SERP presents a question with synthetic answers representing a discours
 This library is the instrumentation half of a two-part research program:
 
 - **Analysis:** [attentional-foraging](https://github.com/andyed/attentional-foraging) — a reanalysis of the AdSERP dataset (Latifzadeh, Gwizdka & Leiva, SIGIR '25; 2,776 trials, 47 participants, simultaneous eye + mouse + scroll + pupil tracking) that produces the OSEC task model and the four-class taxonomy.
-- **Deployment:** this library — the task model in runnable form. You get the signal without the eye tracker.
+- **Instrumentation:** this library — the task model in runnable form. You get the signal without the eye tracker.
 
 ### Precedents (2001–2003)
 
@@ -297,7 +359,7 @@ Each of the papers above treats cursor behavior as a *signal to decode*. None of
 
 The four-class taxonomy and retreat geometry claims are validated in the attentional-foraging notebooks:
 
-- **Click prediction (NB21, NB22):** Episode-level features (dwell, retreat distance, arc ratio, visit count) → **AUC 0.859** for click prediction (LOSO M3, post coordinate-space audit 2026-04-12). With element-type interactions (NB22 M3ei): organic **0.859**, top ads **0.919** (+0.010 over M3), native ads **0.817**. Competitive with Arapakis & Leiva 2016 (0.86 AUC, 638 features) using ~6 features because the task model tells you which features matter.
+- **Click prediction (NB21, NB22):** Episode-level features (dwell, retreat distance, arc ratio, visit count) → **AUC 0.859** for click prediction (LOSO M3, post coordinate-space audit 2026-04-12). With element-type interactions (NB22 M3ei): organic **0.859**, top ads **0.919** (+0.010 over M3), native ads **0.817**. Competitive with Arapakis & Leiva 2016 (0.86 AUC, 638 features) using the 9-feature M4 vector because the task model tells you which features matter.
 - **Retreat arc geometry (NB24 v2, rebuilt 2026-04-08):** Top ads show 1.50 median arc ratio vs 1.31 for organic (pooled p = 0.027, but ns under participant clustering p = 0.26 — the element-type effect is Fitts ID, not arc curvature). The arc-ratio metric measures path-length / direct-distance at the moment of max retreat — a *different* geometric quantity from the K5 post-closest-drift signal cited in `docs/theory.md`. NB24's participant-clustered direction has not been re-verified post 2026-04-12 fixation audit; treat NB24 numbers as pre-2nd-fix until refreshed. The canonical motor-signature anchor for the four-class dissociation is `[NB22:K5–K7]` (post-closest drift + gaze dwell + proximity dwell), not arc geometry.
 - **Discrimination cost (NB20):** Top ads produce 2× the approach rate of organic results (42.9% vs 21.0%), 2.3× the dwell (4,586 vs 2,023 ms), 1.7× the direction changes during retreat (2.7 vs 1.6), and the highest pupil dilation (+0.41%). This is the C/W/L violation: top ads evaluate *more* expensively than organic, not less.
 - **Public head-to-head against Brückner et al. 2021:** See [`docs/validation/attcur-bruckner.md`](docs/validation/attcur-bruckner.md). Approach-retreat features beat the Brückner scalar mouse-movement-length baseline by +12.5 AUC (0.821 vs 0.696) on their own ad-click-prediction benchmark, using an 11-feature logistic regression — no neural network, no embeddings. The task model is the whole reason for the gap.

@@ -34,6 +34,7 @@ const trajectory = {
   doc_h: 3000,
   scr_h: 900,
   center_tol_px: 100,
+  iab_viewable_threshold_ms: 1000,
   scroll_events: [
     { t: 0,    scrollY: 0   },
     { t: 1000, scrollY: 300 },   // down slow, 300 px/s
@@ -60,7 +61,8 @@ const jsAnalytics = computeViewportAnalyticsPure(
   trajectory.scroll_events,
   trajectory.aois,
   trajectory.scr_h,
-  trajectory.center_tol_px
+  trajectory.center_tol_px,
+  trajectory.iab_viewable_threshold_ms
 );
 
 console.log('\n── JS computeViewportAnalyticsPure ──');

@@ -375,6 +375,8 @@ export function createPostHogAdapter(posthog, options = {}) {
           max_overlap_frac: a ? a.max_overlap_frac : null,
           min_abs_velocity_px_per_s: a ? a.min_abs_velocity_px_per_s : null,
           n_reversals: a ? a.n_reversals : null,
+          ms_at_50pct_or_more: a ? a.ms_at_50pct_or_more : null,
+          iab_viewable: a ? a.iab_viewable : null,
         };
       });
       for (const b of viewportBands) {
@@ -392,6 +394,8 @@ export function createPostHogAdapter(posthog, options = {}) {
           max_overlap_frac: a ? a.max_overlap_frac : null,
           min_abs_velocity_px_per_s: a ? a.min_abs_velocity_px_per_s : null,
           n_reversals: a ? a.n_reversals : null,
+          ms_at_50pct_or_more: a ? a.ms_at_50pct_or_more : null,
+          iab_viewable: a ? a.iab_viewable : null,
         });
       }
       for (const a of viewportAnalytics) {
@@ -403,6 +407,8 @@ export function createPostHogAdapter(posthog, options = {}) {
           max_overlap_frac: a.max_overlap_frac,
           min_abs_velocity_px_per_s: a.min_abs_velocity_px_per_s,
           n_reversals: a.n_reversals,
+          ms_at_50pct_or_more: a.ms_at_50pct_or_more,
+          iab_viewable: a.iab_viewable,
         });
       }
       mergedFeatures.sort((a, b) => a.position - b.position);
@@ -437,6 +443,7 @@ export function createPostHogAdapter(posthog, options = {}) {
         ar_viewport_band_basis_px: bandContext.viewport_h,
         ar_viewport_analytics_schema: analyticsContext.schema,
         ar_viewport_center_tol_px: analyticsContext.viewport_center_tol_px,
+        ar_iab_viewable_threshold_ms: analyticsContext.iab_viewable_threshold_ms,
         ...getCtx(),
       });
     },

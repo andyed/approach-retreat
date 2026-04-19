@@ -23,11 +23,11 @@ HERE = Path(__file__).resolve().parent
 FIX = HERE.parent / "fixtures"
 
 
-def compute_reference(scroll_events, aois, scr_h, center_tol_px):
-    """Inlined reference from nb30_scroll_trajectory.py (min_abs_velocity,
-    n_reversals, vt_center_ms, avg_viewport_y_px, max_overlap_frac, vt_any_ms).
-    Piecewise-constant attribution: interval [timeline[i], timeline[i+1])
-    uses scrollY at timeline[i]."""
+def compute_reference(scroll_events, aois, scr_h, center_tol_px,
+                      iab_viewable_threshold_ms=1000):
+    """Inlined reference for computeViewportAnalyticsPure (including the
+    IAB/MRC Viewable Impression fields). Piecewise-constant attribution:
+    interval [timeline[i], timeline[i+1]) uses scrollY at timeline[i]."""
     center_y = scr_h / 2.0
     accum = []
     for a in aois:
@@ -37,6 +37,9 @@ def compute_reference(scroll_events, aois, scr_h, center_tol_px):
             "max_overlap_frac": 0.0,
             "min_abs_v": float("inf"),
             "n_reversals": 0, "last_v_sign": 0,
+            "ms_at_50pct_or_more": 0.0,
+            "current_50pct_stretch_ms": 0.0,
+            "iab_viewable": False,
         })
     for i in range(len(scroll_events) - 1):
         dt = scroll_events[i + 1]["t"] - scroll_events[i]["t"]
@@ -51,12 +54,13 @@ def compute_reference(scroll_events, aois, scr_h, center_tol_px):
             vp_top = scroll_y
             vp_bot = scroll_y + scr_h
             overlap = min(a["page_bot"], vp_bot) - max(a["page_top"], vp_top)
+            r = accum[j]
             if overlap <= 0:
+                r["current_50pct_stretch_ms"] = 0.0
                 continue
             center_vp_y = (a["page_top"] + a["page_bot"]) / 2.0 - scroll_y
             aoi_h = a["page_bot"] - a["page_top"]
             overlap_frac = overlap / aoi_h if aoi_h > 0 else 0
-            r = accum[j]
             r["any_ms"] += dt
             r["sum_center_y_ms"] += center_vp_y * dt
             if overlap_frac > r["max_overlap_frac"]:
@@ -69,6 +73,14 @@ def compute_reference(scroll_events, aois, scr_h, center_tol_px):
                 r["n_reversals"] += 1
             if sign != 0:
                 r["last_v_sign"] = sign
+            # IAB / MRC: ≥ 50 % pixel overlap sustained ≥ threshold_ms continuously
+            if overlap_frac >= 0.5:
+                r["ms_at_50pct_or_more"] += dt
+                r["current_50pct_stretch_ms"] += dt
+                if r["current_50pct_stretch_ms"] >= iab_viewable_threshold_ms:
+                    r["iab_viewable"] = True
+            else:
+                r["current_50pct_stretch_ms"] = 0.0
     out = []
     for r in accum:
         avg_vp_y = r["sum_center_y_ms"] / r["any_ms"] if r["any_ms"] > 0 else 0.0
@@ -81,6 +93,8 @@ def compute_reference(scroll_events, aois, scr_h, center_tol_px):
             "max_overlap_frac": r["max_overlap_frac"],
             "min_abs_velocity_px_per_s": min_abs_v,
             "n_reversals": r["n_reversals"],
+            "ms_at_50pct_or_more": r["ms_at_50pct_or_more"],
+            "iab_viewable": r["iab_viewable"],
         })
     out.sort(key=lambda x: x["position"])
     return out
@@ -98,6 +112,7 @@ def main():
         trajectory["aois"],
         trajectory["scr_h"],
         trajectory["center_tol_px"],
+        trajectory.get("iab_viewable_threshold_ms", 1000),
     )
     (FIX / "py_viewport_analytics.json").write_text(json.dumps(py_out, indent=2))
 
@@ -105,7 +120,8 @@ def main():
 
     tol = 1e-6
     fields = ("vt_any_ms", "vt_center_ms", "avg_viewport_y_px",
-              "max_overlap_frac", "min_abs_velocity_px_per_s", "n_reversals")
+              "max_overlap_frac", "min_abs_velocity_px_per_s", "n_reversals",
+              "ms_at_50pct_or_more", "iab_viewable")
     all_ok = True
     for py, js in zip(py_out, js_out):
         assert py["position"] == js["position"]
