@@ -320,10 +320,12 @@ function paintAOIBands(canvasId) {
   const ctx = cv.getContext('2d');
   ctx.scale(devicePixelRatio, devicePixelRatio);
   ctx.clearRect(0, 0, rect.width, rect.height);
-  // For each cursor sample, find which AOI (if any) contains it; paint a band per run
+  // For each cursor-position sample, find which AOI (if any) contains it; paint a band per run.
+  // Skip scroll events — they carry (0, scrollTop), not a mouse position.
   let prev = null, runStart = 0;
   for (let i = 0; i < TRIAL.cursor.length; i++) {
     const s = TRIAL.cursor[i];
+    if (s.event === 'scroll') continue;
     const aoi = aoiAt(s.x, s.y);
     const key = aoi ? `${aoi.kind}:${aoi.label}` : null;
     if (key !== prev) {
@@ -374,12 +376,17 @@ function setTime(t) {
 }
 
 function updateCursor() {
-  // Find nearest cursor sample at or before currentT
+  // Find nearest cursor-position sample at or before currentT.
+  // Skip scroll events — AdSERP records them with (xpos=0, ypos=scrollTop),
+  // which are viewport offsets, not cursor positions.
   if (!TRIAL.cursor.length) return;
-  let s = TRIAL.cursor[0];
+  let s = null;
   for (const c of TRIAL.cursor) {
-    if (c.t <= currentT) s = c; else break;
+    if (c.t > currentT) break;
+    if (c.event === 'scroll') continue;
+    s = c;
   }
+  if (!s) return;
   cursor.style.left = s.x + 'px';
   cursor.style.top = s.y + 'px';
   cursor.classList.toggle('clicking', s.event === 'click' || s.event === 'mousedown');
@@ -404,8 +411,12 @@ function updatePlayhead() {
 
 function updateInfo() {
   document.getElementById('time-label').textContent = `${(currentT / 1000).toFixed(2)}s / ${(DUR / 1000).toFixed(2)}s`;
-  let s = TRIAL.cursor[0];
-  for (const c of TRIAL.cursor) { if (c.t <= currentT) s = c; else break; }
+  let s = null;
+  for (const c of TRIAL.cursor) {
+    if (c.t > currentT) break;
+    if (c.event === 'scroll') continue;
+    s = c;
+  }
   if (s) {
     document.getElementById('info-pos').textContent = `(${Math.round(s.x)}, ${Math.round(s.y)})`;
     const aoi = aoiAt(s.x, s.y);
