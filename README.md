@@ -1,8 +1,31 @@
 # Approach/Retreat
 
-Cursor approach-retreat dynamics on **ranked list layouts** (search result pages, recommendation feeds, comparison tables). Sister library to [ClickSense](https://github.com/andyed/clicksense).
+Two motor signals for **ranked list layouts** (search result pages, recommendation feeds, comparison tables):
+
+1. **Approach-retreat episodes** — per-result enter / dwell / exit behavior, classified into a four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached).
+2. **Viewport bands** *(v0.2.0, 2026-04-19)* — per-AOI cumulative milliseconds in the top / middle / bottom third of the visible viewport, piecewise-constant across scroll, resize, and reflow.
+
+Either alone discriminates the hard **deferred vs evaluated-rejected** split on AdSERP-LAB (n=2,351); **together they reach AUC 0.837** (retreat-alone 0.792, bands-alone 0.799). See [`docs/validation/viewport-bands-calibration.md`](docs/validation/viewport-bands-calibration.md).
+
+Sister library to [ClickSense](https://github.com/andyed/clicksense).
 
 *Current iteration of a cursor-instrumentation line that began with the Optimoz Firefox gesture extension (2001) and Uzilla (2003) — see [Precedents](#precedents-2001-2003) below and [`docs/history.md`](docs/history.md) for the full lineage.*
+
+## See the library at work
+
+Three AdSERP trials replayed against the **original screenshots** with four-class taxonomy labels (clicked / deferred / evaluated-rejected / not-approached) inferred from cursor episodes alone:
+
+<table>
+<tr>
+<td align="center" valign="middle"><a href="https://andyed.github.io/approach-retreat/replay/trials/p006-b4-t7.html"><img src="site/assets/hero/p006-b4-t7_tilt.png" alt="Canonical rejected — DEF 9 / REJ 4" width="300"/></a><br/><sub><b>Canonical rejected</b><br/>DEF 9 · REJ 4</sub></td>
+<td align="center" valign="middle"><a href="https://andyed.github.io/approach-retreat/replay/trials/p047-b6-t1.html"><img src="site/assets/hero/p047-b6-t1_tilt.png" alt="Multi-AOI drama — CLK 1 / DEF 9 / REJ 1 / NA 4" width="440"/></a><br/><sub><b>Multi-AOI drama</b><br/>CLK 1 · DEF 9 · REJ 1 · NA 4</sub></td>
+<td align="center" valign="middle"><a href="https://andyed.github.io/approach-retreat/replay/trials/p019-b1-t8.html"><img src="site/assets/hero/p019-b1-t8_tilt.png" alt="Canonical deferred — DEF 11" width="300"/></a><br/><sub><b>Canonical deferred</b><br/>DEF 11 · REJ 1</sub></td>
+</tr>
+</table>
+
+The backgrounds are **raw AdSERP screenshots** — what the participant actually saw, pixel for pixel. Boxes are AOIs; labels are this library's output, computed from the cursor stream alone (no eye tracker input at inference time). Full replay index: [**andyed.github.io/approach-retreat/replay/**](https://andyed.github.io/approach-retreat/replay/) — 86 curated trials across four canonical taxonomy groups.
+
+> **Companion viewer.** For the same trials rendered through a foveated-perception simulator (showing what the participant could *resolve* at each fixation), see [attentional-foraging's cursor plots](https://andyed.github.io/attentional-foraging/). Different view of the same data — screenshot-accurate here, perception-accurate there.
 
 ## The idea
 
@@ -27,6 +50,7 @@ Both libraries compose — a page can run both. ClickSense sees each click as a 
 | **Arc ratio** | Path length / direct distance — curved retreats (arc ratio > 1.5) predict re-approach |
 | **Re-approach** | Cursor returns to a previously visited result — reconsideration |
 | **Commitment depth** | How far down the SERP before first click |
+| **Viewport bands** | Per-AOI cumulative ms in top / middle / bottom third of the viewport. Calibrated against gaze-derived deferred-vs-rejected labels (AUC 0.799 alone, 0.837 combined with retreat). See [docs/validation/viewport-bands-calibration.md](docs/validation/viewport-bands-calibration.md). |
 
 ## Install
 
