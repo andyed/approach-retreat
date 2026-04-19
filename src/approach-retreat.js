@@ -123,6 +123,81 @@ export function computeViewportBandsPure(timeline, aois, scrH) {
   return out;
 }
 
+/**
+ * Pure-function computation of continuous viewport analytics + scroll-
+ * trajectory features (NB30's minimal B∪C' set) for parity testing
+ * against the Python reference in
+ * attentional-foraging/scripts/nb30_scroll_trajectory.py.
+ *
+ * For each AOI: compute vt_any_ms, vt_center_ms, avg_viewport_y_px,
+ * max_overlap_frac, min_abs_velocity_px_per_s, n_reversals from a
+ * pre-built scroll timeline. Piecewise-constant: each interval
+ * [timeline[i], timeline[i+1]) is attributed using the scrollY at
+ * timeline[i] (matches the band computation convention).
+ *
+ * @param {Array<{t: number, scrollY: number}>} timeline — sorted by t.
+ * @param {Array<{position: number, page_top: number, page_bot: number}>} aois
+ * @param {number} scrH — viewport height (assumed constant).
+ * @param {number} [centerTolPx=100] — ±px from viewport center defining
+ *   "near center" for vt_center_ms.
+ * @returns {Array<{position, vt_any_ms, vt_center_ms, avg_viewport_y_px,
+ *   max_overlap_frac, min_abs_velocity_px_per_s, n_reversals}>} sorted
+ *   by position. Values rounded to match the session-level emission.
+ */
+export function computeViewportAnalyticsPure(timeline, aois, scrH, centerTolPx = 100) {
+  const centerY = scrH / 2;
+  const accum = aois.map((a) => ({
+    position: a.position,
+    any_ms: 0,
+    center_ms: 0,
+    sum_center_y_ms: 0,
+    max_overlap_frac: 0,
+    min_abs_v: Infinity,
+    n_reversals: 0,
+    last_v_sign: 0,
+  }));
+  for (let i = 0; i < timeline.length - 1; i++) {
+    const dt = timeline[i + 1].t - timeline[i].t;
+    if (dt <= 0) continue;
+    const dtS = dt / 1000;
+    const scrollY = timeline[i].scrollY;
+    const v = dtS > 0 ? (timeline[i + 1].scrollY - scrollY) / dtS : 0;
+    const absV = Math.abs(v);
+    const sign = absV < 1e-6 ? 0 : v > 0 ? 1 : -1;
+    for (let j = 0; j < aois.length; j++) {
+      const a = aois[j];
+      const vpTop = scrollY;
+      const vpBot = scrollY + scrH;
+      const overlap = Math.min(a.page_bot, vpBot) - Math.max(a.page_top, vpTop);
+      if (overlap <= 0) continue;
+      const centerVpY = (a.page_top + a.page_bot) / 2 - scrollY;
+      const aoiH = a.page_bot - a.page_top;
+      const overlapFrac = aoiH > 0 ? overlap / aoiH : 0;
+      const ac = accum[j];
+      ac.any_ms += dt;
+      ac.sum_center_y_ms += centerVpY * dt;
+      if (overlapFrac > ac.max_overlap_frac) ac.max_overlap_frac = overlapFrac;
+      if (Math.abs(centerVpY - centerY) <= centerTolPx) ac.center_ms += dt;
+      if (absV < ac.min_abs_v) ac.min_abs_v = absV;
+      if (ac.last_v_sign !== 0 && sign !== 0 && sign !== ac.last_v_sign) {
+        ac.n_reversals += 1;
+      }
+      if (sign !== 0) ac.last_v_sign = sign;
+    }
+  }
+  const out = accum.map((a) => ({
+    position: a.position,
+    vt_any_ms: a.any_ms,
+    vt_center_ms: a.center_ms,
+    avg_viewport_y_px: a.any_ms > 0 ? a.sum_center_y_ms / a.any_ms : 0,
+    max_overlap_frac: a.max_overlap_frac,
+    min_abs_velocity_px_per_s: a.min_abs_v === Infinity ? 0 : a.min_abs_v,
+    n_reversals: a.n_reversals,
+  }));
+  out.sort((a, b) => a.position - b.position);
+  return out;
+}
+
 const DEFAULTS = {
   // AOI selector: which elements are SERP results?
   resultSelector: '[data-result]',
