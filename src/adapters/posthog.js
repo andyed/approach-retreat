@@ -207,6 +207,13 @@ function flattenEpisode(episode) {
     ar_entered_at: episode.entered_at,
     ar_exited_at: episode.exited_at,
     ar_clicked_at: episode.clicked_at,
+    // Per-episode viewport-band dwell, scoped to [entered_at, exited_at].
+    // Null when the library was initialized with trackViewportBands: false.
+    // Calibration source: attentional-foraging/scripts/viewport_time_calibration.py
+    ar_vp_any_ms: episode.vp_any_ms ?? null,
+    ar_vp_top_ms: episode.vp_top_ms ?? null,
+    ar_vp_mid_ms: episode.vp_mid_ms ?? null,
+    ar_vp_bot_ms: episode.vp_bot_ms ?? null,
   };
 }
 
@@ -336,6 +343,44 @@ export function createPostHogAdapter(posthog, options = {}) {
       const approachFeatures =
         typeof ar.getApproachFeatures === 'function' ? ar.getApproachFeatures() : [];
 
+      // Merge per-AOI viewport-band totals into the approach-features array
+      // on `position`. Augmentative — the nine-feature schema is unchanged;
+      // band fields are nullable on rows that have no band record. AOIs
+      // with a band record but no approach-feature tracker (cursor never
+      // drove a tracker) are appended as band-only rows. Calibration source:
+      // attentional-foraging/scripts/viewport_time_calibration.py.
+      const viewportBands =
+        typeof ar.getViewportBands === 'function' ? ar.getViewportBands() : [];
+      const bandByPosition = new Map(viewportBands.map((b) => [b.position, b]));
+      const seen = new Set();
+      const mergedFeatures = approachFeatures.map((f) => {
+        seen.add(f.position);
+        const b = bandByPosition.get(f.position);
+        return {
+          ...f,
+          vp_any_ms: b ? b.vp_any_ms : null,
+          vp_top_ms: b ? b.vp_top_ms : null,
+          vp_mid_ms: b ? b.vp_mid_ms : null,
+          vp_bot_ms: b ? b.vp_bot_ms : null,
+        };
+      });
+      for (const b of viewportBands) {
+        if (seen.has(b.position)) continue;
+        mergedFeatures.push({
+          position: b.position,
+          vp_any_ms: b.vp_any_ms,
+          vp_top_ms: b.vp_top_ms,
+          vp_mid_ms: b.vp_mid_ms,
+          vp_bot_ms: b.vp_bot_ms,
+        });
+      }
+      mergedFeatures.sort((a, b) => a.position - b.position);
+
+      const bandContext =
+        typeof ar.getViewportBandContext === 'function'
+          ? ar.getViewportBandContext()
+          : { viewport_h: null, schema: null };
+
       posthog.capture(summaryEventName, {
         ar_total_episodes: episodes.length,
         ar_total_clicked: (classes.clicked || []).length,
@@ -351,8 +396,10 @@ export function createPostHogAdapter(posthog, options = {}) {
         ar_total_dwell_ms: Math.round(totalDwellMs),
         ar_time_to_first_click_ms: timeToFirstClickMs,
         ar_max_position_approached: maxPositionApproached >= 0 ? maxPositionApproached : null,
-        ar_approach_features: approachFeatures,
+        ar_approach_features: mergedFeatures,
         ar_approach_feature_schema: 'edmonds-2026-m4-v1',
+        ar_viewport_band_schema: bandContext.schema,
+        ar_viewport_band_basis_px: bandContext.viewport_h,
         ...getCtx(),
       });
     },

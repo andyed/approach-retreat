@@ -43,6 +43,86 @@ export const Outcome = Object.freeze({
   NOT_APPROACHED: 'not_approached',
 });
 
+/**
+ * Classify an AOI against a viewport snapshot.
+ *
+ * Pure. Mirrors the semantics of `viewport_ms_for_trial` in
+ * attentional-foraging/scripts/viewport_time_calibration.py — any-intersection
+ * uses a strict min > max test (touching edges is NOT intersecting, matching
+ * Python's `min(..., vp_bot) <= max(..., vp_top): continue`), and the three
+ * thirds are [0, third), [third, 2*third), [2*third, scr_h].
+ *
+ * @param {number} aoiPageTop — AOI top in page-space pixels
+ * @param {number} aoiPageBot — AOI bottom in page-space pixels
+ * @param {number} scrollY — current document.scrollingElement.scrollY
+ * @param {number} scrH — current viewport height
+ * @returns {{intersecting: boolean, band: 'top'|'mid'|'bot'|'off'}}
+ *   `band === 'off'` when the AOI center is outside [0, scr_h] OR the AOI
+ *   doesn't intersect the viewport at all. `intersecting` is independent —
+ *   a tall AOI can intersect while its center is off-viewport.
+ */
+export function classifyAoiInViewport(aoiPageTop, aoiPageBot, scrollY, scrH) {
+  const vpTop = scrollY;
+  const vpBot = scrollY + scrH;
+  const intersecting =
+    Math.min(aoiPageBot, vpBot) > Math.max(aoiPageTop, vpTop);
+  if (!intersecting) return { intersecting: false, band: 'off' };
+
+  const centerVpY = (aoiPageTop + aoiPageBot) / 2 - scrollY;
+  const third = scrH / 3;
+  let band = 'off';
+  if (centerVpY >= 0 && centerVpY < third) band = 'top';
+  else if (centerVpY >= third && centerVpY < 2 * third) band = 'mid';
+  else if (centerVpY >= 2 * third && centerVpY <= scrH) band = 'bot';
+  return { intersecting, band };
+}
+
+/**
+ * Batch computation of per-AOI viewport-band dwell totals from a scroll
+ * timeline. Pure helper, parity-tested against the Python reference
+ * `viewport_ms_for_trial` in
+ * attentional-foraging/scripts/viewport_time_calibration.py.
+ *
+ * Piecewise-constant semantics: the interval `[timeline[i].t, timeline[i+1].t]`
+ * is attributed using the scroll position at `timeline[i]` (i.e. the
+ * *start* of the interval), matching Python's `(t0, y0), (t1, _) in zip(...)`.
+ *
+ * Zero-duration or negative intervals are skipped.
+ *
+ * @param {Array<{t: number, scrollY: number}>} timeline — must be sorted by t.
+ * @param {Array<{position: number, page_top: number, page_bot: number}>} aois
+ * @param {number} scrH — viewport height (assumed constant across the timeline;
+ *   if the page resizes, callers should segment the timeline by basis and
+ *   aggregate segment totals).
+ * @returns {Array<{position, any_ms, top_ms, mid_ms, bot_ms}>} sorted by position.
+ */
+export function computeViewportBandsPure(timeline, aois, scrH) {
+  const out = aois.map((a) => ({
+    position: a.position,
+    any_ms: 0,
+    top_ms: 0,
+    mid_ms: 0,
+    bot_ms: 0,
+  }));
+  for (let i = 0; i < timeline.length - 1; i++) {
+    const dt = timeline[i + 1].t - timeline[i].t;
+    if (dt <= 0) continue;
+    const scrollY = timeline[i].scrollY;
+    for (let j = 0; j < aois.length; j++) {
+      const a = aois[j];
+      const { intersecting, band } =
+        classifyAoiInViewport(a.page_top, a.page_bot, scrollY, scrH);
+      if (!intersecting) continue;
+      out[j].any_ms += dt;
+      if (band === 'top') out[j].top_ms += dt;
+      else if (band === 'mid') out[j].mid_ms += dt;
+      else if (band === 'bot') out[j].bot_ms += dt;
+    }
+  }
+  out.sort((a, b) => a.position - b.position);
+  return out;
+}
+
 const DEFAULTS = {
   // AOI selector: which elements are SERP results?
   resultSelector: '[data-result]',
@@ -90,6 +170,21 @@ const DEFAULTS = {
   // page-space pixels. 100 px matches the canonical AdSERP extractor
   // (attentional-foraging/scripts/m4_nb21_hybrid_rerun.py).
   approachFeatureProximityPx: 100,
+
+  // Per-AOI viewport-band dwell tracking. When enabled, each observed
+  // AOI accumulates cumulative ms in each of {any, top, mid, bot} bands
+  // via piecewise-constant snapshots on scroll/resize/reflow/intersect.
+  // Emitted on ar_session_summary (per-position) and ar_episode (scoped
+  // to the entered_at → exited_at window). Calibration source:
+  // attentional-foraging/scripts/viewport_time_calibration.py — LAB
+  // n=2,351, retreat-alone AUC 0.792, bands-alone 0.799, combined 0.837.
+  trackViewportBands: true,
+
+  // Observe layout reflow via ResizeObserver on documentElement. When
+  // available, reflow invalidates cached page-Y centers and schedules a
+  // fresh band snapshot. Feature-detected; absence degrades to
+  // scroll + window.resize coverage only (safe for non-reflowing pages).
+  trackViewportReflow: true,
 };
 
 /**
@@ -310,6 +405,13 @@ class Episode {
       entered_at: this.enteredAt,
       exited_at: this.exitedAt,
       clicked_at: this.clickedAt,
+      // Episode-scoped viewport-band dwell, restricted to
+      // [entered_at, exited_at]. Null when the library was initialized with
+      // trackViewportBands: false or the AOI was never band-observed.
+      vp_any_ms: this.viewportBands ? this.viewportBands.any_ms : null,
+      vp_top_ms: this.viewportBands ? this.viewportBands.top_ms : null,
+      vp_mid_ms: this.viewportBands ? this.viewportBands.mid_ms : null,
+      vp_bot_ms: this.viewportBands ? this.viewportBands.bot_ms : null,
     };
     if (this._includeSamples) {
       json.samples = this.samples;
@@ -340,10 +442,34 @@ export class ApproachRetreat {
     // known scroll position. See ResultFeatureTracker docstring.
     this._approachFeatures = new Map();
     this._resultPageYCenter = new Map(); // resultEl → cached pageY center
+    this._resultHalfHeight = new Map();  // resultEl → cached AOI half-height
+
+    // Per-AOI viewport-band accumulators. Piecewise-constant: each snapshot
+    // closes the interval since lastSnapshotT into the band current *at the
+    // start* of that interval, then records the new band. Matches the
+    // reference batch helper `computeViewportBandsPure` (parity-tested) which
+    // in turn mirrors `viewport_ms_for_trial` in the attentional-foraging
+    // calibration script.
+    //
+    // resultEl → {
+    //   any_ms, top_ms, mid_ms, bot_ms: accumulated durations (ms)
+    //   lastSnapshotT: performance.now() at last snapshot
+    //   currentBand:    'top'|'mid'|'bot'|'off' — band during the pending interval
+    //   lastIntersecting: boolean — any-band membership during pending interval
+    // }
+    this._viewportBandTimes = new Map();
+
+    // rAF scheduling guard so scroll bursts coalesce to one snapshot per frame.
+    this._viewportSnapshotRafId = null;
+    // Last observed viewport height; surfaced on summary for basis disclosure.
+    this._viewportH = typeof window !== 'undefined' ? window.innerHeight : 0;
+    this._resizeObserver = null;
 
     this._onMouseMove = this._onMouseMove.bind(this);
     this._onScroll = this._onScroll.bind(this);
     this._onClick = this._onClick.bind(this);
+    this._onResize = this._onResize.bind(this);
+    this._runViewportSnapshotRaf = this._runViewportSnapshotRaf.bind(this);
 
     this._init();
   }
@@ -366,10 +492,42 @@ export class ApproachRetreat {
               this._visibleResults.delete(entry.target);
             }
           }
+          // IntersectionObserver only fires on threshold transitions; an AOI
+          // that appears mid-band (long scroll jump) still needs an immediate
+          // band snapshot so the pending interval is attributed correctly.
+          if (this.config.trackViewportBands) {
+            this._scheduleViewportSnapshot();
+          }
         },
         { threshold: 0.3 }
       );
       this._observeResults();
+    }
+
+    if (this.config.trackViewportBands && typeof window !== 'undefined') {
+      window.addEventListener('resize', this._onResize, { passive: true });
+      if (
+        this.config.trackViewportReflow &&
+        typeof ResizeObserver !== 'undefined' &&
+        typeof document !== 'undefined' &&
+        document.documentElement
+      ) {
+        this._resizeObserver = new ResizeObserver(() => {
+          // Reflow invalidates cached page-Y centers. Clear both caches,
+          // then schedule a snapshot so the next interval uses fresh geometry.
+          this._resultPageYCenter.clear();
+          this._resultHalfHeight.clear();
+          this._scheduleViewportSnapshot();
+        });
+        this._resizeObserver.observe(document.documentElement);
+      }
+      // Seed pass — establishes lastSnapshotT + currentBand for every AOI
+      // currently present so the first real snapshot has a well-defined
+      // "previous" band to attribute its interval to.
+      this._updateViewportBands(
+        typeof performance !== 'undefined' ? performance.now() : 0,
+        /* seed */ true
+      );
     }
   }
 
@@ -377,6 +535,11 @@ export class ApproachRetreat {
     const results = document.querySelectorAll(this.config.resultSelector);
     for (const el of results) {
       if (this._observer) this._observer.observe(el);
+    }
+    // Newly-observed AOIs should pick up their initial band state before the
+    // next scroll/resize so the first attributable interval is well-defined.
+    if (this.config.trackViewportBands) {
+      this._scheduleViewportSnapshot();
     }
   }
 
@@ -496,6 +659,14 @@ export class ApproachRetreat {
       }
     }
 
+    // Episode-scoped viewport-band baseline. Close the pending session-level
+    // interval up to `now` before reading, so the baseline is accurate to
+    // the entry instant. At finalize we subtract this from the then-current
+    // cumulative band totals to get bands restricted to [enteredAt, exitedAt].
+    if (this.config.trackViewportBands) {
+      episode._viewportBandsAtEntry = this._snapshotViewportBandsFor(el);
+    }
+
     this._active.set(el, episode);
   }
 
@@ -577,9 +748,25 @@ export class ApproachRetreat {
   }
 
   _finalizeEpisode(episode) {
+    // Episode-scoped viewport-band deltas. Subtract the entry-time snapshot
+    // from the current cumulative totals to get ms restricted to
+    // [enteredAt, exitedAt]. Nullable — missing when bands are disabled or
+    // the AOI was never observed by the band accumulator.
+    if (this.config.trackViewportBands && episode._viewportBandsAtEntry) {
+      const cur = this._snapshotViewportBandsFor(episode.resultEl);
+      const base = episode._viewportBandsAtEntry;
+      episode.viewportBands = {
+        any_ms: Math.round(cur.any_ms - base.any_ms),
+        top_ms: Math.round(cur.top_ms - base.top_ms),
+        mid_ms: Math.round(cur.mid_ms - base.mid_ms),
+        bot_ms: Math.round(cur.bot_ms - base.bot_ms),
+      };
+    }
+
     // Clean up transient tracking state
     delete episode._aoiCenter;
     delete episode._retreatStart;
+    delete episode._viewportBandsAtEntry;
 
     this._episodes.push(episode);
     if (this.config.onEpisode) {
@@ -592,6 +779,211 @@ export class ApproachRetreat {
     if (this._scrollY > this._scrollHwm) {
       this._scrollHwm = this._scrollY;
     }
+    if (this.config.trackViewportBands) {
+      this._scheduleViewportSnapshot();
+    }
+  }
+
+  _onResize() {
+    this._viewportH = window.innerHeight;
+    // Layout may have reflowed. Clear cached geometry so the next snapshot
+    // picks up fresh page-space centers and half-heights.
+    this._resultPageYCenter.clear();
+    this._resultHalfHeight.clear();
+    this._scheduleViewportSnapshot();
+  }
+
+  /**
+   * rAF-throttled scroll/resize/reflow handler for band snapshots. Multiple
+   * scroll events within one frame coalesce into a single snapshot, which is
+   * enough resolution — band boundaries are defined against scr_h/3, a much
+   * coarser scale than per-event scroll deltas.
+   */
+  _scheduleViewportSnapshot() {
+    if (this._viewportSnapshotRafId != null) return;
+    if (typeof requestAnimationFrame === 'undefined') {
+      // No rAF available (tests, unusual hosts). Fall back to sync snapshot —
+      // still correct, just not coalesced.
+      this._updateViewportBands(
+        typeof performance !== 'undefined' ? performance.now() : Date.now()
+      );
+      return;
+    }
+    this._viewportSnapshotRafId = requestAnimationFrame(
+      this._runViewportSnapshotRaf
+    );
+  }
+
+  _runViewportSnapshotRaf() {
+    this._viewportSnapshotRafId = null;
+    this._updateViewportBands(performance.now());
+  }
+
+  /**
+   * Update per-AOI viewport-band accumulators.
+   *
+   * Semantics (mirrors `computeViewportBandsPure` and
+   * `viewport_ms_for_trial` in
+   * attentional-foraging/scripts/viewport_time_calibration.py):
+   *
+   * For each observed AOI, close the interval `(lastSnapshotT, now)` using
+   * the band that was current *at the start* of the interval (piecewise-
+   * constant attribution), then record the new band + intersection state.
+   *
+   * When `seed` is true, skip the accumulation step — used at init so the
+   * first real interval is well-defined. AOIs encountered for the first
+   * time are always seeded (regardless of the flag).
+   *
+   * Band definitions (with `third = scr_h / 3`):
+   *   top  iff 0        <= center_vp_y < third
+   *   mid  iff third    <= center_vp_y < 2*third
+   *   bot  iff 2*third  <= center_vp_y <= scr_h
+   *   off  otherwise (includes tall-AOI case where AOI intersects viewport
+   *                   but its center sits outside [0, scr_h])
+   *
+   * `any_ms` accumulates for any viewport intersection (min(a_bot, vp_bot)
+   * > max(a_top, vp_top)), including the off-band case.
+   */
+  _updateViewportBands(now, seed = false) {
+    if (!this.config.trackViewportBands) return;
+    const scrH = typeof window !== 'undefined' ? window.innerHeight : this._viewportH;
+    if (!scrH || scrH <= 0) return;
+    this._viewportH = scrH;
+    const third = scrH / 3;
+    const scrollY = this._scrollY;
+
+    // Union the full tracked-AOI set: visible, feature-tracker-touched, and
+    // every currently-matching selector element (covers first-snapshot
+    // before the observer has fired).
+    const elements = new Set();
+    for (const el of this._visibleResults) elements.add(el);
+    for (const el of this._approachFeatures.keys()) elements.add(el);
+    if (typeof document !== 'undefined') {
+      const nodes = document.querySelectorAll(this.config.resultSelector);
+      for (const el of nodes) elements.add(el);
+    }
+
+    for (const el of elements) {
+      // Geometry cache. _resultPageYCenter is shared with the approach-
+      // feature path; _resultHalfHeight is this module's sibling cache.
+      let pageYCenter = this._resultPageYCenter.get(el);
+      let halfH = this._resultHalfHeight.get(el);
+      if (pageYCenter === undefined || halfH === undefined) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) continue; // not laid out yet
+        pageYCenter = rect.top + rect.height / 2 + scrollY;
+        halfH = rect.height / 2;
+        this._resultPageYCenter.set(el, pageYCenter);
+        this._resultHalfHeight.set(el, halfH);
+      }
+
+      const aoiTop = pageYCenter - halfH;
+      const aoiBot = pageYCenter + halfH;
+      const vpTop = scrollY;
+      const vpBot = scrollY + scrH;
+      const intersecting =
+        Math.min(aoiBot, vpBot) > Math.max(aoiTop, vpTop);
+      const centerVpY = pageYCenter - scrollY;
+      let band = 'off';
+      if (intersecting) {
+        if (centerVpY >= 0 && centerVpY < third) band = 'top';
+        else if (centerVpY >= third && centerVpY < 2 * third) band = 'mid';
+        else if (centerVpY >= 2 * third && centerVpY <= scrH) band = 'bot';
+      }
+
+      let rec = this._viewportBandTimes.get(el);
+      if (!rec) {
+        this._viewportBandTimes.set(el, {
+          any_ms: 0,
+          top_ms: 0,
+          mid_ms: 0,
+          bot_ms: 0,
+          lastSnapshotT: now,
+          currentBand: band,
+          lastIntersecting: intersecting,
+        });
+        continue;
+      }
+
+      if (!seed) {
+        const dt = now - rec.lastSnapshotT;
+        if (dt > 0) {
+          if (rec.lastIntersecting) rec.any_ms += dt;
+          if (rec.currentBand === 'top') rec.top_ms += dt;
+          else if (rec.currentBand === 'mid') rec.mid_ms += dt;
+          else if (rec.currentBand === 'bot') rec.bot_ms += dt;
+        }
+      }
+      rec.lastSnapshotT = now;
+      rec.currentBand = band;
+      rec.lastIntersecting = intersecting;
+    }
+  }
+
+  /**
+   * Force a snapshot up to `now` and return a band record snapshot for `el`.
+   * Returns zeros if the element has not yet been seeded — the caller is
+   * expected to treat an absent record as "no accumulation yet."
+   */
+  _snapshotViewportBandsFor(el) {
+    if (!this.config.trackViewportBands) {
+      return { any_ms: 0, top_ms: 0, mid_ms: 0, bot_ms: 0 };
+    }
+    const now =
+      typeof performance !== 'undefined' ? performance.now() : Date.now();
+    this._updateViewportBands(now);
+    const rec = this._viewportBandTimes.get(el);
+    if (!rec) return { any_ms: 0, top_ms: 0, mid_ms: 0, bot_ms: 0 };
+    return {
+      any_ms: rec.any_ms,
+      top_ms: rec.top_ms,
+      mid_ms: rec.mid_ms,
+      bot_ms: rec.bot_ms,
+    };
+  }
+
+  /**
+   * Per-position viewport-band dwell totals. Mirrors `getApproachFeatures`
+   * in shape: an array of `{ position, vp_any_ms, vp_top_ms, vp_mid_ms,
+   * vp_bot_ms }` sorted by position. Values are rounded to integer ms.
+   *
+   * Forces a snapshot up to now() so callers see fresh totals. Downstream
+   * scoring should apply per-rank interaction weights — the vt_top
+   * coefficient in the calibration is rank-dependent (+1.96 at P0, +0.46
+   * at P4, ~0.2 at P5+; see docs/validation/viewport-bands-calibration.md).
+   */
+  getViewportBands() {
+    if (!this.config.trackViewportBands) return [];
+    this._updateViewportBands(
+      typeof performance !== 'undefined' ? performance.now() : Date.now()
+    );
+    const out = [];
+    for (const [el, rec] of this._viewportBandTimes) {
+      const position = parseInt(
+        el.getAttribute(this.config.positionAttr) || '0',
+        10
+      );
+      out.push({
+        position,
+        vp_any_ms: Math.round(rec.any_ms),
+        vp_top_ms: Math.round(rec.top_ms),
+        vp_mid_ms: Math.round(rec.mid_ms),
+        vp_bot_ms: Math.round(rec.bot_ms),
+      });
+    }
+    return out.sort((a, b) => a.position - b.position);
+  }
+
+  /**
+   * Metadata describing how band totals were computed — current viewport
+   * height and schema tag. The calibration is only basis-stable within a
+   * session; mid-session resize shifts the basis for subsequent intervals.
+   */
+  getViewportBandContext() {
+    return {
+      viewport_h: this._viewportH,
+      schema: 'edmonds-2026-vpbands-v1',
+    };
   }
 
   /**
@@ -626,6 +1018,9 @@ export class ApproachRetreat {
         if (rect.width === 0 && rect.height === 0) continue; // not laid out yet
         const pageYCenter = rect.top + rect.height / 2 + this._scrollY;
         this._resultPageYCenter.set(el, pageYCenter);
+        // Shared geometry cache with the band accumulator path. Populating
+        // here avoids a second getBoundingClientRect when bands are enabled.
+        this._resultHalfHeight.set(el, rect.height / 2);
         tracker = new ResultFeatureTracker(pageYCenter, proximityPx);
         this._approachFeatures.set(el, tracker);
       }
@@ -814,6 +1209,11 @@ export class ApproachRetreat {
    */
   flush() {
     const now = performance.now();
+    // Close the pending band interval up to now so session-level totals are
+    // fresh before any consumer reads them.
+    if (this.config.trackViewportBands) {
+      this._updateViewportBands(now);
+    }
     // Exit and finalize active episodes
     for (const [el, episode] of this._active) {
       this._exitResult(el, episode, now);
@@ -840,16 +1240,31 @@ export class ApproachRetreat {
     this._visitCounts.clear();
     this._approachFeatures.clear();
     this._resultPageYCenter.clear();
+    this._resultHalfHeight.clear();
+    this._viewportBandTimes.clear();
   }
 
   destroy() {
     document.removeEventListener('mousemove', this._onMouseMove);
     document.removeEventListener('click', this._onClick, { capture: true });
     document.removeEventListener('scroll', this._onScroll);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('resize', this._onResize);
+    }
     if (this._observer) this._observer.disconnect();
+    if (this._resizeObserver) this._resizeObserver.disconnect();
+    if (
+      this._viewportSnapshotRafId != null &&
+      typeof cancelAnimationFrame !== 'undefined'
+    ) {
+      cancelAnimationFrame(this._viewportSnapshotRafId);
+    }
+    this._viewportSnapshotRafId = null;
     this._active.clear();
     this._retreating = [];
     this._approachFeatures.clear();
     this._resultPageYCenter.clear();
+    this._resultHalfHeight.clear();
+    this._viewportBandTimes.clear();
   }
 }

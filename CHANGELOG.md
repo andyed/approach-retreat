@@ -3,6 +3,91 @@
 All notable changes to `approach-retreat` are documented here. Versioning
 follows SemVer; breaking changes bump MAJOR, additive changes bump MINOR.
 
+## [0.2.0] — 2026-04-19
+
+### Added
+
+- **Per-AOI viewport-band dwell tracking.** Every observed AOI now
+  accumulates four cumulative-ms totals: `vp_any_ms` (any part of the AOI
+  intersected the viewport), plus `vp_top_ms` / `vp_mid_ms` / `vp_bot_ms`
+  using the AOI center's viewport-y bucketed into thirds of the current
+  viewport height. Piecewise-constant accumulation fires on scroll (rAF-
+  throttled), resize, reflow (ResizeObserver), and IntersectionObserver
+  transitions.
+- **`ApproachRetreat.getViewportBands()`** — returns per-position band
+  totals `[{ position, vp_any_ms, vp_top_ms, vp_mid_ms, vp_bot_ms }]`.
+- **`ApproachRetreat.getViewportBandContext()`** — returns
+  `{ viewport_h, schema: 'edmonds-2026-vpbands-v1' }` for session-summary
+  basis disclosure.
+- **Exported pure helpers** — `computeViewportBandsPure(timeline, aois,
+  scrH)` and `classifyAoiInViewport(pageTop, pageBot, scrollY, scrH)`.
+  Stateless, parity-tested against the Python reference
+  `viewport_ms_for_trial` in
+  `attentional-foraging/scripts/viewport_time_calibration.py`
+  (`scripts/test_viewport_bands_parity.{js,py}`, Δ = 0 on every field).
+- **Episode-scoped band times on `ar_episode`** — `ar_vp_{any,top,mid,bot}_ms`
+  restricted to `entered_at → exited_at`.
+- **Session-scoped band times on `ar_session_summary`** — merged into each
+  `ar_approach_features` row on `position`. Augmentative: the nine-feature
+  schema `edmonds-2026-m4-v1` is unchanged; band fields are nullable on
+  rows without a band record. Summary also carries
+  `ar_viewport_band_schema: 'edmonds-2026-vpbands-v1'` and
+  `ar_viewport_band_basis_px` (current viewport height at capture).
+- **Config flags** — `trackViewportBands` (default `true`) and
+  `trackViewportReflow` (default `true`). Setting `trackViewportBands:
+  false` fully degrades to pre-0.2.0 behavior.
+
+### Fixed
+
+- `_resultPageYCenter` cache is now invalidated on layout reflow via
+  ResizeObserver. Prior behavior cached on first observation and never
+  re-measured — on reflow-heavy pages, `getApproachFeatures()` could drift
+  silently from the live AOI geometry. Incidental improvement to M4
+  feature accuracy.
+
+### Calibration source
+
+LAB (AdSERP), n = 2,351 approached-not-clicked AOIs, 47 LOSO participants,
+post 2026-04-12 coordinate-space audit. Outcome = NB22 gaze-regression
+label (deferred vs evaluated-rejected). 95 % CIs from 1,000-seed
+participant-cluster bootstrap:
+
+- retreat features alone (9 M4 features): **AUC 0.796 [0.759, 0.830]**
+- viewport bands alone (target AOI, 3 features): **AUC 0.800 [0.774, 0.828]**
+- retreat + bands combined: **AUC 0.842 [0.818, 0.864]** (+0.04 over retreat alone)
+- Fully-contextual viewport (all 10 AOIs × 3 bands + rank dummies, 40
+  features): AUC 0.748 — worse than local-only under LOSO. The signal is
+  **local per-AOI**, not contextual. This library emits local bands only.
+
+Pooled standardized coefficients (+ predicts DEFERRED):
+`vt_top +1.83, vt_mid +0.83, vt_bot +0.21`. Top-of-viewport dwell is ~9×
+more discriminative than bottom-of-viewport.
+
+`vt_top` is **rank-dependent**: +2.02 [+1.47, +2.69] at P0 → +0.49 [+0.13,
++1.05] at P4 → +0.21 [−0.17, +0.69] at P5 (CI crosses 0 — the significance
+transition). Positions past P5 are pooled into a P6+ bucket (n = 201,
+vt_top +0.75 [+0.21, +1.60]) because per-position estimates beyond P5 are
+sparse (n ≤ 91) with inverted class balance. Consumers should apply per-rank
+interaction weights downstream; the library emits raw band ms only.
+
+Source: `attentional-foraging/scripts/viewport_time_calibration.py`,
+`scripts/output/viewport_time_calibration/results.json`.
+
+### Notes
+
+- `ResizeObserver` is feature-detected; on older browsers the library
+  falls back to `scroll` + `window.resize` coverage (safe for non-
+  reflowing pages).
+- Mid-session viewport resize shifts the basis for subsequent intervals.
+  The summary carries `ar_viewport_band_basis_px` (current at capture);
+  sessions needing basis-stable bands should filter on equality with the
+  initial `ar_viewport_h` in `buildSessionContext`.
+- Synthetic parity test covers edge cases: fully-above, fully-below, all-
+  thirds crossing, tall AOI with center off-viewport, zero-duration
+  intervals, stationary tails. An end-to-end real-trial replay test
+  against the AdSERP dataset is recommended as a follow-up (not load-
+  bearing for the 0.2.0 release; the synthetic parity is exact).
+
 ## [0.1.0] — 2026-04-15
 
 First tagged release. Ships the cursor episode decomposition library, the

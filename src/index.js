@@ -1,1 +1,7 @@
-export { ApproachRetreat, Outcome, ResultFeatureTracker } from './approach-retreat.js';
+export {
+  ApproachRetreat,
+  Outcome,
+  ResultFeatureTracker,
+  classifyAoiInViewport,
+  computeViewportBandsPure,
+} from './approach-retreat.js';
