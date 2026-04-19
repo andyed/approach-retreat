@@ -53,12 +53,8 @@ reading happens; bottom-of-viewport is scrolling past.
 
 ### Rank dependence of `vt_top`
 
-Per-position estimates are reported for P0–P5 (n ≥ 122 per slice, 200-seed
-per-position bootstrap). Positions past P5 are pooled into a single **P6+
-bucket** because per-position estimates at P6/P7/P8 are noise: class balance
-inverts (P8 is 25 % deferred vs P0's 90 %), sample sizes collapse
-(n = 91/56/40), and CIs widen across zero. The P6+ bucket is the honest
-deep-rank estimator.
+Per-position estimates are reported for **P0–P5 only** (n ≥ 122 per slice,
+200-seed per-position cluster bootstrap).
 
 | pos | n | vt_top median | 95 % CI | verdict |
 |---|---|---|---|---|
@@ -68,18 +64,32 @@ deep-rank estimator.
 | P3 (rank 4) | 262 | **+1.10** | [+0.56, +2.05] | strong |
 | P4 (rank 5) | 180 | +0.49 | [+0.13, +1.05] | marginal |
 | P5 (rank 6) | 122 | +0.21 | [−0.17, +0.69] | **CI includes 0 — transition** |
-| **P6+ bucket** | **201** | **+0.75** | **[+0.21, +1.60]** | weak but CI-clean |
 
-At the P6+ bucket, the bands-alone coefficient structure flattens: `vt_top`
-+0.72, `vt_mid` +0.30, `vt_bot` +0.36. At depth, *any* viewport residence
-is a consideration signal, not specifically top-of-viewport. Combined
-retreat + bands AUC at P6+ is 0.742 [0.640, 0.839].
+**Deep ranks (P6–P8) not reported as calibration.** An initial pooled
+P6+ bucket (n = 201) gave `vt_top = +0.75 [+0.21, +1.60]`, but a
+participant-sensitivity audit (2026-04-19) found the estimate fragile:
+- Top 4 of 33 contributors supply 44 % of the bucket (p044 alone = 14 %).
+- Dropping those 4 participants attenuates `vt_top` to +0.34 with the
+  CI touching 0 ([−0.03, +1.40]).
+- Top-4-only subsample shows `vt_top = +1.13 [+0.89, +1.71]` — a tight
+  internal pattern, but not representative.
+- Bottom-of-page ads and deep-rank approach behavior may interact
+  (users reaching rank 7–10 are disproportionately those willing to scroll
+  past ad slots); this confound has not been controlled for.
 
-**Practical implication for consumers.** Weight `vt_top` by rank with a
-piecewise function or a smooth decay; a single pooled weight under-fits
-P0–P3 and over-fits deep ranks. If a single band feature is desired,
-`vt_mid` is the more rank-robust default (+0.5 to +1.2 across P1–P7).
-For scoring beyond P5, treat the P6+ bucket as one position.
+Deep-rank values are retained in
+`attentional-foraging/scripts/output/viewport_time_calibration/bootstrap_results.json`
+(`deep_rank_bucket` + `per_position_ci[6..8]`) for diagnostic use. They
+should not be cited as calibration without a larger-corpus replication
+that (a) balances deep-rank contribution across participants and
+(b) stratifies by bottom-ad presence.
+
+**Practical implication for consumers.** Weight `vt_top` by rank over
+P0–P5 with a piecewise function or a smooth decay. A single pooled
+weight under-fits P0–P3 and over-fits the P4–P5 transition. If a
+single band feature is desired, `vt_mid` is the more rank-robust
+default (+0.5 to +1.2 across P1–P5). Do not apply a learned deep-rank
+weight until the confounds above are resolved.
 
 ## Parity test
 

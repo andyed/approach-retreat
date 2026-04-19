@@ -65,10 +65,16 @@ more discriminative than bottom-of-viewport.
 
 `vt_top` is **rank-dependent**: +2.02 [+1.47, +2.69] at P0 → +0.49 [+0.13,
 +1.05] at P4 → +0.21 [−0.17, +0.69] at P5 (CI crosses 0 — the significance
-transition). Positions past P5 are pooled into a P6+ bucket (n = 201,
-vt_top +0.75 [+0.21, +1.60]) because per-position estimates beyond P5 are
-sparse (n ≤ 91) with inverted class balance. Consumers should apply per-rank
-interaction weights downstream; the library emits raw band ms only.
+transition). **Rank dependence is reported for P0–P5 only.** Positions past
+P5 are too sparse (n ≤ 91 per slice), class-balance-inverted (P8 is 25 %
+deferred vs P0's 90 %), and participant-concentrated (top 4 of 33
+contributors supply 44 % of the deep-rank pool; removing them attenuates
+the bucket's vt_top from +0.72 to +0.34 with CI touching 0) for a robust
+headline claim. Diagnostic deep-rank values live in
+`attentional-foraging/scripts/output/viewport_time_calibration/bootstrap_results.json`
+(`deep_rank_bucket`, `per_position_ci[6..8]`) and should not be cited as
+calibration without a larger-corpus replication. Consumers should apply
+per-rank interaction weights downstream; the library emits raw band ms only.
 
 Source: `attentional-foraging/scripts/viewport_time_calibration.py`,
 `scripts/output/viewport_time_calibration/results.json`.
