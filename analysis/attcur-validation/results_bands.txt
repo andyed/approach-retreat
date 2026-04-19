@@ -1,0 +1,6 @@
+ACD band port — ad_clicked
+native-ad sessions: 954   click rate: 0.303
+
+retreat alone (11)                        AUC 0.823 ± 0.013  F1w 0.732 ± 0.006
+bands alone (6)                           AUC 0.828 ± 0.028  F1w 0.702 ± 0.031
+retreat + bands (17)                      AUC 0.859 ± 0.013  F1w 0.762 ± 0.010

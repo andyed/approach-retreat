@@ -28,13 +28,35 @@ A feature set that survives all three constraints is load-bearing; one that does
 
 | Model | AUC | F1 (weighted) |
 |---|---|---|
-| **approach-retreat (11 features)** | **0.821 ± 0.022** | **0.732 ± 0.011** |
+| **approach-retreat + cursor-in-viewport bands (17 features)** | **0.859 ± 0.013** | **0.762 ± 0.010** |
+| approach-retreat (11 features) | 0.823 ± 0.013 | 0.732 ± 0.006 |
+| cursor-in-viewport bands alone (6 features) | 0.828 ± 0.028 | 0.702 ± 0.031 |
 | Brückner primitive (`total_mouse_length` only) | 0.696 ± 0.031 | 0.543 ± 0.004 |
 | `min_dist` only | 0.564 ± 0.032 | 0.520 ± 0.012 |
 | `min_dist + retreat_dist + ever_in_target` | 0.798 ± 0.036 | 0.649 ± 0.019 |
 | Retreat-only (`retreat_dist + retreat_path + retreat_arc_ratio`) | 0.705 ± 0.020 | 0.586 ± 0.016 |
 
-**Reading the table.** The 11-feature approach-retreat classifier beats the scalar Brückner baseline by **+0.125 AUC** (0.821 vs 0.696). Scalar mouse-length is well above chance (0.5) but far below what the geometry-aware features recover. A three-feature subset (`min_dist + retreat_dist + ever_in_target`) already reaches 0.798, meaning most of the approach-retreat gain is captured by just those three — the remaining eight features contribute a further +0.023 AUC. Retreat features alone (without any approach or dwell) get to 0.705, slightly above the Brückner baseline — retreat geometry is carrying real signal independently, not just as a correlate of something else.
+**Reading the table.** The 17-feature classifier (approach-retreat + cursor-in-viewport bands) beats scalar Brückner by **+0.163 AUC** (0.859 vs 0.696) and beats the 11-feature retreat-only baseline by **+0.036 AUC** (0.859 vs 0.823). Bands alone (0.828) are a shade ahead of retreat alone (0.823), and the two signals combine additively — cursor motion and viewport residence carry largely independent information even in WILD. Scalar mouse-length is well above chance (0.5) but far below what the geometry-aware features recover. A three-feature subset (`min_dist + retreat_dist + ever_in_target`) already reaches 0.798, meaning most of the retreat gain is captured by just those three; the remaining eight retreat features contribute a further +0.023 AUC, and adding cursor-in-viewport bands on top adds another +0.036. Retreat features alone (without any approach or dwell) get to 0.705, slightly above the Brückner baseline — retreat geometry is carrying real signal independently, not just as a correlate of something else.
+
+**A band-analog on ACD — WILD semantics vs LAB semantics.** Viewport bands
+on AdSERP are *AOI-center-in-viewport-third* dwell: per-AOI cumulative ms in
+each of top/mid/bot thirds of the scr_h viewport. On ACD we don't have
+scroll-Y in the logs (scroll events fire but carry `(xpos=0, ypos=0)`), so
+the ad's viewport-y cannot be reconstructed from the dataset without
+solving for it from the corner-distance geometry in `extras.{topRight,
+topLeft, bottomRight, bottomLeft}`. This first-pass port uses the simpler
+**cursor-in-viewport-third** (where the cursor sits, not where the ad
+sits) + in-target-by-third variants — a cursor-only analog of the LAB
+signal. The strongest coefficient in the combined model is
+`vp_cursor_bot_in_ms = −1.556` (cursor at bottom-of-viewport while inside
+the ad bbox → anti-click), a mirror-image of LAB's `vt_top = +1.83`
+(AOI-center in top-of-viewport → deferred). Both signed consistently with
+the same mechanism — top-of-viewport = engagement, bottom-of-viewport =
+leaving — but measured through different feature surfaces because the two
+datasets expose different things. A richer port using the corner-distance
+geometry to derive ad viewport-y per event is flagged as follow-up; the
+cursor-analog's +0.036 is enough to earn the viewport-band signal a
+`[BOTH]` tag on the click-prediction task.
 
 **Dataset and subset.** 954 sessions on native-ad SERPs, after filtering ACD's 3,020 total sessions to `ad_type == 'native'` and dropping 6 sessions with fewer than 3 valid mouse events. Positive rate 30.3 % (289 clicks).
 
