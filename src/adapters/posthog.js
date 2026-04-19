@@ -352,26 +352,57 @@ export function createPostHogAdapter(posthog, options = {}) {
       const viewportBands =
         typeof ar.getViewportBands === 'function' ? ar.getViewportBands() : [];
       const bandByPosition = new Map(viewportBands.map((b) => [b.position, b]));
+      const viewportAnalytics =
+        typeof ar.getViewportAnalytics === 'function'
+          ? ar.getViewportAnalytics()
+          : [];
+      const analyticsByPosition = new Map(
+        viewportAnalytics.map((a) => [a.position, a])
+      );
       const seen = new Set();
       const mergedFeatures = approachFeatures.map((f) => {
         seen.add(f.position);
         const b = bandByPosition.get(f.position);
+        const a = analyticsByPosition.get(f.position);
         return {
           ...f,
           vp_any_ms: b ? b.vp_any_ms : null,
           vp_top_ms: b ? b.vp_top_ms : null,
           vp_mid_ms: b ? b.vp_mid_ms : null,
           vp_bot_ms: b ? b.vp_bot_ms : null,
+          vt_center_ms: a ? a.vt_center_ms : null,
+          avg_viewport_y_px: a ? a.avg_viewport_y_px : null,
+          max_overlap_frac: a ? a.max_overlap_frac : null,
+          min_abs_velocity_px_per_s: a ? a.min_abs_velocity_px_per_s : null,
+          n_reversals: a ? a.n_reversals : null,
         };
       });
       for (const b of viewportBands) {
         if (seen.has(b.position)) continue;
+        const a = analyticsByPosition.get(b.position);
+        seen.add(b.position);
         mergedFeatures.push({
           position: b.position,
           vp_any_ms: b.vp_any_ms,
           vp_top_ms: b.vp_top_ms,
           vp_mid_ms: b.vp_mid_ms,
           vp_bot_ms: b.vp_bot_ms,
+          vt_center_ms: a ? a.vt_center_ms : null,
+          avg_viewport_y_px: a ? a.avg_viewport_y_px : null,
+          max_overlap_frac: a ? a.max_overlap_frac : null,
+          min_abs_velocity_px_per_s: a ? a.min_abs_velocity_px_per_s : null,
+          n_reversals: a ? a.n_reversals : null,
+        });
+      }
+      for (const a of viewportAnalytics) {
+        if (seen.has(a.position)) continue;
+        mergedFeatures.push({
+          position: a.position,
+          vt_center_ms: a.vt_center_ms,
+          avg_viewport_y_px: a.avg_viewport_y_px,
+          max_overlap_frac: a.max_overlap_frac,
+          min_abs_velocity_px_per_s: a.min_abs_velocity_px_per_s,
+          n_reversals: a.n_reversals,
         });
       }
       mergedFeatures.sort((a, b) => a.position - b.position);
@@ -380,6 +411,10 @@ export function createPostHogAdapter(posthog, options = {}) {
         typeof ar.getViewportBandContext === 'function'
           ? ar.getViewportBandContext()
           : { viewport_h: null, schema: null };
+      const analyticsContext =
+        typeof ar.getViewportAnalyticsContext === 'function'
+          ? ar.getViewportAnalyticsContext()
+          : { viewport_h: null, viewport_center_tol_px: null, schema: null };
 
       posthog.capture(summaryEventName, {
         ar_total_episodes: episodes.length,
@@ -400,6 +435,8 @@ export function createPostHogAdapter(posthog, options = {}) {
         ar_approach_feature_schema: 'edmonds-2026-m4-v1',
         ar_viewport_band_schema: bandContext.schema,
         ar_viewport_band_basis_px: bandContext.viewport_h,
+        ar_viewport_analytics_schema: analyticsContext.schema,
+        ar_viewport_center_tol_px: analyticsContext.viewport_center_tol_px,
         ...getCtx(),
       });
     },

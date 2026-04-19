@@ -175,10 +175,28 @@ const DEFAULTS = {
   // AOI accumulates cumulative ms in each of {any, top, mid, bot} bands
   // via piecewise-constant snapshots on scroll/resize/reflow/intersect.
   // Emitted on ar_session_summary (per-position) and ar_episode (scoped
-  // to the entered_at → exited_at window). Calibration source:
-  // attentional-foraging/scripts/viewport_time_calibration.py — LAB
-  // n=2,351, retreat-alone AUC 0.792, bands-alone 0.799, combined 0.837.
+  // to the entered_at → exited_at window).
+  //
+  // Calibration (LAB n=2,351, deferred-vs-eval-rejected): bands-alone AUC
+  // 0.799, continuous viewport analytics (see below) 0.798, minimal 6-
+  // feature B∪C' recovers the K13 lift. K14 at n=47 (paired Δ = +0.003,
+  // p = 0.22 ns) cannot rule in or out a small additional contribution
+  // from bands beyond B∪C; default-on is retained for backward
+  // compatibility, but consumers favoring parsimony can flip off.
   trackViewportBands: true,
+
+  // Per-AOI continuous viewport analytics + scroll trajectory. Four B
+  // features (vt_any_ms duplicates the band emission; vt_center_ms,
+  // avg_viewport_y_px, max_overlap_frac) and two C features
+  // (min_abs_velocity_px_per_s, n_reversals) — see NB30 K18 for the
+  // forward-selection that picked this minimal set. Emitted alongside
+  // the bands on ar_episode / ar_session_summary when enabled.
+  trackViewportAnalytics: true,
+
+  // ±px from viewport center defining "near center" for vt_center_ms.
+  // NB30 K22 sweep shows the feature is flat across {25, 50, 100, 200,
+  // 400} px (pooled AUC spread 0.001); 100 px is the defensible default.
+  viewportCenterTolPx: 100,
 
   // Observe layout reflow via ResizeObserver on documentElement. When
   // available, reflow invalidates cached page-Y centers and schedules a
@@ -413,6 +431,11 @@ class Episode {
       vp_mid_ms: this.viewportBands ? this.viewportBands.mid_ms : null,
       vp_bot_ms: this.viewportBands ? this.viewportBands.bot_ms : null,
     };
+    // Continuous viewport analytics + scroll-trajectory (NB30 minimal set)
+    // are emitted at session-summary granularity, not per-episode — the
+    // features are aggregates over the whole scroll timeline and some
+    // (max_overlap_frac, min_abs_velocity) are non-subtractable. See
+    // getViewportAnalytics() on the tracker.
     if (this._includeSamples) {
       json.samples = this.samples;
     }
@@ -845,12 +868,23 @@ export class ApproachRetreat {
    * > max(a_top, vp_top)), including the off-band case.
    */
   _updateViewportBands(now, seed = false) {
-    if (!this.config.trackViewportBands) return;
+    if (!this.config.trackViewportBands && !this.config.trackViewportAnalytics) return;
     const scrH = typeof window !== 'undefined' ? window.innerHeight : this._viewportH;
     if (!scrH || scrH <= 0) return;
     this._viewportH = scrH;
     const third = scrH / 3;
     const scrollY = this._scrollY;
+    const centerY = scrH / 2;
+    const centerTol = this.config.viewportCenterTolPx;
+
+    // Scroll velocity for this just-closed interval: px/s. Global since the
+    // scroll timeline is shared across AOIs. Zero on seed or when dt is 0.
+    const globalDt = now - (this._vbLastSnapshotT ?? now);
+    const scrollDelta = scrollY - (this._vbLastScrollY ?? scrollY);
+    const intervalV =
+      globalDt > 0 ? (scrollDelta / globalDt) * 1000 : 0; // px/s
+    this._vbLastSnapshotT = now;
+    this._vbLastScrollY = scrollY;
 
     // Union the full tracked-AOI set: visible, feature-tracker-touched, and
     // every currently-matching selector element (covers first-snapshot
@@ -879,11 +913,15 @@ export class ApproachRetreat {
 
       const aoiTop = pageYCenter - halfH;
       const aoiBot = pageYCenter + halfH;
+      const aoiH = aoiBot - aoiTop;
       const vpTop = scrollY;
       const vpBot = scrollY + scrH;
-      const intersecting =
-        Math.min(aoiBot, vpBot) > Math.max(aoiTop, vpTop);
+      const overlap = Math.min(aoiBot, vpBot) - Math.max(aoiTop, vpTop);
+      const intersecting = overlap > 0;
+      const overlapFrac = intersecting && aoiH > 0 ? overlap / aoiH : 0;
       const centerVpY = pageYCenter - scrollY;
+      const nearCenter =
+        intersecting && Math.abs(centerVpY - centerY) <= centerTol;
       let band = 'off';
       if (intersecting) {
         if (centerVpY >= 0 && centerVpY < third) band = 'top';
@@ -894,13 +932,27 @@ export class ApproachRetreat {
       let rec = this._viewportBandTimes.get(el);
       if (!rec) {
         this._viewportBandTimes.set(el, {
+          // A — banded decomposition (existing; kept for backward compat)
           any_ms: 0,
           top_ms: 0,
           mid_ms: 0,
           bot_ms: 0,
+          // B — continuous viewport analytics
+          center_ms: 0,
+          sum_center_y_ms: 0,
+          max_overlap_frac: 0,
+          // C — scroll trajectory (minimal NB30 set: min_abs_velocity, n_reversals)
+          min_abs_velocity: Infinity,
+          n_reversals: 0,
+          last_v_sign: 0,
+          // State carried into the next interval (the geometry IS the
+          // state during the closing interval, piecewise-constant)
           lastSnapshotT: now,
           currentBand: band,
           lastIntersecting: intersecting,
+          lastCenterVpY: centerVpY,
+          lastOverlapFrac: overlapFrac,
+          lastNearCenter: nearCenter,
         });
         continue;
       }
@@ -908,15 +960,42 @@ export class ApproachRetreat {
       if (!seed) {
         const dt = now - rec.lastSnapshotT;
         if (dt > 0) {
+          // A — banded accumulators (existing)
           if (rec.lastIntersecting) rec.any_ms += dt;
           if (rec.currentBand === 'top') rec.top_ms += dt;
           else if (rec.currentBand === 'mid') rec.mid_ms += dt;
           else if (rec.currentBand === 'bot') rec.bot_ms += dt;
+
+          // B — continuous viewport analytics: attribute interval using the
+          // geometry recorded at the START of the interval (lastCenterVpY /
+          // lastOverlapFrac / lastNearCenter), matching the piecewise-
+          // constant convention used by viewport_time_calibration.py.
+          if (rec.lastIntersecting) {
+            rec.sum_center_y_ms += rec.lastCenterVpY * dt;
+            if (rec.lastOverlapFrac > rec.max_overlap_frac) {
+              rec.max_overlap_frac = rec.lastOverlapFrac;
+            }
+            if (rec.lastNearCenter) rec.center_ms += dt;
+
+            // C — scroll trajectory: min |v| and reversal count, attributed
+            // only over intervals the AOI was visible.
+            const absV = Math.abs(intervalV);
+            if (absV < rec.min_abs_velocity) rec.min_abs_velocity = absV;
+            const sign =
+              absV < 1e-6 ? 0 : intervalV > 0 ? 1 : -1;
+            if (rec.last_v_sign !== 0 && sign !== 0 && sign !== rec.last_v_sign) {
+              rec.n_reversals += 1;
+            }
+            if (sign !== 0) rec.last_v_sign = sign;
+          }
         }
       }
       rec.lastSnapshotT = now;
       rec.currentBand = band;
       rec.lastIntersecting = intersecting;
+      rec.lastCenterVpY = centerVpY;
+      rec.lastOverlapFrac = overlapFrac;
+      rec.lastNearCenter = nearCenter;
     }
   }
 
@@ -983,6 +1062,60 @@ export class ApproachRetreat {
     return {
       viewport_h: this._viewportH,
       schema: 'edmonds-2026-vpbands-v1',
+    };
+  }
+
+  /**
+   * Per-position continuous viewport analytics + scroll trajectory.
+   * Mirrors `getViewportBands` in shape: an array of
+   * `{ position, vt_any_ms, vt_center_ms, avg_viewport_y_px,
+   *    max_overlap_frac, min_abs_velocity_px_per_s, n_reversals }`
+   * sorted by position. Values are accumulators over the full scroll
+   * timeline for each AOI (matches NB30's per-(trial, position) feature
+   * extraction).
+   *
+   * Minimal feature set (NB30 K18 forward-selection): this is the
+   * parsimonious B∪C' that recovers the K13 deferred-vs-rejected lift.
+   * pause_ms is NOT emitted (collinear with vt_any_ms at r=0.995, K17).
+   * Bands (vt_top_ms / vt_mid_ms / vt_bot_ms) remain on
+   * `getViewportBands` for callers who want the banded decomposition.
+   */
+  getViewportAnalytics() {
+    if (!this.config.trackViewportAnalytics) return [];
+    this._updateViewportBands(
+      typeof performance !== 'undefined' ? performance.now() : Date.now()
+    );
+    const out = [];
+    for (const [el, rec] of this._viewportBandTimes) {
+      const position = parseInt(
+        el.getAttribute(this.config.positionAttr) || '0',
+        10
+      );
+      const avgVpY = rec.any_ms > 0 ? rec.sum_center_y_ms / rec.any_ms : 0;
+      const minAbsV =
+        rec.min_abs_velocity === Infinity ? 0 : rec.min_abs_velocity;
+      out.push({
+        position,
+        vt_any_ms: Math.round(rec.any_ms),
+        vt_center_ms: Math.round(rec.center_ms),
+        avg_viewport_y_px: Math.round(avgVpY),
+        max_overlap_frac: Number(rec.max_overlap_frac.toFixed(4)),
+        min_abs_velocity_px_per_s: Number(minAbsV.toFixed(2)),
+        n_reversals: rec.n_reversals,
+      });
+    }
+    return out.sort((a, b) => a.position - b.position);
+  }
+
+  /**
+   * Metadata describing how analytics totals were computed — schema tag
+   * and the threshold used for vt_center_ms.
+   */
+  getViewportAnalyticsContext() {
+    return {
+      viewport_h: this._viewportH,
+      viewport_center_tol_px: this.config.viewportCenterTolPx,
+      schema: 'edmonds-2026-vpanalytics-v1',
     };
   }
 
