@@ -17,7 +17,7 @@ await esbuild.build({
   ...shared,
   outfile: 'dist/approach-retreat.js',
   format: 'iife',
-  globalName: 'ApproachRetreat',
+  globalName: 'ApproachRetreatLib',
 });
 
 // ESM
