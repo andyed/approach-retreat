@@ -496,3 +496,39 @@
   doi       = {10.1007/s00521-020-05306-7},
   note      = {Recent IFT framing for cursor-based behavior prediction. Closest contemporary prior art for the IFT $\times$ cursor combination approach-retreat operationalizes.},
 }
+
+% ─── Non-sequential / direction-aware click models (THUIR / Liu lineage) ───
+% Added 2026-04-30 from regressions-lit-review.md.
+
+@inproceedings{wang2015pscm,
+  author    = {Wang, Chao and Liu, Yiqun and Wang, Meng and Zhou, Ke and Nie, Jian-Yun and Ma, Shaoping},
+  title     = {Incorporating Non-sequential Behavior into Click Models},
+  booktitle = {Proceedings of the 38th International ACM SIGIR Conference on Research and Development in Information Retrieval},
+  series    = {SIGIR '15},
+  year      = {2015},
+  pages     = {283--292},
+  publisher = {ACM},
+  doi       = {10.1145/2766462.2767712},
+  note      = {Partially Sequential Click Model (PSCM). Eye-tracking-grounded. Locally unidirectional examination between adjacent clicks; users may skip results and examine at distance; direction is consistent with click direction. Closest IR-side prior art for the temporal window approach-retreat episodes operate on. PSCM treats direction as a click-likelihood feature; approach-retreat captures retreat geometry at AOI granularity that the click-model unit cannot represent. Code: github.com/THUIR/PSCMModel.},
+}
+
+@inproceedings{zhang2021cbcm,
+  author    = {Zhang, Jingtao and Liu, Yiqun and Mao, Jiaxin and Zhang, Min and Ma, Shaoping},
+  title     = {Constructing a Comparison-based Click Model for Web Search},
+  booktitle = {Proceedings of the Web Conference 2021},
+  series    = {WWW '21},
+  year      = {2021},
+  publisher = {ACM},
+  note      = {Comparison-Based Click Model (CBCM). Explicit revisit and compare primitives in the click likelihood. Same THUIR group as wang2015pscm. CBCM's revisit primitive is the closest IR-side construct to approach-retreat's deferred class; CBCM operates at click-model granularity, approach-retreat at AOI episode geometry.},
+}
+
+@inproceedings{borisov2018clicksequence,
+  author    = {Borisov, Alexey and Wardenaar, Martijn and Markov, Ilya and de Rijke, Maarten},
+  title     = {A Click Sequence Model for Web Search},
+  booktitle = {Proceedings of the 41st International ACM SIGIR Conference on Research and Development in Information Retrieval},
+  series    = {SIGIR '18},
+  year      = {2018},
+  publisher = {ACM},
+  doi       = {10.1145/3209978.3210004},
+  note      = {Neural seq2seq absorbing non-sequential click patterns end-to-end. Direction is implicit, learned from data. Sequence-model successor to PSCM at the click level; same gap as cursor-feature classifiers (no per-result-AOI commitment, no explicit direction or revisit construct, no geometric descriptors).},
+}
