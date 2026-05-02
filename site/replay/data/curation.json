@@ -121,7 +121,7 @@
     "A": [
       {
         "trial_id": "p008-b3-t7",
-        "caption": "Drive-through: 1 CLICKED, 36.0s — minimal cursor engagement (M5 over-predicts DEFERRED on positions with 0 cursor episodes; M5 retrain under bbox pending)"
+        "caption": "Drive-through: 1 CLICKED + 12 not approached (bbox heuristic), 36.0s. M5 reads 6 brief cursor sweeps within 100 px as DEFERRED — illustrative of M5's added sensitivity over the bbox-dwell rule."
       }
     ]
   },
