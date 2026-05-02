@@ -1,5 +1,56 @@
 # Changelog
 
+## 2026-05-01 — AOI rebuild on bbox attribution (branch `feat/aoi-rebuild-2026-05-01`)
+
+### Why
+
+Upstream `attentional-foraging` shipped pixel-accurate organic-result bboxes (branch `feat/aoi-pipeline-v2`, replacing band-estimation-from-h3-count with CV row-projection on screenshots). The replay-bundle producer (`scripts/build_replay_trial.py`) reads `AdSERP/data/organic-boundary-data/{tid}.json` and feeds those bboxes into the M5 four-class classifier. Re-running it under the new bboxes shifts class labels per AOI on most trials.
+
+### What was rebuilt
+
+All 80 curated trials in `site/replay/data/curation.json` had their replay bundles regenerated under the new bbox AOIs. Pre-rebuild bundles snapshotted to `scripts/output/aoi-rebuild-baseline/trials-pre-aoi-v2/` for diff.
+
+### Magnitude of label shifts
+
+**64 of 80 curated trials (80.0%) have shifted four-class label distributions.** Sample:
+
+| Trial | OLD (band attribution) | NEW (bbox attribution) |
+|---|---|---|
+| p011-b6-t2 | DEF=5, NA=5, EVAL=3 | DEF=8, **CLK=1**, NA=5, EVAL=3 (click reattributed) |
+| p019-b6-t2 | DEF=1, NA=4 | **CLK=1**, DEF=8, NA=5 (huge shift) |
+| p035-b6-t10 | NA=7 (all unapproached) | DEF=6, CLK=1, NA=6 (was previously a "drive-through" example) |
+| p036-b1-t6 | DEF=4, NA=6, EVAL=2 | CLK=1, DEF=8, NA=4, EVAL=2 |
+
+### Stale curation captions (8 total)
+
+Captions that cite class counts which no longer match:
+
+```
+[B-DEF] p019-b1-t8:    "5 DEFERRED"  → new has 11
+[B-DEF] p015-b3-t10:   "5 DEFERRED"  → new has  7
+[B-DEF] p015-b5-t2:    "4 DEFERRED"  → new has  9
+[B-DEF] p005-b2-t2:    "4 DEFERRED"  → new has 10
+[B-DEF] p009-b1-t1:    "3 DEFERRED"  → new has  8
+[B-REJ] p006-b4-t7:    "5 EVAL-REJ"  → new has  4
+[B-REJ] p020-b1-t7:    "3 EVAL-REJ"  → new has  0   (reclassified entirely)
+[B-REJ] p045-b2-t5:    "2 EVAL-REJ"  → new has  1
+```
+
+The remaining 72 captions either don't cite explicit counts (general descriptions) or still match exactly under bbox attribution.
+
+### Status / next moves
+
+- **Replay bundles are committed.** Demos at `andyed.github.io/approach-retreat/replay/` will reflect the new labels on next deploy.
+- **Stale captions need editing** before re-publishing — either rephrase to match new counts or pick different trials that still illustrate the original intent.
+- **M5 classifier was NOT retrained.** It was originally trained against NB22 gaze-based regression labels under band attribution. Inference happens against new bboxes (cursor + AOI features change), but the LR coefficients are unchanged. A future iteration should retrain M5 against organic-attribution NB22 labels for full consistency.
+- **Heavier work deferred**: regenerating cursor-approach-features under organic and retraining M5 against fresh NB22 labels.
+
+### Upstream pointer
+
+Full upstream context, K-ID delta tables, and pipeline rationale at `attentional-foraging` branch `feat/aoi-pipeline-v2`, top entry of `CHANGELOG.md`.
+
+---
+
 All notable changes to `approach-retreat` are documented here. Versioning
 follows SemVer; breaking changes bump MAJOR, additive changes bump MINOR.
 
