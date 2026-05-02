@@ -23,17 +23,18 @@ If you are mining hard negatives for dense-retrieval training from user behavior
 
 The M5 calibration methodology produces a cursor-only classifier whose predicted-deferred pool contains episodes in which **the user approached a candidate, their gaze-return behavior indicated a second examination, and they still chose to decline**. These are behaviorally-grounded hard negatives of the same kind human relevance annotators produce, generated in-session at production scale, with no gaze data required at inference time.
 
-**On AdSERP, the calibration reference point** is:
+**On AdSERP, the calibration reference point** is `[LAB, AdSERP, organic]` (post-2026-05-01 cascade; M5 retrained against bbox-derived NB22 labels):
 
-| Metric | Value |
-|---|---:|
-| LOSO AUC (cursor-only, gaze-clean features) | 0.709 |
-| Precision on predicted-deferred pool | 88.9 % |
-| Recall on predicted-deferred pool | 73.0 % |
-| F1 on deferred class | 0.802 |
-| Supervision-signal advantage over click-trained baseline | 1.49 × |
+| Metric | Value (post-cascade `[organic]`) | Pre-cascade `[absolute legacy]` |
+|---|---:|---:|
+| LOSO AUC (cursor-only, gaze-clean features) | **0.769** | 0.709 |
+| Youden-*J* operating threshold | *p* = 0.489 | *p* = 0.500 |
+| Precision on predicted-deferred pool | **87.8 %** | 88.9 % |
+| Recall on predicted-deferred pool | **71.6 %** | 73.0 % |
+| F1 on deferred class | **0.789** | 0.802 |
+| Supervision-signal advantage over click-trained baseline | 1.49 × (legacy; bbox re-derivation pending — the supervision-target argument survives structurally even if the per-class numbers shift) | 1.49 × |
 
-These are **reference numbers for AdSERP's class prior and task design**. Production deployments will see different numbers depending on their own prior; the calibration methodology itself is what transfers.
+These are **reference numbers for AdSERP's class prior and task design**. Production deployments will see different numbers depending on their own prior; the calibration methodology itself is what transfers. Source for the post-cascade values: `attentional-foraging/scripts/output/m5_cursor_only_taxonomy_organic/{summary.json, m5_final_model.json}`.
 
 ---
 
@@ -100,7 +101,7 @@ y_proba = cross_val_predict(
 
 ## Calibrating the operating threshold
 
-M5 outputs `p(deferred)` for each episode at inference time. The operating threshold is a scalar knob you choose based on the precision / recall trade-off your downstream task requires. The AdSERP Youden-*J* threshold (`p* = 0.500`) is a reasonable default, but **you should recalibrate against your own data before deploying**.
+M5 outputs `p(deferred)` for each episode at inference time. The operating threshold is a scalar knob you choose based on the precision / recall trade-off your downstream task requires. The AdSERP Youden-*J* threshold post-cascade (`p* = 0.489` under `[organic]`; `p* = 0.500` under `[absolute legacy]`) is a reasonable default, but **you should recalibrate against your own data before deploying**.
 
 Three practical calibration paths for the threshold itself (distinct from the supervision-source options above):
 

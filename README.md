@@ -109,6 +109,36 @@ Mark your SERP results:
 </div>
 ```
 
+### Recommended: tag the surface type with `data-etype`
+
+If your SERP mixes ads and organics in the result column (most commercial SERPs), tag each with `data-etype` so your dashboard can slice ad-vs-organic behavior:
+
+```html
+<div data-result data-position="0" data-etype="dd_top">
+  <h3>Sponsored carousel cell</h3>
+  ...
+</div>
+<div data-result data-position="1" data-etype="organic">
+  <h3>Organic result title</h3>
+  ...
+</div>
+<div data-result data-position="2" data-etype="native_ad">
+  <h3>Inline-text ad</h3>
+  ...
+</div>
+```
+
+Conventional values that match the AdSERP analysis vocabulary:
+- `organic` — first-class organic search result.
+- `dd_top` — top-of-page ad carousel cell (Google's "dd_top" element class).
+- `native_ad` — text-link ad embedded in the result column.
+
+Any data-* attribute is automatically passed through to PostHog under `target_data_<key>` (per the bundled adapter), so dashboard-level filtering by surface type is one filter expression away. The library itself is etype-agnostic at the machinery level — episode capture, M5 inference, four-class taxonomy, and the nine-feature M4 vector all work identically with or without etype tags. **What you give up by going undifferentiated is the ability to slice in your dashboard, not the ability to capture.**
+
+**Why this matters.** The 2026-05-01 cascade analysis on AdSERP found that **dd_top click rate is 17.1 % vs organic 14.6 % vs native_ad 5.2 %** (n=14,657 organic / 1,581 dd_top / 3,670 native_ad records, two-proportion test dd_top − organic Δ = +2.58 pp, *p* = 6 × 10⁻³, 95 % CI [+2.55, +2.71]; AF NB21:K-bbox-* etype breakdown). The dd_top advantage was structurally invisible under the older "rank N" pooling because dd_top fixations got absorbed into "organic position 1." Production deployers that don't tag etype get the rank-pooled view, which is fine for aggregate analytics but loses the ad-vs-organic story.
+
+**Calibration footnote.** M5 was trained against bbox-organic NB22 labels (organic-only positions). Applying it to ad fixations produces probabilities calibrated against organic-deferred-vs-rejected behavior. The features themselves (mean_dist, dwell_in_proximity, direction_changes…) are pure cursor patterns and transfer cleanly; the decision boundary may be slightly off on ads but the binary classification mostly survives. An ad-only M5 retrain is a follow-up if production deployers need ad-side calibration.
+
 ## Episode data
 
 Every completed cursor visit to a result produces a 23-field episode from `Episode.toJSON()` (19 cursor fields + 4 banded-viewport fields, the latter null when `trackViewportBands: false`). Grouped by purpose:

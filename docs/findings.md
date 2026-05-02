@@ -12,7 +12,7 @@ The library's nine cursor approach features were derived against AdSERP's 150 Hz
 
 **Headline (`[AR-V1:K1]`, `[AR-V1:K6]`):** an 11-feature logistic regression on the same feature family reaches **AUC 0.821 ± 0.022** for `ad_clicked` on the public Attentive Cursor Dataset (Leiva & Arapakis 2020) — a 954-session native-ad cohort with cursor + click only, no eye tracker, no pupil. That is **+0.125 AUC points (+18 % relative)** over the standard `total_mouse_length` scalar baseline `[AR-V1:K3]` reported by Brückner et al. (SIGIR '21).
 
-**The cross-dataset coincidence `[AR-V1:K8]`.** The same number — 0.821 — appears on the AdSERP LAB click-prediction LOSO with the gaze-clean nine-feature M4 extractor (upstream `[LAB, NB21:K3]`). Two completely different datasets, different AOI counts (10 vs 1), different click rates, different participant pools, same AUC. We frame this as "transfer in the same neighborhood, not significantly worse despite stripped instrumentation," not as a deep regularity — the agreement is striking but not predicted.
+**Cross-dataset transfer `[AR-V1:K8]`.** The pre-cascade AdSERP LAB click-prediction LOSO with the gaze-clean nine-feature M4 extractor was 0.821 `[LAB, AdSERP, absolute legacy, NB21:K3]` — exactly matching the WILD ACD AUC, which produced an evocative "0.821 = 0.821 across two completely different datasets" framing. **The 2026-05-01 cascade retired that LAB anchor**: M4 LOSO AUC under bbox-organic attribution is now **0.864** `[LAB, AdSERP, organic, NB21:K-bbox-4]` and **0.870** under hybrid attribution. The post-cascade LAB number is +0.043 above WILD; the headline shifts from "same number" to "the cursor-only feature family transfers from LAB to WILD with a modest LAB-favoring gap, consistent with cleaner attribution sharpening the LAB signal." The within-CI agreement is intact (LAB per-fold SD ≈ 0.044; WILD ± 0.022 — overlap is wide); the rhetorical "exact equality" hook does not survive cleaner attribution. WILD AUC `[WILD, attcur]` is rank-type-N/A (single-AOI native ad cohort, no AdSERP-style rank structure).
 
 ### The dwell-cheat objection is defused
 
@@ -38,9 +38,11 @@ Full discussion at [`docs/validation/attcur-bruckner.md`](validation/attcur-bruc
 
 The four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached) is `[LAB]`-only by construction: the deferred / evaluated-rejected split requires the gaze-fixation sequence revisiting an earlier result band, which no cursor-only stream provides. **M5 closes that gap as a calibration methodology**, not as a pre-trained artifact: train a logistic regression once against gaze-derived labels, then deploy at inference time on standard `mousemove` + click telemetry without any eye-tracker dependency.
 
-**On AdSERP — the gaze-clean reference point:**
-- LOSO AUC **0.709** `[AR-V2:K1]` at the Youden-*J* threshold *p* = 0.500 `[AR-V2:K2]`
-- Precision on predicted-deferred pool **88.9 %** `[AR-V2:K3]`, recall **73.0 %** `[AR-V2:K4]`, F1 **0.802** `[AR-V2:K5]`
+**On AdSERP — the gaze-clean reference point** `[LAB, AdSERP, organic]` (post-2026-05-01 cascade; trained against bbox-organic NB22 labels via `compute_regression_labels.py --attribution organic`):
+- LOSO AUC **0.769** `[AR-V2:K-bbox-1]` at the Youden-*J* threshold *p* = 0.489 `[AR-V2:K-bbox-2]`
+- Precision on predicted-deferred pool **87.8 %** `[AR-V2:K-bbox-3]`, recall **71.6 %** `[AR-V2:K-bbox-4]`, F1 **0.789** `[AR-V2:K-bbox-5]`
+
+> Pre-cascade reference (legacy absolute attribution, retired 2026-05-01): LOSO AUC 0.709 / threshold 0.500 / precision 88.9 % / recall 73.0 % / F1 0.802 — preserved as `[AR-V2:K1–K5, absolute legacy]`. The cascade retrained the M5 model on `cursor-approach-features-organic.json` with bbox-derived AOIs; the +0.060 AUC gain reflects cleaner training data, not a different model architecture.
 
 ### The supervision-signal finding
 
