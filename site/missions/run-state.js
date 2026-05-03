@@ -160,18 +160,41 @@ export function clearMission(runId, missionId) {
 }
 
 /**
- * Map AR signals + the SERP answers to a mission summary.
- *
- * "evaluated_rejected" overstates the signal — on a 10-item list, most cards
- * the user briefly looks at end up there, but that's not real anti-taste. So
- * the user-facing summary uses signal *strength*, not class:
+ * Map AR signals + the SERP answers to a mission summary with three tiers:
  *
  *   selected   — the click
- *   alternates — top 2-3 non-clicked by AR signal strength (dwell + reapproach)
+ *   alternates — drawn-to-it positives: items the user reapproached, or
+ *                items in the deferred bucket. Top 3 by dwell.
+ *   rejected   — *high-confidence* negatives: outcome==evaluated_rejected
+ *                AND reapproach_count==0 AND total_dwell_ms >= 500ms.
+ *                Top 2 by dwell × mean_retreat_distance.
  *
- * The full AR classification is preserved alongside in the run record for
- * forensics and for a future user-override validation step on the prompt page.
+ * Items not meeting either gate fall into the silent middle (brief glances,
+ * no engagement) and are dropped from the prompt entirely. Rec algos love a
+ * good negative — but only if AR is sure.
+ *
+ * Full AR classification is preserved alongside in the run record so the
+ * future validation/override step on prompt.html can let the user reach in.
  */
+
+const REJECT_MIN_DWELL_MS = 500;
+
+function isConfidentReject(sig) {
+  return (
+    sig &&
+    sig.outcome === 'evaluated_rejected' &&
+    (sig.reapproach_count || 0) === 0 &&
+    (sig.total_dwell_ms || 0) >= REJECT_MIN_DWELL_MS
+  );
+}
+
+function isAlternate(sig) {
+  if (!sig) return false;
+  if ((sig.reapproach_count || 0) > 0) return true;
+  if (sig.outcome === 'deferred') return true;
+  return false;
+}
+
 export function summarizeMission(answers, signals, clickedPosition) {
   const byPos = new Map(answers.map((a) => [a.position, a]));
   const sigByPos = new Map((signals || []).map((s) => [s.position, s]));
@@ -182,27 +205,41 @@ export function summarizeMission(answers, signals, clickedPosition) {
     selected = { position: a.position, title: a.title, year: a.year };
   }
 
-  const score = (sig) => {
-    if (!sig) return 0;
-    // dwell in seconds + 5pts per reapproach. Reapproach is the strongest
-    // approach-signal AR has for "drawn to it but didn't commit".
-    return (sig.total_dwell_ms || 0) / 1000 + (sig.reapproach_count || 0) * 5;
-  };
-
-  const ranked = answers
+  const candidates = answers
     .filter((a) => a.position !== clickedPosition)
-    .map((a) => ({ a, score: score(sigByPos.get(a.position)) }))
-    .filter((x) => x.score > 0) // any approach at all
-    .sort((a, b) => b.score - a.score);
+    .map((a) => ({ a, sig: sigByPos.get(a.position) || null }));
 
-  const alternates = ranked.slice(0, 3).map(({ a, score }) => ({
-    position: a.position,
-    title: a.title,
-    year: a.year,
-    score: Math.round(score * 10) / 10,
-  }));
+  const rejected = candidates
+    .filter((x) => isConfidentReject(x.sig))
+    .sort((a, b) => {
+      const sa = (a.sig.total_dwell_ms || 0) * (a.sig.mean_retreat_distance || 1);
+      const sb = (b.sig.total_dwell_ms || 0) * (b.sig.mean_retreat_distance || 1);
+      return sb - sa;
+    })
+    .slice(0, 2)
+    .map(({ a, sig }) => ({
+      position: a.position,
+      title: a.title,
+      year: a.year,
+      dwell_ms: sig.total_dwell_ms,
+      retreat_dist: Math.round(sig.mean_retreat_distance || 0),
+    }));
 
-  return { selected, alternates };
+  const rejectedPositions = new Set(rejected.map((r) => r.position));
+  const alternates = candidates
+    .filter((x) => !rejectedPositions.has(x.a.position))
+    .filter((x) => isAlternate(x.sig))
+    .sort((a, b) => (b.sig.total_dwell_ms || 0) - (a.sig.total_dwell_ms || 0))
+    .slice(0, 3)
+    .map(({ a, sig }) => ({
+      position: a.position,
+      title: a.title,
+      year: a.year,
+      dwell_ms: sig.total_dwell_ms,
+      reapproach_count: sig.reapproach_count || 0,
+    }));
+
+  return { selected, alternates, rejected };
 }
 
 function fmtMovie(m) {
@@ -211,9 +248,12 @@ function fmtMovie(m) {
 
 /**
  * Build a copy-pasteable LLM prompt from a completed run.
- * Encodes affinity: picked > alternates (next-best by AR signal). No
- * "rejected" framing — most non-picked cards aren't anti-taste, just
- * not-this-time.
+ *
+ * Three-tier affinity:
+ *   Picked            — explicit positive
+ *   Also considered   — soft positive (drawn back / deferred)
+ *   Not for me        — high-confidence negative (looked carefully, walked
+ *                       away, never returned). Only emitted when AR is sure.
  */
 export function buildPrompt(run) {
   const blocks = [];
@@ -221,9 +261,12 @@ export function buildPrompt(run) {
     const m = run.missions[id];
     if (!m || !m.selected) continue;
     const lines = [`${MISSION_LABELS[id].toUpperCase()}`];
-    lines.push(`  Picked:          ${fmtMovie(m.selected)}`);
+    lines.push(`  Picked:           ${fmtMovie(m.selected)}`);
     if (m.alternates && m.alternates.length) {
-      lines.push(`  Also considered: ${m.alternates.map(fmtMovie).join(', ')}`);
+      lines.push(`  Also considered:  ${m.alternates.map(fmtMovie).join(', ')}`);
+    }
+    if (m.rejected && m.rejected.length) {
+      lines.push(`  Not for me:       ${m.rejected.map(fmtMovie).join(', ')}`);
     }
     blocks.push(lines.join('\n'));
   }
@@ -236,10 +279,16 @@ export function buildPrompt(run) {
     blocks.join('\n\n'),
     '',
     'Recommend 5 recent (2022–2026) movies for each mission above.',
-    '"Also considered" are movies I was drawn toward but did not commit to —',
-    'they encode taste signal alongside the pick. Do not recommend anything',
-    'from my Picked or Also-considered lists. Briefly explain each pick',
-    '(one sentence).',
+    '',
+    '"Also considered" are movies I was drawn toward but did not pick —',
+    'soft positives that encode taste alongside the pick.',
+    '',
+    '"Not for me" are movies I looked at carefully and decided against —',
+    'treat these as confident negatives, strong signals about what to avoid',
+    'in the same vein.',
+    '',
+    'Do not recommend anything from my Picked, Also-considered, or',
+    'Not-for-me lists. Briefly explain each pick (one sentence).',
   ].join('\n');
 }
 
@@ -257,6 +306,7 @@ export function encodeRunForUrl(run) {
           completed_at: m.completed_at,
           selected: m.selected,
           alternates: m.alternates,
+          rejected: m.rejected,
         },
       ]),
     ),

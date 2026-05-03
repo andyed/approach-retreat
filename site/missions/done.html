@@ -54,7 +54,10 @@
         : `<span class="empty">no pick recorded</span>`;
       sum.innerHTML =
         row('Picked', pickLine) +
-        row('Also considered', list(mission.alternates));
+        row('Also considered', list(mission.alternates)) +
+        (mission.rejected && mission.rejected.length
+          ? row('Not for me', mission.rejected.map(fmt).join(', '))
+          : '');
 
       const next = nextMissionId(run);
       const actions = document.getElementById('actions');

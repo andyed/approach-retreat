@@ -24,6 +24,7 @@
             <th>Mission</th>
             <th>Picked</th>
             <th>Also considered</th>
+            <th>Not for me</th>
             <th></th>
           </tr>
         </thead>
@@ -118,7 +119,7 @@
           if (!m) {
             return `<tr class="pending">
               <td>${MISSION_LABELS[id]}</td>
-              <td colspan="2">not yet</td>
+              <td colspan="3">not yet</td>
               <td>${
                 isShared
                   ? ''
@@ -131,6 +132,9 @@
             <td class="pick">${m.selected ? fmt(m.selected) : '—'}</td>
             <td class="considered">${
               (m.alternates || []).map(fmt).join(', ') || '<span style="color: var(--ink-dim)">—</span>'
+            }</td>
+            <td class="rejected">${
+              (m.rejected || []).map(fmt).join(', ') || '<span style="color: var(--ink-dim)">—</span>'
             }</td>
             <td>${
               isShared
