@@ -39,6 +39,66 @@
       "answer_count": 6,
       "ad_count": 1,
       "tone": "personal / experiential"
+    },
+    {
+      "id": "date-night",
+      "title": "Recommend movies for date night",
+      "subtitle": "Adult chemistry · character drama · smart action",
+      "year_min": 1942,
+      "year_max": 2016,
+      "answer_count": 10,
+      "ad_count": 0,
+      "tone": "romantic / adult co-decision"
+    },
+    {
+      "id": "kids-saturday",
+      "title": "Recommend movies for the kids on Saturday",
+      "subtitle": "Ages 5–10 · animated and family adventure",
+      "year_min": 1982,
+      "year_max": 2014,
+      "answer_count": 10,
+      "ad_count": 0,
+      "tone": "kid-friendly / parent-tolerable"
+    },
+    {
+      "id": "extended-family",
+      "title": "Recommend movies for the extended family",
+      "subtitle": "Multi-generational · broad-appeal classics",
+      "year_min": 1946,
+      "year_max": 2010,
+      "answer_count": 10,
+      "ad_count": 0,
+      "tone": "consensus / nothing risky"
+    },
+    {
+      "id": "solo-wind-down",
+      "title": "Recommend a movie for a quiet solo evening",
+      "subtitle": "Atmospheric · contemplative · single-viewer",
+      "year_min": 1962,
+      "year_max": 2023,
+      "answer_count": 10,
+      "ad_count": 0,
+      "tone": "slow / interior"
+    },
+    {
+      "id": "teen-sleepover",
+      "title": "Recommend movies for a teen sleepover",
+      "subtitle": "Ages 13–16 · high-energy · cult favorites",
+      "year_min": 1985,
+      "year_max": 2018,
+      "answer_count": 10,
+      "ad_count": 0,
+      "tone": "loud / quotable / no slow middle"
+    },
+    {
+      "id": "rainy-sunday-afternoon",
+      "title": "Recommend a movie for a rainy Sunday afternoon",
+      "subtitle": "Comfort rewatches · nothing taxing",
+      "year_min": 1986,
+      "year_max": 2014,
+      "answer_count": 10,
+      "ad_count": 0,
+      "tone": "easy / familiar / dozable"
     }
   ],
   "default": "ai-existential-threat"

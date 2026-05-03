@@ -149,6 +149,10 @@ export function renderAnswers(container, answers, { variant = 'default' } = {}) 
     if (variant === 'rich-thumbnail') {
       const thumb = document.createElement('div');
       thumb.className = 'result-thumbnail';
+      if (a.poster_url) {
+        thumb.classList.add('result-thumbnail--poster');
+        thumb.style.backgroundImage = `url("${a.poster_url}")`;
+      }
       div.appendChild(thumb);
       const body = document.createElement('div');
       body.className = 'result-body';
