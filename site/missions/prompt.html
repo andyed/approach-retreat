@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your prompt — Approach/Retreat</title>
+  <link rel="stylesheet" href="missions.css">
+</head>
+<body class="mission">
+  <main class="mission-page">
+    <div class="mission-eyebrow">Your recommendation prompt</div>
+    <h1 class="mission-title">Paste this into your favourite LLM.</h1>
+    <p class="mission-subtitle" id="subtitle">…</p>
+
+    <div class="mission-section">
+      <h2>What you picked</h2>
+      <table class="run-table">
+        <thead>
+          <tr>
+            <th>Mission</th>
+            <th>Picked</th>
+            <th>Considered</th>
+            <th>Rejected</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="run-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="mission-section">
+      <h2>The prompt</h2>
+      <textarea class="prompt-box" id="prompt-text" readonly></textarea>
+      <div class="mission-actions">
+        <button class="btn btn-primary" id="copy-btn">Copy to clipboard</button>
+        <a class="btn" id="open-chatgpt" target="_blank" rel="noopener">Open ChatGPT</a>
+        <a class="btn" id="open-claude" target="_blank" rel="noopener">Open Claude</a>
+        <a class="btn" id="open-poe" target="_blank" rel="noopener">Open Poe</a>
+      </div>
+    </div>
+
+    <div class="mission-section">
+      <h2>Share or revisit</h2>
+      <p style="color: var(--ink-dim);">
+        Stay-in-this-browser link uses local storage. The shareable link is
+        self-contained — anyone who opens it sees your run on their device.
+      </p>
+      <div class="mission-actions">
+        <button class="btn" id="copy-permalink">Copy revisit link</button>
+        <button class="btn" id="copy-share">Copy shareable link</button>
+      </div>
+      <p id="link-feedback" style="margin-top: 0.5rem; color: var(--accent-strong);"></p>
+    </div>
+
+    <div class="mission-section">
+      <h2>Reset</h2>
+      <div class="mission-actions">
+        <a class="btn" href="index.html">Start a new run</a>
+        <button class="btn btn-warn" id="clear-btn">Clear all runs</button>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import {
+      getRun, getActiveRun, buildPrompt, encodeRunForUrl, decodeRunFromUrl,
+      missionProgress, MISSION_LABELS, clearAllRuns,
+    } from './run-state.js';
+
+    const url = new URL(window.location.href);
+    let run = null;
+    let isShared = false;
+
+    // Cross-device share: #d=<base64>
+    if (window.location.hash.startsWith('#d=')) {
+      try {
+        run = decodeRunFromUrl(window.location.hash.slice(3));
+        isShared = true;
+      } catch (e) {
+        console.warn('failed to decode shared run', e);
+      }
+    }
+    if (!run) {
+      const wantedId = url.searchParams.get('run');
+      if (wantedId) run = getRun(wantedId);
+    }
+    if (!run) run = getActiveRun();
+
+    if (!run) {
+      document.querySelector('main').innerHTML = `
+        <div class="mission-eyebrow">No run found</div>
+        <h1 class="mission-title">Nothing to show.</h1>
+        <p class="mission-subtitle">Start a new run to generate a prompt.</p>
+        <div class="mission-actions">
+          <a class="btn btn-primary" href="index.html">Go to missions</a>
+        </div>
+      `;
+    } else {
+      renderRun(run, isShared);
+    }
+
+    function fmt(m) {
+      return `${m.title}${m.year ? ` (${m.year})` : ''}`;
+    }
+
+    function renderRun(run, isShared) {
+      const { done, total } = missionProgress(run);
+      document.getElementById('subtitle').textContent =
+        `Run ${run.run_id} · ${done} of ${total} missions completed${isShared ? ' (shared view)' : ''}.`;
+
+      const tbody = document.getElementById('run-tbody');
+      tbody.innerHTML = run.mission_order
+        .map((id) => {
+          const m = run.missions[id];
+          if (!m) {
+            return `<tr class="pending">
+              <td>${MISSION_LABELS[id]}</td>
+              <td colspan="3">not yet</td>
+              <td>${
+                isShared
+                  ? ''
+                  : `<a class="btn" href="start.html?m=${id}" style="padding: 0.3rem 0.7rem; font-size: 0.85rem;">Run it</a>`
+              }</td>
+            </tr>`;
+          }
+          return `<tr>
+            <td>${MISSION_LABELS[id]}</td>
+            <td class="pick">${m.selected ? fmt(m.selected) : '—'}</td>
+            <td class="considered">${
+              (m.considered || []).map(fmt).join(', ') || '<span style="color: var(--ink-dim)">—</span>'
+            }</td>
+            <td class="rejected">${
+              (m.rejected || []).map(fmt).join(', ') || '<span style="color: var(--ink-dim)">—</span>'
+            }</td>
+            <td>${
+              isShared
+                ? ''
+                : `<a class="btn" href="done.html?m=${id}" style="padding: 0.3rem 0.7rem; font-size: 0.85rem;">Review</a>`
+            }</td>
+          </tr>`;
+        })
+        .join('');
+
+      const prompt = buildPrompt(run);
+      const ta = document.getElementById('prompt-text');
+      ta.value = prompt;
+
+      // Calibrate textarea height to content
+      requestAnimationFrame(() => {
+        ta.style.height = 'auto';
+        ta.style.height = Math.max(280, ta.scrollHeight + 20) + 'px';
+      });
+
+      // Wire LLM open buttons (just open the chat home; user pastes)
+      document.getElementById('open-chatgpt').href = 'https://chat.openai.com/';
+      document.getElementById('open-claude').href = 'https://claude.ai/new';
+      document.getElementById('open-poe').href = 'https://poe.com/';
+
+      document.getElementById('copy-btn').addEventListener('click', async () => {
+        await navigator.clipboard.writeText(prompt);
+        flash('Prompt copied.');
+      });
+
+      document.getElementById('copy-permalink').addEventListener('click', async () => {
+        const u = new URL(window.location.href);
+        u.searchParams.set('run', run.run_id);
+        u.hash = '';
+        await navigator.clipboard.writeText(u.toString());
+        flash('Revisit link copied (works on this browser only).');
+      });
+
+      document.getElementById('copy-share').addEventListener('click', async () => {
+        const u = new URL(window.location.href);
+        u.search = '';
+        u.hash = '#d=' + encodeRunForUrl(run);
+        await navigator.clipboard.writeText(u.toString());
+        flash('Shareable link copied.');
+      });
+
+      document.getElementById('clear-btn').addEventListener('click', () => {
+        if (!confirm('Clear all runs from this browser? This cannot be undone.')) return;
+        clearAllRuns();
+        window.location.href = 'index.html';
+      });
+    }
+
+    function flash(msg) {
+      const el = document.getElementById('link-feedback');
+      el.textContent = msg;
+      setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500);
+    }
+  </script>
+</body>
+</html>

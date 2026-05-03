@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Done — Approach/Retreat mission</title>
+  <link rel="stylesheet" href="missions.css">
+</head>
+<body class="mission">
+  <main class="mission-page">
+    <div class="mission-progress" id="progress-line"></div>
+    <div class="mission-eyebrow">Mission complete</div>
+    <h1 class="mission-title" id="mission-title">…</h1>
+
+    <div class="mission-card" id="summary"></div>
+
+    <div class="mission-actions" id="actions"></div>
+  </main>
+
+  <script type="module">
+    import {
+      getActiveRun, MISSION_LABELS, missionProgress, nextMissionId,
+      clearMission,
+    } from './run-state.js';
+
+    const url = new URL(window.location.href);
+    const m = url.searchParams.get('m');
+    const run = getActiveRun();
+
+    if (!m || !MISSION_LABELS[m] || !run || !run.missions[m]) {
+      window.location.href = 'index.html';
+    } else {
+      const mission = run.missions[m];
+      document.getElementById('mission-title').textContent = MISSION_LABELS[m];
+
+      const { done, total } = missionProgress(run);
+      document.getElementById('progress-line').textContent =
+        `${done} of ${total} missions complete`;
+
+      const sum = document.getElementById('summary');
+      const row = (label, value, cls = '') =>
+        `<div class="summary-row">
+           <div class="summary-label">${label}</div>
+           <div class="summary-value ${cls}">${value}</div>
+         </div>`;
+      const fmt = (m) =>
+        `${m.title}${m.year ? ` <span style="color: var(--ink-dim)">(${m.year})</span>` : ''}`;
+      const list = (arr) =>
+        arr && arr.length
+          ? arr.map(fmt).join(', ')
+          : `<span class="empty">none</span>`;
+      const pickLine = mission.selected
+        ? `<strong>${fmt(mission.selected)}</strong>`
+        : `<span class="empty">no pick recorded</span>`;
+      sum.innerHTML =
+        row('Picked', pickLine) +
+        row('Considered', list(mission.considered)) +
+        row('Rejected', list(mission.rejected)) +
+        row(
+          'Ignored',
+          mission.ignored && mission.ignored.length
+            ? `<span class="empty">${mission.ignored.length} films you didn't approach</span>`
+            : `<span class="empty">none</span>`,
+        );
+
+      const next = nextMissionId(run);
+      const actions = document.getElementById('actions');
+      const buttons = [];
+      if (next) {
+        buttons.push(
+          `<a class="btn btn-primary" href="start.html?m=${next}">Continue → ${MISSION_LABELS[next]}</a>`,
+        );
+        buttons.push(
+          `<a class="btn" href="prompt.html?run=${run.run_id}">Bail to my prompt</a>`,
+        );
+      } else {
+        buttons.push(
+          `<a class="btn btn-primary" href="prompt.html?run=${run.run_id}">See my prompt</a>`,
+        );
+      }
+      buttons.push(
+        `<button class="btn btn-warn" id="redo-btn">Redo this mission</button>`,
+      );
+      actions.innerHTML = buttons.join(' ');
+
+      document.getElementById('redo-btn').addEventListener('click', () => {
+        clearMission(run.run_id, m);
+        window.location.href = `start.html?m=${m}`;
+      });
+    }
+  </script>
+</body>
+</html>

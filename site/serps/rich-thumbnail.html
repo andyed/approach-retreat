@@ -33,19 +33,81 @@
       loadQuestion, initApproachRetreat, wireDebugOverlay,
       renderHeader, renderAnswers,
     } from '../js/ar-init.js';
+    import {
+      getActiveRun, recordMission, summarizeMission,
+      MISSION_LABELS, MISSION_INSTRUCTIONS,
+    } from '../missions/run-state.js';
 
     const LAYOUT = 'rich-thumbnail';
+    const url = new URL(window.location.href);
+    const isRunMode = url.searchParams.get('mode') === 'run';
+
     const { meta, answers, index } = await loadQuestion();
+
+    if (isRunMode) {
+      document.body.classList.add('mission-run-mode');
+      // Hide the question switcher so the dogfooder stays on-mission
+      const sw = document.querySelector('.question-switcher');
+      if (sw) sw.style.display = 'none';
+    }
+
     renderHeader({ meta, index, layoutName: LAYOUT });
+
+    // In run mode, replace the layout-list link in the info row with a
+    // mission breadcrumb + cancel link.
+    if (isRunMode) {
+      const infoEl = document.querySelector('.serp-info');
+      const run = getActiveRun();
+      const label = MISSION_LABELS[meta.id] || meta.title;
+      const idx = run ? run.mission_order.indexOf(meta.id) + 1 : null;
+      const total = run ? run.mission_order.length : null;
+      const breadcrumb =
+        idx && total
+          ? `Mission ${idx} of ${total} — ${label}`
+          : `Mission — ${label}`;
+      if (infoEl) {
+        infoEl.innerHTML =
+          `${breadcrumb} &middot; <em>${MISSION_INSTRUCTIONS[meta.id] || 'Pick the one you would actually watch.'}</em> &middot; ` +
+          `<a href="../missions/index.html">Cancel mission</a>`;
+      }
+    }
+
     renderAnswers(document.getElementById('serp'), answers, { variant: 'rich-thumbnail' });
 
     let debugUpdate = () => {};
+    let arRef = null;
+    const handleRunClick = (clickInfo) => {
+      const run = getActiveRun();
+      if (!run) {
+        window.location.href = '../missions/index.html';
+        return;
+      }
+      // Finalize active/retreating episodes so classify() includes them.
+      arRef.flush();
+      const classification = arRef.classify();
+      const episodes = arRef.getEpisodes();
+      const summary = summarizeMission(answers, classification, clickInfo.position);
+      recordMission(run.run_id, meta.id, {
+        ...summary,
+        episodes,
+      });
+      // Soft-redirect — let any pending capture flush first.
+      setTimeout(() => {
+        window.location.href = `../missions/done.html?m=${encodeURIComponent(meta.id)}`;
+      }, 50);
+    };
+
+    const onClick = isRunMode
+      ? handleRunClick
+      : ({ target }) => target.classList.toggle('expanded');
+
     const { ar } = initApproachRetreat({
       layoutName: LAYOUT,
       queryMeta: meta,
-      onClick: ({ target }) => target.classList.toggle('expanded'),
+      onClick,
       onEpisode: () => debugUpdate(),
     });
+    arRef = ar;
     debugUpdate = wireDebugOverlay(ar);
     ar.refresh();
   </script>

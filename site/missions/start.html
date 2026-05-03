@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mission — Approach/Retreat</title>
+  <link rel="stylesheet" href="missions.css">
+</head>
+<body class="mission">
+  <main class="mission-page">
+    <div class="mission-progress" id="progress-line"></div>
+    <div class="mission-eyebrow">Mission</div>
+    <h1 class="mission-title" id="mission-title">…</h1>
+    <p class="mission-subtitle" id="mission-instruction">…</p>
+
+    <div class="mission-card">
+      <p class="label">How this works</p>
+      <p class="body">
+        You'll see ten well-known movies. Browse them like you actually
+        would. Click the one you'd pick. We'll record it plus everything
+        you considered or turned away from along the way.
+      </p>
+    </div>
+
+    <div class="mission-actions">
+      <a class="btn btn-primary" id="begin-link">Begin</a>
+      <a class="btn" href="index.html">Cancel</a>
+    </div>
+  </main>
+
+  <script type="module">
+    import {
+      getActiveRun, MISSION_LABELS, MISSION_INSTRUCTIONS, missionProgress,
+    } from './run-state.js';
+
+    const url = new URL(window.location.href);
+    const m = url.searchParams.get('m');
+    const run = getActiveRun();
+
+    if (!m || !MISSION_LABELS[m] || !run) {
+      window.location.href = 'index.html';
+    } else {
+      document.getElementById('mission-title').textContent = MISSION_LABELS[m];
+      document.getElementById('mission-instruction').textContent =
+        MISSION_INSTRUCTIONS[m];
+      const { done, total } = missionProgress(run);
+      const idx = run.mission_order.indexOf(m) + 1;
+      document.getElementById('progress-line').textContent =
+        `Mission ${idx} of ${total} · ${done} complete`;
+      document.getElementById('begin-link').href =
+        `../serps/rich-thumbnail.html?q=${encodeURIComponent(m)}&mode=run`;
+    }
+  </script>
+</body>
+</html>

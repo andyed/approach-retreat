@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Movie missions — Approach/Retreat</title>
+  <link rel="stylesheet" href="missions.css">
+</head>
+<body class="mission">
+  <main class="mission-page">
+    <div class="mission-eyebrow">Movie missions</div>
+    <h1 class="mission-title">Pick a movie. We'll write your prompt.</h1>
+    <p class="mission-subtitle">
+      Six brief missions — date night, kids, extended family, solo wind-down,
+      teen sleepover, rainy Sunday afternoon. For each, you'll see ten
+      classics and pick the one you'd actually watch. We turn your picks into
+      a copy-pasteable recommendation prompt for ChatGPT, Claude, or Poe.
+    </p>
+
+    <div class="mission-card">
+      <p class="label">What we record</p>
+      <p class="body">
+        Which movie you picked, which ones you considered (you looked, you
+        thought about it), and which ones you rejected (you looked and turned
+        away). The prompt encodes all three so the LLM has more than a
+        thumbs-up list to work with.
+      </p>
+    </div>
+
+    <div id="resume-box"></div>
+
+    <div class="mission-actions">
+      <button class="btn btn-primary" id="start-new">Start a new run</button>
+      <a class="btn" href="../index.html">All approach/retreat layouts</a>
+    </div>
+
+    <p class="mission-progress" style="margin-top: 2rem;">
+      Cursor data is captured anonymously via PostHog (or not at all in
+      private browsing). You can clear your run state any time from the
+      prompt page.
+    </p>
+  </main>
+
+  <script type="module">
+    import {
+      createRun, getActiveRun, missionProgress, MISSION_LABELS,
+    } from './run-state.js';
+
+    const resumeBox = document.getElementById('resume-box');
+    const active = getActiveRun();
+    if (active) {
+      const { done, total } = missionProgress(active);
+      const next = active.mission_order.find((id) => !active.missions[id]);
+      const card = document.createElement('div');
+      card.className = 'mission-card';
+      card.innerHTML = `
+        <p class="label">In progress</p>
+        <p class="body">
+          You have a run with <strong>${done} of ${total}</strong>
+          missions complete${next ? ` — next up: <strong>${MISSION_LABELS[next]}</strong>` : ''}.
+        </p>
+        <div class="mission-actions">
+          ${
+            next
+              ? `<a class="btn btn-primary" href="start.html?m=${next}">Continue</a>`
+              : `<a class="btn btn-primary" href="prompt.html?run=${active.run_id}">See your prompt</a>`
+          }
+          <a class="btn" href="prompt.html?run=${active.run_id}">View progress</a>
+        </div>
+      `;
+      resumeBox.appendChild(card);
+    }
+
+    document.getElementById('start-new').addEventListener('click', () => {
+      const run = createRun();
+      const first = run.mission_order[0];
+      window.location.href = `start.html?m=${first}`;
+    });
+  </script>
+</body>
+</html>
