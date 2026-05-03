@@ -48,20 +48,13 @@
       const list = (arr) =>
         arr && arr.length
           ? arr.map(fmt).join(', ')
-          : `<span class="empty">none</span>`;
+          : `<span class="empty">none — you went straight for the pick</span>`;
       const pickLine = mission.selected
         ? `<strong>${fmt(mission.selected)}</strong>`
         : `<span class="empty">no pick recorded</span>`;
       sum.innerHTML =
         row('Picked', pickLine) +
-        row('Considered', list(mission.considered)) +
-        row('Rejected', list(mission.rejected)) +
-        row(
-          'Ignored',
-          mission.ignored && mission.ignored.length
-            ? `<span class="empty">${mission.ignored.length} films you didn't approach</span>`
-            : `<span class="empty">none</span>`,
-        );
+        row('Also considered', list(mission.alternates));
 
       const next = nextMissionId(run);
       const actions = document.getElementById('actions');

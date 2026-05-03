@@ -160,39 +160,49 @@ export function clearMission(runId, missionId) {
 }
 
 /**
- * Map an AR classification snapshot + the SERP answers to a mission summary.
+ * Map AR signals + the SERP answers to a mission summary.
  *
- * AR classes → user-facing labels:
- *   clicked            → selected
- *   deferred           → considered
- *   evaluated_rejected → rejected
- *   not_approached     → ignored
+ * "evaluated_rejected" overstates the signal — on a 10-item list, most cards
+ * the user briefly looks at end up there, but that's not real anti-taste. So
+ * the user-facing summary uses signal *strength*, not class:
+ *
+ *   selected   — the click
+ *   alternates — top 2-3 non-clicked by AR signal strength (dwell + reapproach)
+ *
+ * The full AR classification is preserved alongside in the run record for
+ * forensics and for a future user-override validation step on the prompt page.
  */
-export function summarizeMission(answers, classification, clickedPosition) {
+export function summarizeMission(answers, signals, clickedPosition) {
   const byPos = new Map(answers.map((a) => [a.position, a]));
-  const lookup = (positions) =>
-    positions
-      .map((p) => byPos.get(p.position))
-      .filter(Boolean)
-      .map((a) => ({ position: a.position, title: a.title, year: a.year }));
-
-  const clicked = (classification.clicked || []).filter(
-    (s) => s.position === clickedPosition,
-  );
-  const considered = lookup(classification.deferred || []);
-  const rejected = lookup(classification.evaluated_rejected || []);
-  const ignored = lookup(classification.not_approached || []);
+  const sigByPos = new Map((signals || []).map((s) => [s.position, s]));
 
   let selected = null;
-  if (clicked.length) {
-    const a = byPos.get(clicked[0].position);
-    if (a) selected = { position: a.position, title: a.title, year: a.year };
-  }
-  if (!selected && clickedPosition != null) {
+  if (clickedPosition != null && byPos.has(clickedPosition)) {
     const a = byPos.get(clickedPosition);
-    if (a) selected = { position: a.position, title: a.title, year: a.year };
+    selected = { position: a.position, title: a.title, year: a.year };
   }
-  return { selected, considered, rejected, ignored };
+
+  const score = (sig) => {
+    if (!sig) return 0;
+    // dwell in seconds + 5pts per reapproach. Reapproach is the strongest
+    // approach-signal AR has for "drawn to it but didn't commit".
+    return (sig.total_dwell_ms || 0) / 1000 + (sig.reapproach_count || 0) * 5;
+  };
+
+  const ranked = answers
+    .filter((a) => a.position !== clickedPosition)
+    .map((a) => ({ a, score: score(sigByPos.get(a.position)) }))
+    .filter((x) => x.score > 0) // any approach at all
+    .sort((a, b) => b.score - a.score);
+
+  const alternates = ranked.slice(0, 3).map(({ a, score }) => ({
+    position: a.position,
+    title: a.title,
+    year: a.year,
+    score: Math.round(score * 10) / 10,
+  }));
+
+  return { selected, alternates };
 }
 
 function fmtMovie(m) {
@@ -201,7 +211,9 @@ function fmtMovie(m) {
 
 /**
  * Build a copy-pasteable LLM prompt from a completed run.
- * Encodes relative affinity: picked > considered > rejected > ignored.
+ * Encodes affinity: picked > alternates (next-best by AR signal). No
+ * "rejected" framing — most non-picked cards aren't anti-taste, just
+ * not-this-time.
  */
 export function buildPrompt(run) {
   const blocks = [];
@@ -209,12 +221,9 @@ export function buildPrompt(run) {
     const m = run.missions[id];
     if (!m || !m.selected) continue;
     const lines = [`${MISSION_LABELS[id].toUpperCase()}`];
-    lines.push(`  Picked:     ${fmtMovie(m.selected)}`);
-    if (m.considered && m.considered.length) {
-      lines.push(`  Considered: ${m.considered.map(fmtMovie).join(', ')}`);
-    }
-    if (m.rejected && m.rejected.length) {
-      lines.push(`  Rejected:   ${m.rejected.map(fmtMovie).join(', ')}`);
+    lines.push(`  Picked:          ${fmtMovie(m.selected)}`);
+    if (m.alternates && m.alternates.length) {
+      lines.push(`  Also considered: ${m.alternates.map(fmtMovie).join(', ')}`);
     }
     blocks.push(lines.join('\n'));
   }
@@ -227,10 +236,10 @@ export function buildPrompt(run) {
     blocks.join('\n\n'),
     '',
     'Recommend 5 recent (2022–2026) movies for each mission above.',
-    'Treat "Considered" as movies I was drawn toward but did not commit to —',
-    'they encode taste. Treat "Rejected" as movies I actively turned away from',
-    'after looking — they encode anti-taste. Do not recommend anything from my',
-    'Considered or Rejected lists. Briefly explain each pick (one sentence).',
+    '"Also considered" are movies I was drawn toward but did not commit to —',
+    'they encode taste signal alongside the pick. Do not recommend anything',
+    'from my Picked or Also-considered lists. Briefly explain each pick',
+    '(one sentence).',
   ].join('\n');
 }
 
@@ -247,9 +256,7 @@ export function encodeRunForUrl(run) {
         {
           completed_at: m.completed_at,
           selected: m.selected,
-          considered: m.considered,
-          rejected: m.rejected,
-          ignored: m.ignored,
+          alternates: m.alternates,
         },
       ]),
     ),

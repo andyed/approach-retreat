@@ -82,13 +82,16 @@
         window.location.href = '../missions/index.html';
         return;
       }
-      // Finalize active/retreating episodes so classify() includes them.
+      // Finalize active/retreating episodes so signals/classify include them.
       arRef.flush();
+      const signals = arRef.getSignals();
       const classification = arRef.classify();
       const episodes = arRef.getEpisodes();
-      const summary = summarizeMission(answers, classification, clickInfo.position);
+      const summary = summarizeMission(answers, signals, clickInfo.position);
       recordMission(run.run_id, meta.id, {
         ...summary,
+        // Forensic data — preserved for the v2 user-override step on prompt.html
+        ar: { classification, signals, clicked_position: clickInfo.position },
         episodes,
       });
       // Soft-redirect — let any pending capture flush first.

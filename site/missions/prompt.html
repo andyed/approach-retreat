@@ -14,13 +14,16 @@
 
     <div class="mission-section">
       <h2>What you picked</h2>
+      <p style="color: var(--ink-dim); margin: 0 0 0.5rem;">
+        TODO: validation step here so you can override our inferences before
+        the prompt is generated.
+      </p>
       <table class="run-table">
         <thead>
           <tr>
             <th>Mission</th>
             <th>Picked</th>
-            <th>Considered</th>
-            <th>Rejected</th>
+            <th>Also considered</th>
             <th></th>
           </tr>
         </thead>
@@ -115,7 +118,7 @@
           if (!m) {
             return `<tr class="pending">
               <td>${MISSION_LABELS[id]}</td>
-              <td colspan="3">not yet</td>
+              <td colspan="2">not yet</td>
               <td>${
                 isShared
                   ? ''
@@ -127,10 +130,7 @@
             <td>${MISSION_LABELS[id]}</td>
             <td class="pick">${m.selected ? fmt(m.selected) : '—'}</td>
             <td class="considered">${
-              (m.considered || []).map(fmt).join(', ') || '<span style="color: var(--ink-dim)">—</span>'
-            }</td>
-            <td class="rejected">${
-              (m.rejected || []).map(fmt).join(', ') || '<span style="color: var(--ink-dim)">—</span>'
+              (m.alternates || []).map(fmt).join(', ') || '<span style="color: var(--ink-dim)">—</span>'
             }</td>
             <td>${
               isShared
