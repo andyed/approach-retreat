@@ -178,9 +178,16 @@ function drawAOIs() {
         'stroke-dasharray': (isParent || s.dashed) ? '6,4' : '',
       });
       aoiSvg.appendChild(rect);
-      // Position/kind tag (top-left corner)
+      // Position/kind tag (top-left corner). For typed widgets, use
+      // type-specific short labels so a stack of widgets is distinguishable.
       const TAG_PREFIX = {organic_result: 'O', dd_top_cell: 'T', dd_right_cell: 'R', native_ad: 'NA', dd_top: 'dd_top', dd_right: 'dd_right', widget: 'W'};
-      const tag = (TAG_PREFIX[kind] || kind) + (it.position != null ? it.position : '');
+      const WIDGET_TAG = {image_pack: 'IP', knowledge_panel: 'KP', paa: 'PAA', top_places: 'TP', related_searches: 'RS', pagination: 'PG', other_widget: 'OW', unknown_widget: '?W', chrome: 'CH'};
+      let tag;
+      if (kind === 'widget' && it.type && WIDGET_TAG[it.type]) {
+        tag = WIDGET_TAG[it.type];
+      } else {
+        tag = (TAG_PREFIX[kind] || kind) + (it.position != null ? it.position : '');
+      }
       const tx = mkSvg('text', {x: x + 6, y: y + 18, fill: s.label, 'font-family': 'monospace', 'font-size': 12, 'font-weight': 'bold', stroke: '#000', 'stroke-width': 3, 'paint-order': 'stroke'});
       tx.textContent = tag;
       aoiSvg.appendChild(tx);

@@ -405,15 +405,27 @@ def build_trial(trial_id: str) -> dict | None:
                 "html_handle": c.get("html_handle"),
             })
 
-        # Off-axis widgets (pagination, related_searches, chrome) are NOT
-        # rendered. Their y/x coordinates would have to be estimated, and
-        # that compounded badly: estimated pagination + estimated
-        # related_searches + chrome cells all stacked at the bottom of the
-        # viewer with overlapping dashed rectangles. Visually messy without
-        # adding precision. We render ONLY widgets with measured CV bbox
-        # coordinates above (image_pack, paa, knowledge_panel, top_places,
-        # other_widget, unknown_widget).
-        pass
+        # Pagination overlay — anchored on JPG bottom. Pagination has no CV
+        # bbox; we estimate its y as `jpg_h - 220` to land at the actual
+        # Goooooogle row (not the locale/links footer below it). 80 px
+        # tall, result-column x range.
+        # related_searches and chrome are NOT estimated — they overlap
+        # pagination and each other and produce visual mess.
+        pagination_cards = [c for c in typed_cards if c.get('type') == 'pagination']
+        if pagination_cards and jpg_out.exists():
+            try:
+                _img = Image.open(jpg_out)
+                jpg_h = _img.height
+            except Exception:
+                jpg_h = None
+            if jpg_h:
+                widget_bboxes.append({
+                    "location": {"x": 162.0, "y": max(0.0, float(jpg_h) - 220.0)},
+                    "size": {"width": 586.0, "height": 80.0},
+                    "type": "pagination",
+                    "html_handle": pagination_cards[0].get("html_handle"),
+                    "estimated": True,
+                })
     else:
         widget_bboxes = list(organic.get("widget", []))
 
