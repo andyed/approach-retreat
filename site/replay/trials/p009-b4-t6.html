@@ -135,12 +135,11 @@ function onImgReady() {
   drawCursorTrail();
   drawGazeFixations();
 }
-if (serpImg.complete && serpImg.naturalWidth > 0) {
-  // Image already cached/loaded before listener attached — fire handler now.
-  onImgReady();
-} else {
-  serpImg.addEventListener('load', onImgReady);
-}
+// NB: synchronous-fallback trigger lives at the very bottom of this script
+// (after AOI_STYLE / LABEL_STYLE / drawAOIs / drawCursorTrail /
+// drawGazeFixations are all initialised) — declaring it here would hit the
+// `const`-temporal-dead-zone if the image is already cached.
+serpImg.addEventListener('load', onImgReady);
 
 // ── AOI overlay ───────────────────────────────────────────────────────
 const AOI_STYLE = {
@@ -545,5 +544,12 @@ function mkSvg(tag, attrs) {
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
   return el;
+}
+
+// Cache-safe image-load trigger. If the image was already loaded before
+// the addEventListener('load', ...) call further up, fire the handler now.
+// Placed at end-of-script so all const declarations are initialised.
+if (serpImg.complete && serpImg.naturalWidth > 0) {
+  onImgReady();
 }
 </script></body></html>
