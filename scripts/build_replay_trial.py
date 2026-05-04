@@ -405,11 +405,21 @@ def build_trial(trial_id: str) -> dict | None:
                 "html_handle": c.get("html_handle"),
             })
 
-        # Pagination has no CV bbox (it's not in #rso or in any card-extracted
-        # zone; lives in #botstuff <div role="navigation">). Estimate the
-        # y-range by anchoring on the JPG natural height — pagination
-        # consistently lands in the bottom ~150 px of the rendered SERP.
+        # Pagination + related_searches live in #botstuff. Pagination has no
+        # CV bbox; related_searches has none either. Estimate both:
+        #   - pagination: anchored on JPG bottom (last 150 px of screenshot)
+        #   - related_searches: between deepest main-axis card and pagination
+        # Also: surface CV-detected chrome bboxes (footer/pagination-zone
+        # cells the chrome heuristic swept off-axis but have real coords).
         pagination_cards = [c for c in typed_cards if c.get('type') == 'pagination']
+        related_searches_cards = [c for c in typed_cards if c.get('type') == 'related_searches']
+        chrome_with_coords = [c for c in typed_cards
+                              if c.get('type') == 'chrome'
+                              and c.get('x') is not None and c.get('y') is not None]
+
+        # Compute pagination y from JPG height
+        pag_y = None
+        pag_h = 80.0
         if pagination_cards and jpg_out.exists():
             try:
                 _img = Image.open(jpg_out)
@@ -417,19 +427,46 @@ def build_trial(trial_id: str) -> dict | None:
             except Exception:
                 jpg_h = None
             if jpg_h:
-                # Pagination y ≈ image bottom − 150 px; height ≈ 80 px.
-                # Empirically pagination sits in the lower ~6 % of the screenshot.
-                pag_h = 80.0
                 pag_y = max(0.0, float(jpg_h) - 150.0)
-                pag_x = 162.0
-                pag_w = 586.0
-                widget_bboxes.append({
-                    "location": {"x": pag_x, "y": pag_y},
-                    "size": {"width": pag_w, "height": pag_h},
-                    "type": "pagination",
-                    "html_handle": pagination_cards[0].get("html_handle"),
-                    "estimated": True,  # flag: y-range is estimated, not measured
-                })
+
+        # Deepest main-axis card bottom (organic + ad in display order)
+        last_card_bottom = 0.0
+        for c in typed_cards:
+            if (c.get('position', -1) >= 0 and c.get('y') is not None
+                    and c.get('height') is not None):
+                last_card_bottom = max(last_card_bottom,
+                                        float(c['y']) + float(c['height']))
+
+        # related_searches: spans from last_card_bottom to pagination_y
+        if related_searches_cards and last_card_bottom > 0 and pag_y is not None:
+            rs_y = last_card_bottom + 30.0
+            rs_h = max(60.0, pag_y - rs_y - 20.0)
+            widget_bboxes.append({
+                "location": {"x": 162.0, "y": rs_y},
+                "size": {"width": 586.0, "height": rs_h},
+                "type": "related_searches",
+                "html_handle": related_searches_cards[0].get("html_handle"),
+                "estimated": True,
+            })
+
+        # chrome cells (CV-detected with coords; page-furniture-zone)
+        for c in chrome_with_coords:
+            widget_bboxes.append({
+                "location": {"x": float(c['x']), "y": float(c['y'])},
+                "size": {"width": float(c['width']), "height": float(c['height'])},
+                "type": "chrome",
+                "html_handle": None,
+            })
+
+        # pagination overlay (after rs_searches so it visually layers on top)
+        if pagination_cards and pag_y is not None:
+            widget_bboxes.append({
+                "location": {"x": 162.0, "y": pag_y},
+                "size": {"width": 586.0, "height": pag_h},
+                "type": "pagination",
+                "html_handle": pagination_cards[0].get("html_handle"),
+                "estimated": True,
+            })
     else:
         widget_bboxes = list(organic.get("widget", []))
 
