@@ -379,12 +379,40 @@ def build_trial(trial_id: str) -> dict | None:
 
     organic = json.loads(organic_json.read_text())
     organic = apply_aoi_corrections(trial_id, organic)
+
+    # Load typed AOI map (HTML+vision joint typing) and pull non-ad widgets
+    # into the `widget` bbox slot. When the typed map is available it
+    # supersedes the unlabeled CV widgets in organic-boundary-data; when
+    # absent we fall back to the legacy unlabeled widget list.
+    typed_aoi_path = (Path.home() / "Documents/dev/attentional-foraging"
+                      / "data/aoi-typed" / f"{trial_id}.json")
+    if typed_aoi_path.exists():
+        widget_bboxes = []
+        typed_cards = json.loads(typed_aoi_path.read_text())
+        widget_types = {"image_pack", "knowledge_panel", "paa", "top_places",
+                        "related_searches", "other_widget", "unknown_widget"}
+        for c in typed_cards:
+            if c.get("position", -1) < 0:
+                continue  # off-axis (chrome / dd_right / botstuff / rhs)
+            if c.get("type") not in widget_types:
+                continue
+            if c.get("x") is None or c.get("y") is None:
+                continue
+            widget_bboxes.append({
+                "location": {"x": float(c["x"]), "y": float(c["y"])},
+                "size": {"width": float(c["width"]), "height": float(c["height"])},
+                "type": c["type"],
+                "html_handle": c.get("html_handle"),
+            })
+    else:
+        widget_bboxes = list(organic.get("widget", []))
+
     bboxes = {
         "organic_result": organic.get("organic_result", []),
         "native_ad":  organic.get("native_ad", []),
         "dd_top":     organic.get("dd_top", []),
         "dd_right":   organic.get("dd_right", []),
-        "widget":     organic.get("widget", []),
+        "widget":     widget_bboxes,
     }
     aoi_labels = derive_aoi_labels(cursor, bboxes)
 
