@@ -407,20 +407,20 @@ def build_trial(trial_id: str) -> dict | None:
 
         # Pagination has no CV bbox (it's not in #rso or in any card-extracted
         # zone; lives in #botstuff <div role="navigation">). Estimate the
-        # y-range from the bottom of the deepest main-axis card.
+        # y-range by anchoring on the JPG natural height — pagination
+        # consistently lands in the bottom ~150 px of the rendered SERP.
         pagination_cards = [c for c in typed_cards if c.get('type') == 'pagination']
-        if pagination_cards:
-            # Find max y_bottom across main-axis CV-bbox cards (organics + ads)
-            main_bottoms = []
-            for c in typed_cards:
-                if (c.get('position', -1) >= 0 and c.get('y') is not None
-                        and c.get('height') is not None):
-                    main_bottoms.append(float(c['y']) + float(c['height']))
-            if main_bottoms:
-                # Pagination sits ~50 px below the deepest card; estimate height 80 px
-                pag_y = max(main_bottoms) + 50
-                pag_h = 80
-                # Use result-column x-range
+        if pagination_cards and jpg_out.exists():
+            try:
+                _img = Image.open(jpg_out)
+                jpg_h = _img.height
+            except Exception:
+                jpg_h = None
+            if jpg_h:
+                # Pagination y ≈ image bottom − 150 px; height ≈ 80 px.
+                # Empirically pagination sits in the lower ~6 % of the screenshot.
+                pag_h = 80.0
+                pag_y = max(0.0, float(jpg_h) - 150.0)
                 pag_x = 162.0
                 pag_w = 586.0
                 widget_bboxes.append({
