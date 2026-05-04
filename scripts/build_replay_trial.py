@@ -19,6 +19,8 @@ import json
 import shutil
 import sys
 import xml.etree.ElementTree as ET
+
+from PIL import Image
 from pathlib import Path
 
 AF_ROOT = Path.home() / "Documents/dev/attentional-foraging/AdSERP/data"
@@ -327,7 +329,10 @@ def build_trial(trial_id: str) -> dict | None:
     )
 
     PNG_OUT.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(png, PNG_OUT / png.name)
+    jpg_name = f"{trial_id}.jpg"
+    jpg_out = PNG_OUT / jpg_name
+    if not jpg_out.exists():
+        Image.open(png).convert("RGB").save(jpg_out, "JPEG", quality=85, optimize=True)
 
     organic = json.loads(organic_json.read_text())
     bboxes = {
@@ -340,7 +345,7 @@ def build_trial(trial_id: str) -> dict | None:
 
     return {
         "trial_id": trial_id,
-        "screenshot": f"png/{png.name}",
+        "screenshot": f"png/{jpg_name}",
         "screenshot_width": SCREENSHOT_WIDTH,
         "doc_height": meta["doc_height"],
         "win_width": meta["win_width"],

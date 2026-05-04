@@ -43,6 +43,18 @@ section.group { margin-top: 36px; }
 .group-extended .badge { background: #444; }
 .caption { font-size: 11px; color: #ccc; margin-bottom: 10px; line-height: 1.4; padding-left: 8px; border-left: 2px solid #2a5a8a; }
 .group-extended .caption { display: none; }
+.group-composition .badge { background: #6b3aa0; }
+.composition-axis { background: #1a1a2a; border: 1px solid #2a2a3a; border-radius: 8px; padding: 18px 20px; margin-top: 36px; }
+.composition-axis h2 { font-size: 16px; margin: 0 0 4px 0; }
+.composition-axis .blurb { font-size: 12px; color: #999; margin-bottom: 16px; line-height: 1.5; }
+.composition-axis .cluster { margin-top: 18px; padding-top: 14px; border-top: 1px solid #2a2a3a; }
+.composition-axis .cluster:first-of-type { border-top: none; padding-top: 0; }
+.composition-axis .cluster h3 { font-size: 13px; font-weight: 600; margin: 0 0 4px 0; color: #b48aff; }
+.composition-axis .cluster .share { font-family: monospace; font-size: 11px; color: #888; margin-bottom: 8px; }
+.composition-axis .cluster .share strong { color: #ddd; }
+.composition-axis .trial-list { font-family: monospace; font-size: 11px; line-height: 1.7; color: #aaa; }
+.composition-axis .trial-list a { color: #6af; text-decoration: none; margin-right: 10px; white-space: nowrap; }
+.composition-axis .trial-list a:hover { color: #fff; text-decoration: underline; }
 """
 
 
@@ -76,6 +88,14 @@ GROUP_TITLES = {
     "A":     ("Trivial calls", "one click, no other approached AOIs"),
 }
 GROUP_ORDER = ["E", "B-DEF", "B-REJ", "C", "D", "A"]
+
+COMPOSITION_TITLES = {
+    "top_and_side":     ("Top + side ads", "dd_top block AND dd_right rail present — densest ad surfacing"),
+    "top_only":         ("Top ads only",   "dd_top block, no dd_right rail"),
+    "side_only":        ("Side ads only",  "dd_right rail, no dd_top block"),
+    "organic_dominant": ("Organic-dominant", "no dd_top, no dd_right (native_ad inline only)"),
+}
+COMPOSITION_ORDER = ["top_and_side", "top_only", "side_only", "organic_dominant"]
 
 
 def trial_card(t: dict, caption: str = "") -> str:
@@ -134,6 +154,41 @@ def build_index(trials: list[dict]) -> Path:
                 <div class="grid">{"".join(cards)}</div>
               </section>
             """)
+
+    if curation and curation.get("composition"):
+        comp = curation["composition"]
+        pool = comp.get("audit_pool", {})
+        pool_total = comp.get("audit_pool_total") or max(len(trials), 1)
+        pop = comp.get("population_counts", {})
+        pop_total = comp.get("population_total") or 1
+        cluster_blocks = []
+        for k in COMPOSITION_ORDER:
+            tids = pool.get(k, [])
+            n_pool = len(tids)
+            n_pop = pop.get(k, 0)
+            title, blurb = COMPOSITION_TITLES[k]
+            share_line = (
+                f"<strong>{n_pool}/{pool_total} ({100*n_pool/pool_total:.1f}%)</strong> of audit pool · "
+                f"<strong>{n_pop}/{pop_total} ({100*n_pop/pop_total:.1f}%)</strong> of AdSERP"
+            )
+            links = "".join(
+                f'<a href="trials/{tid}.html">{tid}</a>'
+                for tid in sorted(tids)
+            ) or '<span style="color:#666">(none in audit pool)</span>'
+            cluster_blocks.append(f"""
+              <div class="cluster">
+                <h3>{title}</h3>
+                <div class="share">{share_line} — <span style="color:#aaa">{blurb}</span></div>
+                <div class="trial-list">{links}</div>
+              </div>
+            """)
+        sections.append(f"""
+          <section class="composition-axis">
+            <h2>SERP composition clusters <span class="badge" style="background:#6b3aa0;color:#fff;font-size:11px;font-weight:bold;padding:2px 8px;border-radius:4px;letter-spacing:0.5px;margin-left:6px;">AOI AUDIT</span></h2>
+            <p class="blurb">Orthogonal cut by SERP layout — bbox kinds present, not behaviour. Use this to spot-check whether AOI bbox extraction holds across composition types. Population share is across all {pop_total} AdSERP trials, not just the audit pool.</p>
+            {"".join(cluster_blocks)}
+          </section>
+        """)
 
     extended = [t for t in trials if t["trial_id"] not in assigned]
     if extended:

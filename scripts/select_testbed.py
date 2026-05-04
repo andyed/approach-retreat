@@ -96,6 +96,52 @@ def build_bundles(trial_ids: list[str]) -> list[dict]:
     return bundles
 
 
+# ── SERP composition clustering ─────────────────────────────────────────
+COMPOSITION_KEYS = ("top_and_side", "top_only", "side_only", "organic_dominant")
+
+COMPOSITION_TITLES = {
+    "top_and_side":     ("Top + side ads", "dd_top block AND dd_right rail present — densest ad surfacing"),
+    "top_only":         ("Top ads only",   "dd_top block, no dd_right rail"),
+    "side_only":        ("Side ads only",  "dd_right rail, no dd_top block"),
+    "organic_dominant": ("Organic-dominant", "no dd_top, no dd_right (native_ad inline only)"),
+}
+
+
+def composition_of(bboxes_dict: dict) -> str:
+    """Map a bboxes dict to one of COMPOSITION_KEYS using dd_top/dd_right presence."""
+    has_top = bool(bboxes_dict.get("dd_top"))
+    has_side = bool(bboxes_dict.get("dd_right"))
+    if has_top and has_side:
+        return "top_and_side"
+    if has_top:
+        return "top_only"
+    if has_side:
+        return "side_only"
+    return "organic_dominant"
+
+
+def compute_population_shares() -> dict:
+    """Tally composition cluster across all organic-boundary JSONs in AdSERP."""
+    counts = {k: 0 for k in COMPOSITION_KEYS}
+    n = 0
+    for p in ORGANIC_DIR.glob("*.json"):
+        try:
+            d = json.loads(p.read_text())
+        except Exception:
+            continue
+        counts[composition_of(d)] += 1
+        n += 1
+    return {"counts": counts, "total": n}
+
+
+def composition_for_bundles(bundles: list[dict]) -> dict[str, list[str]]:
+    """Group trial_ids in the audit pool by composition cluster."""
+    by_cluster: dict[str, list[str]] = {k: [] for k in COMPOSITION_KEYS}
+    for b in bundles:
+        by_cluster[composition_of(b["bboxes"])].append(b["trial_id"])
+    return by_cluster
+
+
 # ── Group classification ────────────────────────────────────────────────
 def trial_features(b: dict) -> dict:
     """Per-trial summary for group assignment.
@@ -235,7 +281,7 @@ def classify(bundles: list[dict], target_per_group: dict[str, int]) -> dict:
     return {"groups": dict(groups), "features": feats, "bundle_query": {b["trial_id"]: query(b) for b in bundles}}
 
 
-def write_curation_md(curation: dict, n_pool: int) -> None:
+def write_curation_md(curation: dict, n_pool: int, composition: dict | None = None) -> None:
     CURATION_MD.parent.mkdir(parents=True, exist_ok=True)
     g = curation["groups"]
     feats = curation["features"]
@@ -338,6 +384,29 @@ def write_curation_md(curation: dict, n_pool: int) -> None:
             lines.append(f"| [`{tid}`](../site/replay/trials/{tid}.html) | {q} | {it['caption']} |")
         lines.append("")
 
+    if composition:
+        pop = composition["population_counts"]
+        pop_total = composition["population_total"] or 1
+        pool = composition["audit_pool"]
+        pool_total = composition["audit_pool_total"] or 1
+        lines += [
+            "## SERP composition clusters (AOI accuracy audit)",
+            "",
+            "Orthogonal to the behaviour groups above. Trials are bucketed by the AOI bbox kinds present in the SERP layout (`dd_top` block, `dd_right` rail). The audit pool's share is shown alongside the share of all AdSERP trials so a reviewer can see how representative the rendered sample is.",
+            "",
+            "| Cluster | Audit pool | AdSERP population |",
+            "|---|---|---|",
+        ]
+        for k in COMPOSITION_KEYS:
+            title, _ = COMPOSITION_TITLES[k]
+            n_pool = len(pool.get(k, []))
+            n_pop = pop.get(k, 0)
+            lines.append(
+                f"| {title} | {n_pool} ({100*n_pool/pool_total:.1f}%) | "
+                f"{n_pop} ({100*n_pop/pop_total:.1f}%) |"
+            )
+        lines.append("")
+
     lines += [
         "## Group F — Failure modes (manual)",
         "",
@@ -353,7 +422,7 @@ def write_curation_md(curation: dict, n_pool: int) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--n", type=int, default=80, help="candidate pool size (default 80)")
+    ap.add_argument("--n", type=int, default=250, help="candidate pool size (default 250)")
     ap.add_argument("--cap", type=int, default=3, help="max trials per participant (default 3)")
     args = ap.parse_args()
 
@@ -374,16 +443,52 @@ def main() -> int:
     bundles = build_bundles(selected)
     print(f"      built {len(bundles)} bundles")
 
-    print(f"[5/6] Classifying into groups...")
+    print(f"[5/7] Classifying into groups...")
     target_per_group = {"A": 5, "B-DEF": 6, "B-REJ": 6, "C": 5, "D": 5, "E": 6}
     curation = classify(bundles, target_per_group)
-    CURATION_JSON.write_text(json.dumps({k: v for k, v in curation.items() if k != "features"}))
     for grp, items in curation["groups"].items():
         print(f"      Group {grp:6s}: {len(items)} trials")
 
-    print(f"[6/6] Writing docs/CURATION.md...")
-    write_curation_md(curation, len(selected))
+    print(f"[6/7] Computing SERP composition clusters...")
+    pool_clusters = composition_for_bundles(bundles)
+    pop = compute_population_shares()
+    composition = {
+        "audit_pool": {k: pool_clusters[k] for k in COMPOSITION_KEYS},
+        "audit_pool_total": len(bundles),
+        "population_counts": pop["counts"],
+        "population_total": pop["total"],
+    }
+    for k in COMPOSITION_KEYS:
+        n_pool = len(pool_clusters[k])
+        n_pop = pop["counts"][k]
+        print(
+            f"      {k:18s} pool={n_pool:3d} ({100*n_pool/max(len(bundles),1):5.1f}%)  "
+            f"pop={n_pop:5d} ({100*n_pop/max(pop['total'],1):5.1f}%)"
+        )
+
+    out = {k: v for k, v in curation.items() if k != "features"}
+    out["composition"] = composition
+    CURATION_JSON.write_text(json.dumps(out))
+
+    print(f"[7/7] Writing docs/CURATION.md...")
+    write_curation_md(curation, len(selected), composition)
     print(f"      wrote {CURATION_MD}")
+
+    print(f"\n[orphan-prune] Removing screenshots not in current selection...")
+    keep = {b["trial_id"] for b in bundles}
+    pruned = 0
+    # Remove anything in PNG_OUT not in `keep`, plus any stale .png (we now ship .jpg only).
+    for f in PNG_OUT.glob("*"):
+        if not f.is_file():
+            continue
+        if f.stem not in keep or f.suffix.lower() == ".png":
+            f.unlink()
+            pruned += 1
+    for f in TRIALS_DIR.glob("*.json"):
+        if f.stem not in keep:
+            f.unlink()
+            pruned += 1
+    print(f"      pruned {pruned} orphan files")
 
     print("\nDone. Run `python3 scripts/build_replay_pages.py` to refresh the viewer index.")
     return 0

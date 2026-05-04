@@ -26,19 +26,57 @@ section.group { margin-top: 36px; }
 .group-extended .badge { background: #444; }
 .caption { font-size: 11px; color: #ccc; margin-bottom: 10px; line-height: 1.4; padding-left: 8px; border-left: 2px solid #2a5a8a; }
 .group-extended .caption { display: none; }
+.group-composition .badge { background: #6b3aa0; }
+.composition-axis { background: #1a1a2a; border: 1px solid #2a2a3a; border-radius: 8px; padding: 18px 20px; margin-top: 36px; }
+.composition-axis h2 { font-size: 16px; margin: 0 0 4px 0; }
+.composition-axis .blurb { font-size: 12px; color: #999; margin-bottom: 16px; line-height: 1.5; }
+.composition-axis .cluster { margin-top: 18px; padding-top: 14px; border-top: 1px solid #2a2a3a; }
+.composition-axis .cluster:first-of-type { border-top: none; padding-top: 0; }
+.composition-axis .cluster h3 { font-size: 13px; font-weight: 600; margin: 0 0 4px 0; color: #b48aff; }
+.composition-axis .cluster .share { font-family: monospace; font-size: 11px; color: #888; margin-bottom: 8px; }
+.composition-axis .cluster .share strong { color: #ddd; }
+.composition-axis .trial-list { font-family: monospace; font-size: 11px; line-height: 1.7; color: #aaa; }
+.composition-axis .trial-list a { color: #6af; text-decoration: none; margin-right: 10px; white-space: nowrap; }
+.composition-axis .trial-list a:hover { color: #fff; text-decoration: underline; }
 </style></head><body>
 <h1>AdSERP Signal Testbed</h1>
 <p class="lede">Replay of the <a href="https://github.com/kayhan-latifzadeh/AdSERP">AdSERP dataset</a> with per-AOI <strong>four-class taxonomy labels</strong> overlaid: <span class="pill clk">CLICKED</span> <span class="pill def">DEFERRED</span> <span class="pill rej">EVALUATED-REJECTED</span> <span class="pill not">NOT-APPROACHED</span>. Labels derived from cursor enter/dwell/exit episodes against AOI bboxes — the inference task the AR library performs in production.</p>
-<p class="lede" style="font-size:12px;color:#888;">Curation rubric: <a href="https://github.com/andyed/approach-retreat/blob/main/docs/CURATION.md">docs/CURATION.md</a> · Sibling: <a href="../index.html">live testbed</a> · Pool: 28 grouped + 58 extended = 86 total trials</p>
+<p class="lede" style="font-size:12px;color:#888;">Curation rubric: <a href="https://github.com/andyed/approach-retreat/blob/main/docs/CURATION.md">docs/CURATION.md</a> · Sibling: <a href="../index.html">live testbed</a> · Pool: 31 grouped + 110 extended = 141 total trials</p>
 
               <section class="group">
                 <h2 class="group-title"><span class="badge">Group E</span> Multi-AOI dramas</h2>
                 <p class="group-blurb">3+ active label classes in one SERP — comparative inference</p>
                 <div class="grid">
+    <a class="card" href="trials/p047-b1-t4.html">
+      <h2>p047-b1-t4</h2>
+      <div class="query">buy-volumax-volumax-mega-styling-gel</div>
+      <div class="caption">1 CLK + 9 DEF + 1 REJ in one SERP — comparative inference</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 9</span><span class="pill rej">REJ 1</span><span class="pill not">NA 1</span></div>
+      <div class="stats">
+        <span><span class="v">55.2s</span>duration</span>
+        <span><span class="v">2121</span>cursor</span>
+        <span><span class="v">8</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p047-b1-t3.html">
+      <h2>p047-b1-t3</h2>
+      <div class="query">buy-acdelco-acdelco-18a2-brake-rotor</div>
+      <div class="caption">1 CLK + 7 DEF + 3 REJ in one SERP — comparative inference</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 10</span><span class="pill rej">REJ 1</span><span class="pill not">NA 3</span></div>
+      <div class="stats">
+        <span><span class="v">30.1s</span>duration</span>
+        <span><span class="v">1334</span>cursor</span>
+        <span><span class="v">11</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p047-b6-t1.html">
       <h2>p047-b6-t1</h2>
       <div class="query">buy-avon-avon-glow-bronzing-pearls-bronzed</div>
-      <div class="caption">1 CLK + 9 DEF + 1 REJ in one SERP — comparative inference</div>
+      <div class="caption">1 CLK + 7 DEF + 2 REJ in one SERP — comparative inference</div>
       <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 9</span><span class="pill rej">REJ 1</span><span class="pill not">NA 3</span></div>
       <div class="stats">
         <span><span class="v">29.5s</span>duration</span>
@@ -51,7 +89,7 @@ section.group { margin-top: 36px; }
     <a class="card" href="trials/p037-b1-t6.html">
       <h2>p037-b1-t6</h2>
       <div class="query">buy-halti-halti-headcollar-black-size-0</div>
-      <div class="caption">1 CLK + 10 DEF in one SERP — comparative inference</div>
+      <div class="caption">1 CLK + 6 DEF + 2 REJ in one SERP — comparative inference</div>
       <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 10</span><span class="pill rej">REJ 0</span><span class="pill not">NA 3</span></div>
       <div class="stats">
         <span><span class="v">58.8s</span>duration</span>
@@ -61,54 +99,28 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
+    <a class="card" href="trials/p019-b1-t8.html">
+      <h2>p019-b1-t8</h2>
+      <div class="query">buy-vosene-vosene-original-medicated-shampoo-250ml</div>
+      <div class="caption">1 CLK + 5 DEF + 3 REJ in one SERP — comparative inference</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 11</span><span class="pill rej">REJ 1</span><span class="pill not">NA 2</span></div>
+      <div class="stats">
+        <span><span class="v">31.7s</span>duration</span>
+        <span><span class="v">911</span>cursor</span>
+        <span><span class="v">11</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p037-b4-t1.html">
       <h2>p037-b4-t1</h2>
       <div class="query">buy-gates-gates-25474-radiator-coolant-hose</div>
-      <div class="caption">1 CLK + 10 DEF + 2 REJ in one SERP — comparative inference</div>
+      <div class="caption">1 CLK + 5 DEF + 2 REJ in one SERP — comparative inference</div>
       <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 10</span><span class="pill rej">REJ 2</span><span class="pill not">NA 1</span></div>
       <div class="stats">
         <span><span class="v">46.6s</span>duration</span>
         <span><span class="v">1054</span>cursor</span>
         <span><span class="v">10</span>organic</span>
-        <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p035-b3-t2.html">
-      <h2>p035-b3-t2</h2>
-      <div class="query">buy-rhinox-manchester-united-official-scarf</div>
-      <div class="caption">1 CLK + 8 DEF + 1 REJ in one SERP — comparative inference</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 1</span><span class="pill not">NA 3</span></div>
-      <div class="stats">
-        <span><span class="v">32.5s</span>duration</span>
-        <span><span class="v">841</span>cursor</span>
-        <span><span class="v">9</span>organic</span>
-        <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p035-b1-t2.html">
-      <h2>p035-b1-t2</h2>
-      <div class="query">buy-siskiyou-mlb-baltimore-orioles-toothbrush</div>
-      <div class="caption">1 CLK + 6 DEF in one SERP — comparative inference</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 0</span><span class="pill not">NA 6</span></div>
-      <div class="stats">
-        <span><span class="v">27.8s</span>duration</span>
-        <span><span class="v">998</span>cursor</span>
-        <span><span class="v">10</span>organic</span>
-        <span><span class="v">3</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p047-b1-t3.html">
-      <h2>p047-b1-t3</h2>
-      <div class="query">buy-acdelco-acdelco-18a2-brake-rotor</div>
-      <div class="caption">1 CLK + 10 DEF + 1 REJ in one SERP — comparative inference</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 10</span><span class="pill rej">REJ 1</span><span class="pill not">NA 3</span></div>
-      <div class="stats">
-        <span><span class="v">30.1s</span>duration</span>
-        <span><span class="v">1334</span>cursor</span>
-        <span><span class="v">11</span>organic</span>
         <span><span class="v">4</span>ads</span>
       </div>
     </a>
@@ -119,15 +131,54 @@ section.group { margin-top: 36px; }
                 <h2 class="group-title"><span class="badge">Group B-DEF</span> Canonical DEFERRED</h2>
                 <p class="group-blurb">cursor entered, retreated, returned</p>
                 <div class="grid">
-    <a class="card" href="trials/p019-b1-t8.html">
-      <h2>p019-b1-t8</h2>
-      <div class="query">buy-vosene-vosene-original-medicated-shampoo-250ml</div>
-      <div class="caption">11 DEFERRED AOIs — cursor entered, left, returned</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 11</span><span class="pill rej">REJ 1</span><span class="pill not">NA 2</span></div>
+    <a class="card" href="trials/p005-b2-t2.html">
+      <h2>p005-b2-t2</h2>
+      <div class="query">buy-spy-spy-optic-targa-mini-goggles</div>
+      <div class="caption">6 DEFERRED AOIs — cursor entered, left, returned</div>
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 10</span><span class="pill rej">REJ 0</span><span class="pill not">NA 4</span></div>
       <div class="stats">
-        <span><span class="v">31.7s</span>duration</span>
-        <span><span class="v">911</span>cursor</span>
-        <span><span class="v">11</span>organic</span>
+        <span><span class="v">30.2s</span>duration</span>
+        <span><span class="v">794</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p035-b1-t2.html">
+      <h2>p035-b1-t2</h2>
+      <div class="query">buy-siskiyou-mlb-baltimore-orioles-toothbrush</div>
+      <div class="caption">5 DEFERRED AOIs — cursor entered, left, returned</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 0</span><span class="pill not">NA 6</span></div>
+      <div class="stats">
+        <span><span class="v">27.8s</span>duration</span>
+        <span><span class="v">998</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">3</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p035-b3-t2.html">
+      <h2>p035-b3-t2</h2>
+      <div class="query">buy-rhinox-manchester-united-official-scarf</div>
+      <div class="caption">5 DEFERRED AOIs — cursor entered, left, returned</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 1</span><span class="pill not">NA 3</span></div>
+      <div class="stats">
+        <span><span class="v">32.5s</span>duration</span>
+        <span><span class="v">841</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p035-b6-t10.html">
+      <h2>p035-b6-t10</h2>
+      <div class="query">buy-jobar-dog-bone-bark-control-collar</div>
+      <div class="caption">5 DEFERRED AOIs — cursor entered, left, returned</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 0</span><span class="pill not">NA 6</span></div>
+      <div class="stats">
+        <span><span class="v">28.2s</span>duration</span>
+        <span><span class="v">801</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
         <span><span class="v">4</span>ads</span>
       </div>
     </a>
@@ -135,7 +186,7 @@ section.group { margin-top: 36px; }
     <a class="card" href="trials/p015-b3-t10.html">
       <h2>p015-b3-t10</h2>
       <div class="query">buy-jurlique-intense-recovery-mask-4-7oz</div>
-      <div class="caption">7 DEFERRED AOIs — cursor entered, left, returned</div>
+      <div class="caption">5 DEFERRED AOIs — cursor entered, left, returned</div>
       <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 0</span><span class="pill not">NA 8</span></div>
       <div class="stats">
         <span><span class="v">25.1s</span>duration</span>
@@ -148,52 +199,13 @@ section.group { margin-top: 36px; }
     <a class="card" href="trials/p015-b5-t2.html">
       <h2>p015-b5-t2</h2>
       <div class="query">buy-clarins-the-it-kit</div>
-      <div class="caption">9 DEFERRED AOIs — cursor entered, left, returned</div>
+      <div class="caption">4 DEFERRED AOIs — cursor entered, left, returned</div>
       <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 9</span><span class="pill rej">REJ 1</span><span class="pill not">NA 0</span></div>
       <div class="stats">
         <span><span class="v">47.5s</span>duration</span>
         <span><span class="v">1957</span>cursor</span>
         <span><span class="v">8</span>organic</span>
         <span><span class="v">2</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p005-b2-t2.html">
-      <h2>p005-b2-t2</h2>
-      <div class="query">buy-spy-spy-optic-targa-mini-goggles</div>
-      <div class="caption">10 DEFERRED AOIs — cursor entered, left, returned</div>
-      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 10</span><span class="pill rej">REJ 0</span><span class="pill not">NA 4</span></div>
-      <div class="stats">
-        <span><span class="v">30.2s</span>duration</span>
-        <span><span class="v">794</span>cursor</span>
-        <span><span class="v">10</span>organic</span>
-        <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p036-b4-t7.html">
-      <h2>p036-b4-t7</h2>
-      <div class="query">buy-cello-suites</div>
-      <div class="caption">3 DEFERRED AOIs — cursor entered, left, returned</div>
-      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 3</span><span class="pill rej">REJ 1</span><span class="pill not">NA 13</span></div>
-      <div class="stats">
-        <span><span class="v">28.1s</span>duration</span>
-        <span><span class="v">900</span>cursor</span>
-        <span><span class="v">14</span>organic</span>
-        <span><span class="v">3</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p009-b1-t1.html">
-      <h2>p009-b1-t1</h2>
-      <div class="query">buy-new-chapter-prostate-5lx-120-softgels</div>
-      <div class="caption">8 DEFERRED AOIs — cursor entered, left, returned</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 1</span><span class="pill not">NA 5</span></div>
-      <div class="stats">
-        <span><span class="v">37.7s</span>duration</span>
-        <span><span class="v">756</span>cursor</span>
-        <span><span class="v">10</span>organic</span>
-        <span><span class="v">5</span>ads</span>
       </div>
     </a>
     </div>
@@ -203,54 +215,15 @@ section.group { margin-top: 36px; }
                 <h2 class="group-title"><span class="badge">Group B-REJ</span> Canonical EVALUATED-REJECTED</h2>
                 <p class="group-blurb">approached and dropped, no re-approach</p>
                 <div class="grid">
-    <a class="card" href="trials/p006-b4-t7.html">
-      <h2>p006-b4-t7</h2>
-      <div class="query">buy-altaj-spanish-saffron-tin-1-ounce</div>
-      <div class="caption">4 EVAL-REJ AOIs — evaluated and dropped, no re-approach</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 10</span><span class="pill rej">REJ 4</span><span class="pill not">NA 0</span></div>
+    <a class="card" href="trials/p039-b5-t3.html">
+      <h2>p039-b5-t3</h2>
+      <div class="query">buy-denso-denso-234-4026-oxygen-sensor</div>
+      <div class="caption">5 EVAL-REJ AOIs — evaluated and dropped, no re-approach</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 1</span><span class="pill not">NA 6</span></div>
       <div class="stats">
-        <span><span class="v">46.2s</span>duration</span>
-        <span><span class="v">642</span>cursor</span>
-        <span><span class="v">11</span>organic</span>
-        <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p012-b4-t7.html">
-      <h2>p012-b4-t7</h2>
-      <div class="query">buy-jolly-jolly-ball</div>
-      <div class="caption">3 EVAL-REJ AOIs — evaluated and dropped, no re-approach</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 3</span><span class="pill not">NA 3</span></div>
-      <div class="stats">
-        <span><span class="v">46.5s</span>duration</span>
-        <span><span class="v">641</span>cursor</span>
+        <span><span class="v">56.9s</span>duration</span>
+        <span><span class="v">561</span>cursor</span>
         <span><span class="v">9</span>organic</span>
-        <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p036-b1-t6.html">
-      <h2>p036-b1-t6</h2>
-      <div class="query">buy-nature-nature2-spa-stick-mineral-sanitizer</div>
-      <div class="caption">2 EVAL-REJ AOIs — evaluated and dropped, no re-approach</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 2</span><span class="pill not">NA 4</span></div>
-      <div class="stats">
-        <span><span class="v">31.1s</span>duration</span>
-        <span><span class="v">724</span>cursor</span>
-        <span><span class="v">11</span>organic</span>
-        <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p045-b2-t5.html">
-      <h2>p045-b2-t5</h2>
-      <div class="query">buy-rahua-rahua-jet-setter-kit</div>
-      <div class="caption">1 EVAL-REJ AOI — evaluated and dropped, no re-approach</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 1</span><span class="pill not">NA 9</span></div>
-      <div class="stats">
-        <span><span class="v">66.1s</span>duration</span>
-        <span><span class="v">702</span>cursor</span>
-        <span><span class="v">10</span>organic</span>
         <span><span class="v">5</span>ads</span>
       </div>
     </a>
@@ -258,13 +231,65 @@ section.group { margin-top: 36px; }
     <a class="card" href="trials/p004-b2-t9.html">
       <h2>p004-b2-t9</h2>
       <div class="query">buy-monroe-monroe-72231-sensa-trac-strut</div>
-      <div class="caption">2 EVAL-REJ AOIs — evaluated and dropped, no re-approach</div>
+      <div class="caption">5 EVAL-REJ AOIs — evaluated and dropped, no re-approach</div>
       <div class="pills"><span class="pill clk">CLK 2</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 2</span><span class="pill not">NA 9</span></div>
       <div class="stats">
         <span><span class="v">35.7s</span>duration</span>
         <span><span class="v">436</span>cursor</span>
         <span><span class="v">9</span>organic</span>
         <span><span class="v">8</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p049-b1-t5.html">
+      <h2>p049-b1-t5</h2>
+      <div class="query">buy-solar-clear-solar-clear-solar-ionizer</div>
+      <div class="caption">4 EVAL-REJ AOIs — evaluated and dropped, no re-approach</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 2</span><span class="pill rej">REJ 2</span><span class="pill not">NA 5</span></div>
+      <div class="stats">
+        <span><span class="v">22.7s</span>duration</span>
+        <span><span class="v">398</span>cursor</span>
+        <span><span class="v">8</span>organic</span>
+        <span><span class="v">2</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p041-b6-t10.html">
+      <h2>p041-b6-t10</h2>
+      <div class="query">buy-berkley-berkley-trilene-xl-fishing-line</div>
+      <div class="caption">4 EVAL-REJ AOIs — evaluated and dropped, no re-approach</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 3</span><span class="pill rej">REJ 2</span><span class="pill not">NA 6</span></div>
+      <div class="stats">
+        <span><span class="v">36.3s</span>duration</span>
+        <span><span class="v">384</span>cursor</span>
+        <span><span class="v">8</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p048-b4-t1.html">
+      <h2>p048-b4-t1</h2>
+      <div class="query">buy-playmobil-playmobil-pirates-ship</div>
+      <div class="caption">4 EVAL-REJ AOIs — evaluated and dropped, no re-approach</div>
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 1</span><span class="pill not">NA 8</span></div>
+      <div class="stats">
+        <span><span class="v">31.3s</span>duration</span>
+        <span><span class="v">380</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">5</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p036-b1-t6.html">
+      <h2>p036-b1-t6</h2>
+      <div class="query">buy-nature-nature2-spa-stick-mineral-sanitizer</div>
+      <div class="caption">3 EVAL-REJ AOIs — evaluated and dropped, no re-approach</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 2</span><span class="pill not">NA 4</span></div>
+      <div class="stats">
+        <span><span class="v">31.1s</span>duration</span>
+        <span><span class="v">724</span>cursor</span>
+        <span><span class="v">11</span>organic</span>
+        <span><span class="v">4</span>ads</span>
       </div>
     </a>
     </div>
@@ -287,6 +312,45 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
+    <a class="card" href="trials/p025-b1-t3.html">
+      <h2>p025-b1-t3</h2>
+      <div class="query">buy-jitonrad-aveda-clove-shampoo-33-8oz</div>
+      <div class="caption">3 AOI(s) with dwell near the 100ms classification threshold</div>
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 1</span><span class="pill not">NA 7</span></div>
+      <div class="stats">
+        <span><span class="v">15.5s</span>duration</span>
+        <span><span class="v">463</span>cursor</span>
+        <span><span class="v">8</span>organic</span>
+        <span><span class="v">6</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p029-b5-t4.html">
+      <h2>p029-b5-t4</h2>
+      <div class="query">buy-ist-dive-slate-underwater-writing-slate</div>
+      <div class="caption">3 AOI(s) with dwell near the 100ms classification threshold</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 1</span><span class="pill not">NA 3</span></div>
+      <div class="stats">
+        <span><span class="v">11.4s</span>duration</span>
+        <span><span class="v">376</span>cursor</span>
+        <span><span class="v">11</span>organic</span>
+        <span><span class="v">2</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p037-b3-t2.html">
+      <h2>p037-b3-t2</h2>
+      <div class="query">buy-luk-luk-17-065-clutch-set</div>
+      <div class="caption">2 AOI(s) with dwell near the 100ms classification threshold</div>
+      <div class="pills"><span class="pill clk">CLK 2</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 1</span><span class="pill not">NA 5</span></div>
+      <div class="stats">
+        <span><span class="v">63.0s</span>duration</span>
+        <span><span class="v">990</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">7</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p020-b6-t3.html">
       <h2>p020-b6-t3</h2>
       <div class="query">buy-luk-luk-16-113-clutch-set</div>
@@ -299,45 +363,6 @@ section.group { margin-top: 36px; }
         <span><span class="v">7</span>ads</span>
       </div>
     </a>
-    
-    <a class="card" href="trials/p042-b4-t5.html">
-      <h2>p042-b4-t5</h2>
-      <div class="query">buy-acdelco-acdelco-15036008-windshield-washer-motor</div>
-      <div class="caption">2 AOI(s) with dwell near the 100ms classification threshold</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 0</span><span class="pill not">NA 5</span></div>
-      <div class="stats">
-        <span><span class="v">40.0s</span>duration</span>
-        <span><span class="v">599</span>cursor</span>
-        <span><span class="v">9</span>organic</span>
-        <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p027-b3-t2.html">
-      <h2>p027-b3-t2</h2>
-      <div class="query">buy-bosch-bosch-97182-new-water-pump</div>
-      <div class="caption">2 AOI(s) with dwell near the 100ms classification threshold</div>
-      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 1</span><span class="pill not">NA 6</span></div>
-      <div class="stats">
-        <span><span class="v">25.3s</span>duration</span>
-        <span><span class="v">529</span>cursor</span>
-        <span><span class="v">8</span>organic</span>
-        <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p019-b4-t6.html">
-      <h2>p019-b4-t6</h2>
-      <div class="query">buy-panasonic-panasonic-kx-tpa50-cordless-handset</div>
-      <div class="caption">1 AOI(s) with dwell near the 100ms classification threshold</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 11</span><span class="pill rej">REJ 1</span><span class="pill not">NA 3</span></div>
-      <div class="stats">
-        <span><span class="v">30.3s</span>duration</span>
-        <span><span class="v">711</span>cursor</span>
-        <span><span class="v">12</span>organic</span>
-        <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
     </div>
               </section>
             
@@ -345,6 +370,19 @@ section.group { margin-top: 36px; }
                 <h2 class="group-title"><span class="badge">Group D</span> Cursor-vs-gaze divergence</h2>
                 <p class="group-blurb">gaze-fixated AOIs that cursor missed entirely</p>
                 <div class="grid">
+    <a class="card" href="trials/p045-b2-t5.html">
+      <h2>p045-b2-t5</h2>
+      <div class="query">buy-rahua-rahua-jet-setter-kit</div>
+      <div class="caption">5 AOI(s) gaze-fixated ≥200ms but cursor never entered — cursor-only would miss them</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 1</span><span class="pill not">NA 9</span></div>
+      <div class="stats">
+        <span><span class="v">66.1s</span>duration</span>
+        <span><span class="v">702</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">5</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p045-b1-t10.html">
       <h2>p045-b1-t10</h2>
       <div class="query">buy-filorga-filorga-time-filler-50ml</div>
@@ -358,55 +396,42 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
-    <a class="card" href="trials/p045-b3-t4.html">
-      <h2>p045-b3-t4</h2>
-      <div class="query">buy-swanson-strontium-citrate-2-bottles</div>
-      <div class="caption">3 AOI(s) gaze-fixated ≥200ms but cursor never entered — cursor-only would miss them</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 1</span><span class="pill not">NA 8</span></div>
+    <a class="card" href="trials/p012-b2-t9.html">
+      <h2>p012-b2-t9</h2>
+      <div class="query">buy-hayes-hayes-prime-bleed-fitting-kit</div>
+      <div class="caption">5 AOI(s) gaze-fixated ≥200ms but cursor never entered — cursor-only would miss them</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 3</span><span class="pill rej">REJ 0</span><span class="pill not">NA 9</span></div>
       <div class="stats">
-        <span><span class="v">32.4s</span>duration</span>
-        <span><span class="v">654</span>cursor</span>
+        <span><span class="v">42.7s</span>duration</span>
+        <span><span class="v">551</span>cursor</span>
         <span><span class="v">9</span>organic</span>
-        <span><span class="v">5</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p008-b1-t1.html">
-      <h2>p008-b1-t1</h2>
-      <div class="query">buy-mac-pro-mac-pigment-frozen-white</div>
-      <div class="caption">3 AOI(s) gaze-fixated ≥200ms but cursor never entered — cursor-only would miss them</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 9</span><span class="pill rej">REJ 0</span><span class="pill not">NA 6</span></div>
-      <div class="stats">
-        <span><span class="v">29.2s</span>duration</span>
-        <span><span class="v">669</span>cursor</span>
-        <span><span class="v">12</span>organic</span>
         <span><span class="v">4</span>ads</span>
       </div>
     </a>
     
-    <a class="card" href="trials/p028-b1-t9.html">
-      <h2>p028-b1-t9</h2>
-      <div class="query">buy-solaray-solaray-butterbur-60-capsules</div>
-      <div class="caption">3 AOI(s) gaze-fixated ≥200ms but cursor never entered — cursor-only would miss them</div>
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 0</span><span class="pill not">NA 9</span></div>
+    <a class="card" href="trials/p049-b1-t7.html">
+      <h2>p049-b1-t7</h2>
+      <div class="query">buy-frigidaire-frigidaire-240358005-shelf-for-refrigerator</div>
+      <div class="caption">5 AOI(s) gaze-fixated ≥200ms but cursor never entered — cursor-only would miss them</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 2</span><span class="pill rej">REJ 0</span><span class="pill not">NA 8</span></div>
       <div class="stats">
-        <span><span class="v">35.6s</span>duration</span>
-        <span><span class="v">774</span>cursor</span>
+        <span><span class="v">21.9s</span>duration</span>
+        <span><span class="v">422</span>cursor</span>
+        <span><span class="v">7</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p038-b1-t5.html">
+      <h2>p038-b1-t5</h2>
+      <div class="query">buy-herbalife-protein-drink-mix</div>
+      <div class="caption">4 AOI(s) gaze-fixated ≥200ms but cursor never entered — cursor-only would miss them</div>
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 3</span><span class="pill rej">REJ 1</span><span class="pill not">NA 11</span></div>
+      <div class="stats">
+        <span><span class="v">15.5s</span>duration</span>
+        <span><span class="v">287</span>cursor</span>
         <span><span class="v">11</span>organic</span>
         <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p040-b1-t2.html">
-      <h2>p040-b1-t2</h2>
-      <div class="query">buy-spy-spy-optichaymaker-fade-sunglasses</div>
-      <div class="caption">3 AOI(s) gaze-fixated ≥200ms but cursor never entered — cursor-only would miss them</div>
-      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 0</span><span class="pill not">NA 7</span></div>
-      <div class="stats">
-        <span><span class="v">37.2s</span>duration</span>
-        <span><span class="v">1019</span>cursor</span>
-        <span><span class="v">12</span>organic</span>
-        <span><span class="v">2</span>ads</span>
       </div>
     </a>
     </div>
@@ -416,10 +441,36 @@ section.group { margin-top: 36px; }
                 <h2 class="group-title"><span class="badge">Group A</span> Trivial calls</h2>
                 <p class="group-blurb">one click, no other approached AOIs</p>
                 <div class="grid">
+    <a class="card" href="trials/p025-b6-t1.html">
+      <h2>p025-b6-t1</h2>
+      <div class="query">buy-thorne-oncoqol-by-thorne-inflaqol-120c</div>
+      <div class="caption">Drive-through: 1 CLICKED + 8 not approached, 16.2s</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 0</span><span class="pill not">NA 4</span></div>
+      <div class="stats">
+        <span><span class="v">16.2s</span>duration</span>
+        <span><span class="v">462</span>cursor</span>
+        <span><span class="v">5</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p023-b3-t7.html">
+      <h2>p023-b3-t7</h2>
+      <div class="query">buy-m-a-c-mac-lipstick-plumful</div>
+      <div class="caption">Drive-through: 1 CLICKED + 16 not approached, 19.8s</div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 0</span><span class="pill rej">REJ 0</span><span class="pill not">NA 16</span></div>
+      <div class="stats">
+        <span><span class="v">19.8s</span>duration</span>
+        <span><span class="v">409</span>cursor</span>
+        <span><span class="v">13</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p008-b3-t7.html">
       <h2>p008-b3-t7</h2>
       <div class="query">buy-schildkraut-light-up-mirror-magnifier</div>
-      <div class="caption">Drive-through: 1 CLICKED + 12 not approached (bbox heuristic), 36.0s. M5 reads 6 brief cursor sweeps within 100 px as DEFERRED — illustrative of M5's added sensitivity over the bbox-dwell rule.</div>
+      <div class="caption">Drive-through: 1 CLICKED + 12 not approached, 36.0s</div>
       <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 0</span><span class="pill not">NA 6</span></div>
       <div class="stats">
         <span><span class="v">36.0s</span>duration</span>
@@ -431,10 +482,53 @@ section.group { margin-top: 36px; }
     </div>
               </section>
             
+          <section class="composition-axis">
+            <h2>SERP composition clusters <span class="badge" style="background:#6b3aa0;color:#fff;font-size:11px;font-weight:bold;padding:2px 8px;border-radius:4px;letter-spacing:0.5px;margin-left:6px;">AOI AUDIT</span></h2>
+            <p class="blurb">Orthogonal cut by SERP layout — bbox kinds present, not behaviour. Use this to spot-check whether AOI bbox extraction holds across composition types. Population share is across all 2776 AdSERP trials, not just the audit pool.</p>
+            
+              <div class="cluster">
+                <h3>Top + side ads</h3>
+                <div class="share"><strong>0/141 (0.0%)</strong> of audit pool · <strong>0/2776 (0.0%)</strong> of AdSERP — <span style="color:#aaa">dd_top block AND dd_right rail present — densest ad surfacing</span></div>
+                <div class="trial-list"><span style="color:#666">(none in audit pool)</span></div>
+              </div>
+            
+              <div class="cluster">
+                <h3>Top ads only</h3>
+                <div class="share"><strong>89/141 (63.1%)</strong> of audit pool · <strong>1582/2776 (57.0%)</strong> of AdSERP — <span style="color:#aaa">dd_top block, no dd_right rail</span></div>
+                <div class="trial-list"><a href="trials/p004-b4-t9.html">p004-b4-t9</a><a href="trials/p005-b5-t7.html">p005-b5-t7</a><a href="trials/p005-b6-t2.html">p005-b6-t2</a><a href="trials/p006-b1-t2.html">p006-b1-t2</a><a href="trials/p006-b2-t7.html">p006-b2-t7</a><a href="trials/p007-b3-t8.html">p007-b3-t8</a><a href="trials/p008-b1-t1.html">p008-b1-t1</a><a href="trials/p009-b1-t1.html">p009-b1-t1</a><a href="trials/p009-b4-t6.html">p009-b4-t6</a><a href="trials/p009-b5-t2.html">p009-b5-t2</a><a href="trials/p010-b2-t6.html">p010-b2-t6</a><a href="trials/p010-b3-t1.html">p010-b3-t1</a><a href="trials/p011-b3-t1.html">p011-b3-t1</a><a href="trials/p011-b3-t7.html">p011-b3-t7</a><a href="trials/p012-b2-t9.html">p012-b2-t9</a><a href="trials/p012-b4-t7.html">p012-b4-t7</a><a href="trials/p013-b1-t10.html">p013-b1-t10</a><a href="trials/p013-b3-t2.html">p013-b3-t2</a><a href="trials/p014-b4-t7.html">p014-b4-t7</a><a href="trials/p014-b5-t7.html">p014-b5-t7</a><a href="trials/p014-b6-t5.html">p014-b6-t5</a><a href="trials/p015-b3-t10.html">p015-b3-t10</a><a href="trials/p015-b5-t2.html">p015-b5-t2</a><a href="trials/p016-b1-t1.html">p016-b1-t1</a><a href="trials/p017-b1-t1.html">p017-b1-t1</a><a href="trials/p018-b1-t3.html">p018-b1-t3</a><a href="trials/p018-b1-t6.html">p018-b1-t6</a><a href="trials/p019-b4-t6.html">p019-b4-t6</a><a href="trials/p020-b6-t1.html">p020-b6-t1</a><a href="trials/p022-b1-t1.html">p022-b1-t1</a><a href="trials/p022-b2-t5.html">p022-b2-t5</a><a href="trials/p022-b6-t5.html">p022-b6-t5</a><a href="trials/p023-b1-t6.html">p023-b1-t6</a><a href="trials/p023-b2-t3.html">p023-b2-t3</a><a href="trials/p023-b3-t7.html">p023-b3-t7</a><a href="trials/p024-b4-t5.html">p024-b4-t5</a><a href="trials/p024-b5-t1.html">p024-b5-t1</a><a href="trials/p025-b1-t3.html">p025-b1-t3</a><a href="trials/p025-b3-t5.html">p025-b3-t5</a><a href="trials/p025-b6-t1.html">p025-b6-t1</a><a href="trials/p026-b1-t2.html">p026-b1-t2</a><a href="trials/p027-b1-t10.html">p027-b1-t10</a><a href="trials/p027-b3-t2.html">p027-b3-t2</a><a href="trials/p027-b5-t5.html">p027-b5-t5</a><a href="trials/p028-b1-t2.html">p028-b1-t2</a><a href="trials/p028-b1-t9.html">p028-b1-t9</a><a href="trials/p028-b3-t9.html">p028-b3-t9</a><a href="trials/p029-b5-t4.html">p029-b5-t4</a><a href="trials/p029-b6-t7.html">p029-b6-t7</a><a href="trials/p030-b3-t6.html">p030-b3-t6</a><a href="trials/p031-b3-t1.html">p031-b3-t1</a><a href="trials/p031-b3-t4.html">p031-b3-t4</a><a href="trials/p032-b1-t1.html">p032-b1-t1</a><a href="trials/p032-b1-t6.html">p032-b1-t6</a><a href="trials/p032-b6-t10.html">p032-b6-t10</a><a href="trials/p034-b1-t2.html">p034-b1-t2</a><a href="trials/p034-b4-t3.html">p034-b4-t3</a><a href="trials/p036-b2-t8.html">p036-b2-t8</a><a href="trials/p037-b1-t6.html">p037-b1-t6</a><a href="trials/p037-b4-t1.html">p037-b4-t1</a><a href="trials/p038-b1-t4.html">p038-b1-t4</a><a href="trials/p038-b1-t5.html">p038-b1-t5</a><a href="trials/p038-b4-t3.html">p038-b4-t3</a><a href="trials/p039-b1-t10.html">p039-b1-t10</a><a href="trials/p039-b5-t3.html">p039-b5-t3</a><a href="trials/p040-b1-t2.html">p040-b1-t2</a><a href="trials/p040-b2-t7.html">p040-b2-t7</a><a href="trials/p041-b3-t7.html">p041-b3-t7</a><a href="trials/p041-b6-t10.html">p041-b6-t10</a><a href="trials/p042-b3-t2.html">p042-b3-t2</a><a href="trials/p042-b4-t5.html">p042-b4-t5</a><a href="trials/p043-b2-t2.html">p043-b2-t2</a><a href="trials/p044-b1-t6.html">p044-b1-t6</a><a href="trials/p044-b2-t4.html">p044-b2-t4</a><a href="trials/p044-b3-t8.html">p044-b3-t8</a><a href="trials/p045-b1-t10.html">p045-b1-t10</a><a href="trials/p045-b2-t5.html">p045-b2-t5</a><a href="trials/p045-b3-t4.html">p045-b3-t4</a><a href="trials/p046-b2-t4.html">p046-b2-t4</a><a href="trials/p046-b6-t7.html">p046-b6-t7</a><a href="trials/p047-b6-t1.html">p047-b6-t1</a><a href="trials/p048-b1-t6.html">p048-b1-t6</a><a href="trials/p048-b1-t7.html">p048-b1-t7</a><a href="trials/p048-b4-t1.html">p048-b4-t1</a><a href="trials/p049-b1-t10.html">p049-b1-t10</a><a href="trials/p049-b1-t7.html">p049-b1-t7</a><a href="trials/p050-b2-t4.html">p050-b2-t4</a><a href="trials/p050-b2-t7.html">p050-b2-t7</a><a href="trials/p050-b5-t10.html">p050-b5-t10</a></div>
+              </div>
+            
+              <div class="cluster">
+                <h3>Side ads only</h3>
+                <div class="share"><strong>41/141 (29.1%)</strong> of audit pool · <strong>861/2776 (31.0%)</strong> of AdSERP — <span style="color:#aaa">dd_right rail, no dd_top block</span></div>
+                <div class="trial-list"><a href="trials/p004-b2-t9.html">p004-b2-t9</a><a href="trials/p004-b3-t5.html">p004-b3-t5</a><a href="trials/p005-b2-t2.html">p005-b2-t2</a><a href="trials/p006-b4-t7.html">p006-b4-t7</a><a href="trials/p007-b4-t6.html">p007-b4-t6</a><a href="trials/p007-b5-t6.html">p007-b5-t6</a><a href="trials/p008-b2-t4.html">p008-b2-t4</a><a href="trials/p008-b3-t7.html">p008-b3-t7</a><a href="trials/p011-b6-t2.html">p011-b6-t2</a><a href="trials/p012-b6-t7.html">p012-b6-t7</a><a href="trials/p013-b1-t4.html">p013-b1-t4</a><a href="trials/p016-b3-t9.html">p016-b3-t9</a><a href="trials/p016-b5-t1.html">p016-b5-t1</a><a href="trials/p017-b5-t4.html">p017-b5-t4</a><a href="trials/p018-b1-t2.html">p018-b1-t2</a><a href="trials/p019-b1-t8.html">p019-b1-t8</a><a href="trials/p019-b6-t2.html">p019-b6-t2</a><a href="trials/p020-b1-t7.html">p020-b1-t7</a><a href="trials/p020-b6-t3.html">p020-b6-t3</a><a href="trials/p021-b1-t3.html">p021-b1-t3</a><a href="trials/p021-b6-t8.html">p021-b6-t8</a><a href="trials/p024-b1-t9.html">p024-b1-t9</a><a href="trials/p026-b1-t3.html">p026-b1-t3</a><a href="trials/p026-b1-t9.html">p026-b1-t9</a><a href="trials/p029-b6-t8.html">p029-b6-t8</a><a href="trials/p031-b1-t6.html">p031-b1-t6</a><a href="trials/p033-b1-t3.html">p033-b1-t3</a><a href="trials/p033-b1-t5.html">p033-b1-t5</a><a href="trials/p034-b1-t5.html">p034-b1-t5</a><a href="trials/p035-b6-t10.html">p035-b6-t10</a><a href="trials/p036-b1-t6.html">p036-b1-t6</a><a href="trials/p036-b4-t7.html">p036-b4-t7</a><a href="trials/p037-b3-t2.html">p037-b3-t2</a><a href="trials/p040-b2-t4.html">p040-b2-t4</a><a href="trials/p041-b5-t2.html">p041-b5-t2</a><a href="trials/p043-b3-t3.html">p043-b3-t3</a><a href="trials/p043-b4-t7.html">p043-b4-t7</a><a href="trials/p046-b4-t6.html">p046-b4-t6</a><a href="trials/p047-b1-t3.html">p047-b1-t3</a><a href="trials/p047-b1-t4.html">p047-b1-t4</a><a href="trials/p049-b1-t5.html">p049-b1-t5</a></div>
+              </div>
+            
+              <div class="cluster">
+                <h3>Organic-dominant</h3>
+                <div class="share"><strong>11/141 (7.8%)</strong> of audit pool · <strong>333/2776 (12.0%)</strong> of AdSERP — <span style="color:#aaa">no dd_top, no dd_right (native_ad inline only)</span></div>
+                <div class="trial-list"><a href="trials/p010-b6-t3.html">p010-b6-t3</a><a href="trials/p015-b1-t2.html">p015-b1-t2</a><a href="trials/p017-b3-t1.html">p017-b3-t1</a><a href="trials/p021-b6-t1.html">p021-b6-t1</a><a href="trials/p030-b1-t1.html">p030-b1-t1</a><a href="trials/p030-b1-t8.html">p030-b1-t8</a><a href="trials/p033-b2-t5.html">p033-b2-t5</a><a href="trials/p035-b1-t2.html">p035-b1-t2</a><a href="trials/p035-b3-t2.html">p035-b3-t2</a><a href="trials/p039-b3-t9.html">p039-b3-t9</a><a href="trials/p042-b2-t6.html">p042-b2-t6</a></div>
+              </div>
+            
+          </section>
+        
           <section class="group group-extended">
-            <h2 class="group-title">Extended candidate pool (58)</h2>
+            <h2 class="group-title">Extended candidate pool (110)</h2>
             <p class="group-blurb">High-scoring trials not yet assigned to a pedagogical group. Browse to spot-check the curation or surface trials worth promoting.</p>
             <div class="grid">
+    <a class="card" href="trials/p004-b3-t5.html">
+      <h2>p004-b3-t5</h2>
+      <div class="query">buy-sunpro-actron-cp7612-battery-load-tester</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 1</span><span class="pill not">NA 5</span></div>
+      <div class="stats">
+        <span><span class="v">33.3s</span>duration</span>
+        <span><span class="v">450</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p004-b4-t9.html">
       <h2>p004-b4-t9</h2>
       <div class="query">buy-angel-greek-mountain-tea-2-ounce</div>
@@ -500,6 +594,19 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
+    <a class="card" href="trials/p006-b4-t7.html">
+      <h2>p006-b4-t7</h2>
+      <div class="query">buy-altaj-spanish-saffron-tin-1-ounce</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 10</span><span class="pill rej">REJ 4</span><span class="pill not">NA 0</span></div>
+      <div class="stats">
+        <span><span class="v">46.2s</span>duration</span>
+        <span><span class="v">642</span>cursor</span>
+        <span><span class="v">11</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p007-b3-t8.html">
       <h2>p007-b3-t8</h2>
       <div class="query">buy-airex-airex-balance-beam</div>
@@ -539,16 +646,16 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
-    <a class="card" href="trials/p007-b6-t8.html">
-      <h2>p007-b6-t8</h2>
-      <div class="query">buy-dermalogica-dermalogica-active-moist-3-5oz</div>
+    <a class="card" href="trials/p008-b1-t1.html">
+      <h2>p008-b1-t1</h2>
+      <div class="query">buy-mac-pro-mac-pigment-frozen-white</div>
       
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 2</span><span class="pill not">NA 4</span></div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 9</span><span class="pill rej">REJ 0</span><span class="pill not">NA 6</span></div>
       <div class="stats">
-        <span><span class="v">20.3s</span>duration</span>
-        <span><span class="v">363</span>cursor</span>
-        <span><span class="v">9</span>organic</span>
-        <span><span class="v">5</span>ads</span>
+        <span><span class="v">29.2s</span>duration</span>
+        <span><span class="v">669</span>cursor</span>
+        <span><span class="v">12</span>organic</span>
+        <span><span class="v">4</span>ads</span>
       </div>
     </a>
     
@@ -562,6 +669,19 @@ section.group { margin-top: 36px; }
         <span><span class="v">498</span>cursor</span>
         <span><span class="v">10</span>organic</span>
         <span><span class="v">8</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p009-b1-t1.html">
+      <h2>p009-b1-t1</h2>
+      <div class="query">buy-new-chapter-prostate-5lx-120-softgels</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 1</span><span class="pill not">NA 5</span></div>
+      <div class="stats">
+        <span><span class="v">37.7s</span>duration</span>
+        <span><span class="v">756</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">5</span>ads</span>
       </div>
     </a>
     
@@ -591,6 +711,45 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
+    <a class="card" href="trials/p010-b2-t6.html">
+      <h2>p010-b2-t6</h2>
+      <div class="query">buy-think-fun-rush-hour-jr-game</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 2</span><span class="pill not">NA 7</span></div>
+      <div class="stats">
+        <span><span class="v">33.3s</span>duration</span>
+        <span><span class="v">641</span>cursor</span>
+        <span><span class="v">15</span>organic</span>
+        <span><span class="v">2</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p010-b3-t1.html">
+      <h2>p010-b3-t1</h2>
+      <div class="query">buy-dior-dior-diorific-vernis-751-marilyn</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 9</span><span class="pill rej">REJ 1</span><span class="pill not">NA 4</span></div>
+      <div class="stats">
+        <span><span class="v">33.3s</span>duration</span>
+        <span><span class="v">560</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">5</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p010-b6-t3.html">
+      <h2>p010-b6-t3</h2>
+      <div class="query">buy-stress-less-stress-less-by-aromafloria</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 0</span><span class="pill not">NA 1</span></div>
+      <div class="stats">
+        <span><span class="v">30.4s</span>duration</span>
+        <span><span class="v">478</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">1</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p011-b3-t1.html">
       <h2>p011-b3-t1</h2>
       <div class="query">buy-toshiba-pa5034u-1aca-ac-adapter</div>
@@ -617,16 +776,68 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
-    <a class="card" href="trials/p013-b2-t3.html">
-      <h2>p013-b2-t3</h2>
-      <div class="query">buy-romantic-music-for-cello</div>
+    <a class="card" href="trials/p012-b4-t7.html">
+      <h2>p012-b4-t7</h2>
+      <div class="query">buy-jolly-jolly-ball</div>
       
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 0</span><span class="pill rej">REJ 1</span><span class="pill not">NA 12</span></div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 3</span><span class="pill not">NA 3</span></div>
       <div class="stats">
-        <span><span class="v">3.3s</span>duration</span>
-        <span><span class="v">46</span>cursor</span>
+        <span><span class="v">46.5s</span>duration</span>
+        <span><span class="v">641</span>cursor</span>
         <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p012-b6-t7.html">
+      <h2>p012-b6-t7</h2>
+      <div class="query">buy-motorcraft-motorcraft-fp-65-pollen-filter</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 0</span><span class="pill not">NA 8</span></div>
+      <div class="stats">
+        <span><span class="v">32.1s</span>duration</span>
+        <span><span class="v">382</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">7</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p013-b1-t10.html">
+      <h2>p013-b1-t10</h2>
+      <div class="query">buy-pure-encapsulations-magnesium-citrate-malate-180c</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 0</span><span class="pill rej">REJ 2</span><span class="pill not">NA 13</span></div>
+      <div class="stats">
+        <span><span class="v">4.8s</span>duration</span>
+        <span><span class="v">133</span>cursor</span>
+        <span><span class="v">11</span>organic</span>
         <span><span class="v">5</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p013-b1-t4.html">
+      <h2>p013-b1-t4</h2>
+      <div class="query">buy-sherwood-pump-rubber-impeller</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 0</span><span class="pill not">NA 9</span></div>
+      <div class="stats">
+        <span><span class="v">8.0s</span>duration</span>
+        <span><span class="v">259</span>cursor</span>
+        <span><span class="v">12</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p013-b3-t2.html">
+      <h2>p013-b3-t2</h2>
+      <div class="query">buy-maybelline-maybelline-forever-lipcolor-mauve-100</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 1</span><span class="pill not">NA 2</span></div>
+      <div class="stats">
+        <span><span class="v">7.2s</span>duration</span>
+        <span><span class="v">205</span>cursor</span>
+        <span><span class="v">7</span>organic</span>
+        <span><span class="v">2</span>ads</span>
       </div>
     </a>
     
@@ -638,6 +849,32 @@ section.group { margin-top: 36px; }
       <div class="stats">
         <span><span class="v">39.6s</span>duration</span>
         <span><span class="v">431</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p014-b5-t7.html">
+      <h2>p014-b5-t7</h2>
+      <div class="query">buy-timken-timken-set11-bearing-set</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 9</span><span class="pill rej">REJ 2</span><span class="pill not">NA 2</span></div>
+      <div class="stats">
+        <span><span class="v">32.0s</span>duration</span>
+        <span><span class="v">419</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p014-b6-t5.html">
+      <h2>p014-b6-t5</h2>
+      <div class="query">buy-franmara-aluminum-wine-and-champagne-chiller</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 9</span><span class="pill rej">REJ 1</span><span class="pill not">NA 4</span></div>
+      <div class="stats">
+        <span><span class="v">22.2s</span>duration</span>
+        <span><span class="v">258</span>cursor</span>
         <span><span class="v">10</span>organic</span>
         <span><span class="v">4</span>ads</span>
       </div>
@@ -665,6 +902,123 @@ section.group { margin-top: 36px; }
         <span><span class="v">33.8s</span>duration</span>
         <span><span class="v">521</span>cursor</span>
         <span><span class="v">10</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p016-b3-t9.html">
+      <h2>p016-b3-t9</h2>
+      <div class="query">buy-lindt-grandeur-dark-hazelnut-chocolate-bar</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 1</span><span class="pill rej">REJ 0</span><span class="pill not">NA 11</span></div>
+      <div class="stats">
+        <span><span class="v">20.3s</span>duration</span>
+        <span><span class="v">391</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p016-b5-t1.html">
+      <h2>p016-b5-t1</h2>
+      <div class="query">buy-neiko-24v-cordless-impact-wrench</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 1</span><span class="pill not">NA 5</span></div>
+      <div class="stats">
+        <span><span class="v">15.4s</span>duration</span>
+        <span><span class="v">576</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">3</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p017-b1-t1.html">
+      <h2>p017-b1-t1</h2>
+      <div class="query">buy-skycaddie-skycaddie-breeze-golf-gps-rangefinder</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 2</span><span class="pill rej">REJ 1</span><span class="pill not">NA 11</span></div>
+      <div class="stats">
+        <span><span class="v">12.4s</span>duration</span>
+        <span><span class="v">246</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">5</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p017-b3-t1.html">
+      <h2>p017-b3-t1</h2>
+      <div class="query">buy-hagerty-hagerty-91320-chandelier-cleaner</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 0</span><span class="pill not">NA 8</span></div>
+      <div class="stats">
+        <span><span class="v">7.2s</span>duration</span>
+        <span><span class="v">146</span>cursor</span>
+        <span><span class="v">11</span>organic</span>
+        <span><span class="v">3</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p017-b5-t4.html">
+      <h2>p017-b5-t4</h2>
+      <div class="query">buy-brookstone-royce-leather-ladies-passport-wallet</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 0</span><span class="pill not">NA 6</span></div>
+      <div class="stats">
+        <span><span class="v">24.1s</span>duration</span>
+        <span><span class="v">253</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p018-b1-t2.html">
+      <h2>p018-b1-t2</h2>
+      <div class="query">buy-denso-denso-221-3117-radiator</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 2</span><span class="pill not">NA 8</span></div>
+      <div class="stats">
+        <span><span class="v">19.2s</span>duration</span>
+        <span><span class="v">256</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">6</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p018-b1-t3.html">
+      <h2>p018-b1-t3</h2>
+      <div class="query">buy-skinceuticals-skinceuticals-phyto-1-fl-oz</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 0</span><span class="pill not">NA 5</span></div>
+      <div class="stats">
+        <span><span class="v">24.1s</span>duration</span>
+        <span><span class="v">351</span>cursor</span>
+        <span><span class="v">7</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p018-b1-t6.html">
+      <h2>p018-b1-t6</h2>
+      <div class="query">buy-acdelco-acdelco-d599a-ignition-coil-assembly</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 1</span><span class="pill not">NA 6</span></div>
+      <div class="stats">
+        <span><span class="v">44.9s</span>duration</span>
+        <span><span class="v">331</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p019-b4-t6.html">
+      <h2>p019-b4-t6</h2>
+      <div class="query">buy-panasonic-panasonic-kx-tpa50-cordless-handset</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 11</span><span class="pill rej">REJ 1</span><span class="pill not">NA 3</span></div>
+      <div class="stats">
+        <span><span class="v">30.3s</span>duration</span>
+        <span><span class="v">711</span>cursor</span>
+        <span><span class="v">12</span>organic</span>
         <span><span class="v">4</span>ads</span>
       </div>
     </a>
@@ -708,6 +1062,45 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
+    <a class="card" href="trials/p021-b1-t3.html">
+      <h2>p021-b1-t3</h2>
+      <div class="query">buy-stars</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 1</span><span class="pill not">NA 15</span></div>
+      <div class="stats">
+        <span><span class="v">30.7s</span>duration</span>
+        <span><span class="v">454</span>cursor</span>
+        <span><span class="v">17</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p021-b6-t1.html">
+      <h2>p021-b6-t1</h2>
+      <div class="query">buy-kal-kal-amino-max-250-tablets</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 0</span><span class="pill not">NA 4</span></div>
+      <div class="stats">
+        <span><span class="v">32.8s</span>duration</span>
+        <span><span class="v">552</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">3</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p021-b6-t8.html">
+      <h2>p021-b6-t8</h2>
+      <div class="query">buy-bosal-bosal-099-223-catalytic-converter</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 9</span><span class="pill rej">REJ 1</span><span class="pill not">NA 7</span></div>
+      <div class="stats">
+        <span><span class="v">33.1s</span>duration</span>
+        <span><span class="v">591</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">8</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p022-b1-t1.html">
       <h2>p022-b1-t1</h2>
       <div class="query">buy-bosch-bosch-98076-new-water-pump</div>
@@ -734,16 +1127,81 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
-    <a class="card" href="trials/p024-b3-t5.html">
-      <h2>p024-b3-t5</h2>
-      <div class="query">buy-lego-lego-dinosaurs-mosasaurus-6721</div>
+    <a class="card" href="trials/p022-b6-t5.html">
+      <h2>p022-b6-t5</h2>
+      <div class="query">buy-rhinotek-black-toner-cartridge-q2612a-rd</div>
       
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 0</span><span class="pill not">NA 9</span></div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 2</span><span class="pill not">NA 9</span></div>
       <div class="stats">
-        <span><span class="v">16.7s</span>duration</span>
-        <span><span class="v">196</span>cursor</span>
-        <span><span class="v">11</span>organic</span>
+        <span><span class="v">19.1s</span>duration</span>
+        <span><span class="v">413</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">7</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p023-b1-t6.html">
+      <h2>p023-b1-t6</h2>
+      <div class="query">buy-wittner-wittner-metronome-walnut-plastic-case</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 0</span><span class="pill not">NA 9</span></div>
+      <div class="stats">
+        <span><span class="v">13.5s</span>duration</span>
+        <span><span class="v">305</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
         <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p023-b2-t3.html">
+      <h2>p023-b2-t3</h2>
+      <div class="query">buy-primera-technology-53422-ink-cartridge-cyan</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 2</span><span class="pill rej">REJ 3</span><span class="pill not">NA 10</span></div>
+      <div class="stats">
+        <span><span class="v">19.2s</span>duration</span>
+        <span><span class="v">243</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">6</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p024-b1-t9.html">
+      <h2>p024-b1-t9</h2>
+      <div class="query">buy-bosch-bosch-15896-oxygen-sensor</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 1</span><span class="pill not">NA 8</span></div>
+      <div class="stats">
+        <span><span class="v">32.8s</span>duration</span>
+        <span><span class="v">429</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">8</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p024-b4-t5.html">
+      <h2>p024-b4-t5</h2>
+      <div class="query">buy-bosch-bosch-03195-distributor-cap</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 0</span><span class="pill not">NA 6</span></div>
+      <div class="stats">
+        <span><span class="v">20.9s</span>duration</span>
+        <span><span class="v">467</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p024-b5-t1.html">
+      <h2>p024-b5-t1</h2>
+      <div class="query">buy-elemis-elemis-cellutox-active-body-concentrate</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 0</span><span class="pill not">NA 8</span></div>
+      <div class="stats">
+        <span><span class="v">27.1s</span>duration</span>
+        <span><span class="v">534</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">6</span>ads</span>
       </div>
     </a>
     
@@ -751,12 +1209,51 @@ section.group { margin-top: 36px; }
       <h2>p025-b3-t5</h2>
       <div class="query">buy-grays-greys-gs-large-fly-box</div>
       
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 0</span><span class="pill not">NA 4</span></div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 1</span><span class="pill not">NA 4</span></div>
       <div class="stats">
         <span><span class="v">21.0s</span>duration</span>
         <span><span class="v">602</span>cursor</span>
         <span><span class="v">9</span>organic</span>
         <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p026-b1-t2.html">
+      <h2>p026-b1-t2</h2>
+      <div class="query">buy-schoenhut-6-string-guitar-metal-strings</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 2</span><span class="pill rej">REJ 1</span><span class="pill not">NA 7</span></div>
+      <div class="stats">
+        <span><span class="v">30.3s</span>duration</span>
+        <span><span class="v">384</span>cursor</span>
+        <span><span class="v">7</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p026-b1-t3.html">
+      <h2>p026-b1-t3</h2>
+      <div class="query">buy-dayco-dayco-95179k1-timing-belt-kit</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 3</span><span class="pill rej">REJ 1</span><span class="pill not">NA 12</span></div>
+      <div class="stats">
+        <span><span class="v">24.0s</span>duration</span>
+        <span><span class="v">436</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">8</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p026-b1-t9.html">
+      <h2>p026-b1-t9</h2>
+      <div class="query">buy-bosch-bosch-0280218073-air-mass-sensor</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 0</span><span class="pill not">NA 10</span></div>
+      <div class="stats">
+        <span><span class="v">18.7s</span>duration</span>
+        <span><span class="v">478</span>cursor</span>
+        <span><span class="v">11</span>organic</span>
+        <span><span class="v">6</span>ads</span>
       </div>
     </a>
     
@@ -773,6 +1270,32 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
+    <a class="card" href="trials/p027-b3-t2.html">
+      <h2>p027-b3-t2</h2>
+      <div class="query">buy-bosch-bosch-97182-new-water-pump</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 2</span><span class="pill not">NA 6</span></div>
+      <div class="stats">
+        <span><span class="v">25.3s</span>duration</span>
+        <span><span class="v">529</span>cursor</span>
+        <span><span class="v">8</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p027-b5-t5.html">
+      <h2>p027-b5-t5</h2>
+      <div class="query">buy-pevonia-pevonia-rs2-concentrate-1-ounce</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 0</span><span class="pill not">NA 7</span></div>
+      <div class="stats">
+        <span><span class="v">25.3s</span>duration</span>
+        <span><span class="v">495</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p028-b1-t2.html">
       <h2>p028-b1-t2</h2>
       <div class="query">buy-nars-nars-foreplay-orgasm-cheek-palette</div>
@@ -783,6 +1306,19 @@ section.group { margin-top: 36px; }
         <span><span class="v">676</span>cursor</span>
         <span><span class="v">9</span>organic</span>
         <span><span class="v">5</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p028-b1-t9.html">
+      <h2>p028-b1-t9</h2>
+      <div class="query">buy-solaray-solaray-butterbur-60-capsules</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 0</span><span class="pill not">NA 9</span></div>
+      <div class="stats">
+        <span><span class="v">35.6s</span>duration</span>
+        <span><span class="v">774</span>cursor</span>
+        <span><span class="v">11</span>organic</span>
+        <span><span class="v">4</span>ads</span>
       </div>
     </a>
     
@@ -799,6 +1335,32 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
+    <a class="card" href="trials/p029-b6-t7.html">
+      <h2>p029-b6-t7</h2>
+      <div class="query">buy-niterider-niterider-pro-1800-race-light</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 3</span><span class="pill rej">REJ 1</span><span class="pill not">NA 6</span></div>
+      <div class="stats">
+        <span><span class="v">14.2s</span>duration</span>
+        <span><span class="v">288</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">2</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p029-b6-t8.html">
+      <h2>p029-b6-t8</h2>
+      <div class="query">buy-m-a-c-mac-lipstick-frenzy</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 0</span><span class="pill not">NA 13</span></div>
+      <div class="stats">
+        <span><span class="v">17.9s</span>duration</span>
+        <span><span class="v">307</span>cursor</span>
+        <span><span class="v">15</span>organic</span>
+        <span><span class="v">3</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p030-b1-t1.html">
       <h2>p030-b1-t1</h2>
       <div class="query">buy-xtrememac-micromemo-for-ipod-nano-4g</div>
@@ -808,6 +1370,71 @@ section.group { margin-top: 36px; }
         <span><span class="v">19.1s</span>duration</span>
         <span><span class="v">510</span>cursor</span>
         <span><span class="v">10</span>organic</span>
+        <span><span class="v">3</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p030-b1-t8.html">
+      <h2>p030-b1-t8</h2>
+      <div class="query">buy-natures-sunshine-pro-prancreas-improved</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 0</span><span class="pill not">NA 5</span></div>
+      <div class="stats">
+        <span><span class="v">25.1s</span>duration</span>
+        <span><span class="v">419</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">3</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p030-b3-t6.html">
+      <h2>p030-b3-t6</h2>
+      <div class="query">buy-oase-pond-vacuum-pondomatic-by-oase</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 1</span><span class="pill not">NA 7</span></div>
+      <div class="stats">
+        <span><span class="v">14.7s</span>duration</span>
+        <span><span class="v">298</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p031-b1-t6.html">
+      <h2>p031-b1-t6</h2>
+      <div class="query">buy-timken-timken-613010-clutch-release-bearing</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 1</span><span class="pill not">NA 8</span></div>
+      <div class="stats">
+        <span><span class="v">26.7s</span>duration</span>
+        <span><span class="v">481</span>cursor</span>
+        <span><span class="v">8</span>organic</span>
+        <span><span class="v">8</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p031-b3-t1.html">
+      <h2>p031-b3-t1</h2>
+      <div class="query">buy-serengeti-serengeti-vittoria-sunglasses</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 1</span><span class="pill not">NA 7</span></div>
+      <div class="stats">
+        <span><span class="v">14.1s</span>duration</span>
+        <span><span class="v">397</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">3</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p031-b3-t4.html">
+      <h2>p031-b3-t4</h2>
+      <div class="query">buy-katadyn-katadyn-vario-replacement-cartridge-8014933</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 0</span><span class="pill not">NA 5</span></div>
+      <div class="stats">
+        <span><span class="v">17.1s</span>duration</span>
+        <span><span class="v">425</span>cursor</span>
+        <span><span class="v">11</span>organic</span>
         <span><span class="v">3</span>ads</span>
       </div>
     </a>
@@ -848,19 +1475,6 @@ section.group { margin-top: 36px; }
         <span><span class="v">651</span>cursor</span>
         <span><span class="v">15</span>organic</span>
         <span><span class="v">6</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p032-b6-t8.html">
-      <h2>p032-b6-t8</h2>
-      <div class="query">buy-hartleys-hartleys-lemon-jelly-135g</div>
-      
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 0</span><span class="pill rej">REJ 0</span><span class="pill not">NA 12</span></div>
-      <div class="stats">
-        <span><span class="v">2.3s</span>duration</span>
-        <span><span class="v">49</span>cursor</span>
-        <span><span class="v">10</span>organic</span>
-        <span><span class="v">3</span>ads</span>
       </div>
     </a>
     
@@ -942,19 +1556,6 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
-    <a class="card" href="trials/p035-b6-t10.html">
-      <h2>p035-b6-t10</h2>
-      <div class="query">buy-jobar-dog-bone-bark-control-collar</div>
-      
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 0</span><span class="pill not">NA 6</span></div>
-      <div class="stats">
-        <span><span class="v">28.2s</span>duration</span>
-        <span><span class="v">801</span>cursor</span>
-        <span><span class="v">9</span>organic</span>
-        <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
-    
     <a class="card" href="trials/p036-b2-t8.html">
       <h2>p036-b2-t8</h2>
       <div class="query">buy-ism-ism-touring-saddle</div>
@@ -968,16 +1569,42 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
-    <a class="card" href="trials/p037-b3-t2.html">
-      <h2>p037-b3-t2</h2>
-      <div class="query">buy-luk-luk-17-065-clutch-set</div>
+    <a class="card" href="trials/p036-b4-t7.html">
+      <h2>p036-b4-t7</h2>
+      <div class="query">buy-cello-suites</div>
       
-      <div class="pills"><span class="pill clk">CLK 2</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 1</span><span class="pill not">NA 5</span></div>
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 3</span><span class="pill rej">REJ 1</span><span class="pill not">NA 13</span></div>
       <div class="stats">
-        <span><span class="v">63.0s</span>duration</span>
-        <span><span class="v">990</span>cursor</span>
+        <span><span class="v">28.1s</span>duration</span>
+        <span><span class="v">900</span>cursor</span>
+        <span><span class="v">14</span>organic</span>
+        <span><span class="v">3</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p038-b1-t4.html">
+      <h2>p038-b1-t4</h2>
+      <div class="query">buy-vitabase-ultra-veggie-enzymes</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 1</span><span class="pill not">NA 4</span></div>
+      <div class="stats">
+        <span><span class="v">14.9s</span>duration</span>
+        <span><span class="v">229</span>cursor</span>
         <span><span class="v">9</span>organic</span>
-        <span><span class="v">7</span>ads</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p038-b4-t3.html">
+      <h2>p038-b4-t3</h2>
+      <div class="query">buy-bmw-bmw-genuine-z4-key-ring</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 8</span><span class="pill rej">REJ 1</span><span class="pill not">NA 4</span></div>
+      <div class="stats">
+        <span><span class="v">13.6s</span>duration</span>
+        <span><span class="v">307</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
       </div>
     </a>
     
@@ -991,6 +1618,32 @@ section.group { margin-top: 36px; }
         <span><span class="v">442</span>cursor</span>
         <span><span class="v">7</span>organic</span>
         <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p039-b3-t9.html">
+      <h2>p039-b3-t9</h2>
+      <div class="query">buy-escante-escante-french-maid</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 1</span><span class="pill not">NA 4</span></div>
+      <div class="stats">
+        <span><span class="v">46.9s</span>duration</span>
+        <span><span class="v">531</span>cursor</span>
+        <span><span class="v">7</span>organic</span>
+        <span><span class="v">3</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p040-b1-t2.html">
+      <h2>p040-b1-t2</h2>
+      <div class="query">buy-spy-spy-optichaymaker-fade-sunglasses</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 0</span><span class="pill not">NA 7</span></div>
+      <div class="stats">
+        <span><span class="v">37.2s</span>duration</span>
+        <span><span class="v">1019</span>cursor</span>
+        <span><span class="v">12</span>organic</span>
+        <span><span class="v">2</span>ads</span>
       </div>
     </a>
     
@@ -1020,6 +1673,32 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
+    <a class="card" href="trials/p041-b3-t7.html">
+      <h2>p041-b3-t7</h2>
+      <div class="query">buy-delphi-delphi-fg0411-fuel-pump-module</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 0</span><span class="pill not">NA 6</span></div>
+      <div class="stats">
+        <span><span class="v">28.8s</span>duration</span>
+        <span><span class="v">340</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p041-b5-t2.html">
+      <h2>p041-b5-t2</h2>
+      <div class="query">buy-airtex-airtex-e8145-electric-fuel-pump</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 6</span><span class="pill rej">REJ 2</span><span class="pill not">NA 4</span></div>
+      <div class="stats">
+        <span><span class="v">21.0s</span>duration</span>
+        <span><span class="v">175</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p042-b2-t6.html">
       <h2>p042-b2-t6</h2>
       <div class="query">buy-continental-continental-electric-ce23111-steam-iron</div>
@@ -1043,6 +1722,58 @@ section.group { margin-top: 36px; }
         <span><span class="v">563</span>cursor</span>
         <span><span class="v">8</span>organic</span>
         <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p042-b4-t5.html">
+      <h2>p042-b4-t5</h2>
+      <div class="query">buy-acdelco-acdelco-15036008-windshield-washer-motor</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 7</span><span class="pill rej">REJ 0</span><span class="pill not">NA 5</span></div>
+      <div class="stats">
+        <span><span class="v">40.0s</span>duration</span>
+        <span><span class="v">599</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p043-b2-t2.html">
+      <h2>p043-b2-t2</h2>
+      <div class="query">buy-dayco-dayco-5070640-serpentine-belt</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 2</span><span class="pill rej">REJ 2</span><span class="pill not">NA 12</span></div>
+      <div class="stats">
+        <span><span class="v">33.8s</span>duration</span>
+        <span><span class="v">545</span>cursor</span>
+        <span><span class="v">12</span>organic</span>
+        <span><span class="v">5</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p043-b3-t3.html">
+      <h2>p043-b3-t3</h2>
+      <div class="query">buy-motorcraft-motorcraft-jk61063-v-ribbed-belt</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 0</span><span class="pill rej">REJ 4</span><span class="pill not">NA 11</span></div>
+      <div class="stats">
+        <span><span class="v">35.7s</span>duration</span>
+        <span><span class="v">353</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">6</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p043-b4-t7.html">
+      <h2>p043-b4-t7</h2>
+      <div class="query">buy-enzymedica-enzymedica-lacto-30-count</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 3</span><span class="pill rej">REJ 2</span><span class="pill not">NA 11</span></div>
+      <div class="stats">
+        <span><span class="v">41.3s</span>duration</span>
+        <span><span class="v">318</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">7</span>ads</span>
       </div>
     </a>
     
@@ -1085,6 +1816,19 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
+    <a class="card" href="trials/p045-b3-t4.html">
+      <h2>p045-b3-t4</h2>
+      <div class="query">buy-swanson-strontium-citrate-2-bottles</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 1</span><span class="pill not">NA 8</span></div>
+      <div class="stats">
+        <span><span class="v">32.4s</span>duration</span>
+        <span><span class="v">654</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">5</span>ads</span>
+      </div>
+    </a>
+    
     <a class="card" href="trials/p046-b2-t4.html">
       <h2>p046-b2-t4</h2>
       <div class="query">buy-elemis-elemis-visible-brilliance</div>
@@ -1124,32 +1868,6 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
-    <a class="card" href="trials/p047-b1-t4.html">
-      <h2>p047-b1-t4</h2>
-      <div class="query">buy-volumax-volumax-mega-styling-gel</div>
-      
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 9</span><span class="pill rej">REJ 1</span><span class="pill not">NA 1</span></div>
-      <div class="stats">
-        <span><span class="v">55.2s</span>duration</span>
-        <span><span class="v">2121</span>cursor</span>
-        <span><span class="v">8</span>organic</span>
-        <span><span class="v">4</span>ads</span>
-      </div>
-    </a>
-    
-    <a class="card" href="trials/p047-b1-t9.html">
-      <h2>p047-b1-t9</h2>
-      <div class="query">buy-dayco-dayco-wp259k2a-timing-belt-kit</div>
-      
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 1</span><span class="pill rej">REJ 0</span><span class="pill not">NA 11</span></div>
-      <div class="stats">
-        <span><span class="v">16.4s</span>duration</span>
-        <span><span class="v">412</span>cursor</span>
-        <span><span class="v">5</span>organic</span>
-        <span><span class="v">8</span>ads</span>
-      </div>
-    </a>
-    
     <a class="card" href="trials/p048-b1-t6.html">
       <h2>p048-b1-t6</h2>
       <div class="query">buy-callaway-callaway-x-hot-fairway-wood</div>
@@ -1163,16 +1881,29 @@ section.group { margin-top: 36px; }
       </div>
     </a>
     
-    <a class="card" href="trials/p049-b2-t6.html">
-      <h2>p049-b2-t6</h2>
-      <div class="query">buy-robert-sorby-robert-sorby-410-sandmaster</div>
+    <a class="card" href="trials/p048-b1-t7.html">
+      <h2>p048-b1-t7</h2>
+      <div class="query">buy-exedy-exedy-08805-racing-clutch-kit</div>
       
-      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 0</span><span class="pill rej">REJ 0</span><span class="pill not">NA 13</span></div>
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 5</span><span class="pill rej">REJ 0</span><span class="pill not">NA 6</span></div>
       <div class="stats">
-        <span><span class="v">5.9s</span>duration</span>
-        <span><span class="v">45</span>cursor</span>
+        <span><span class="v">33.3s</span>duration</span>
+        <span><span class="v">417</span>cursor</span>
         <span><span class="v">11</span>organic</span>
-        <span><span class="v">3</span>ads</span>
+        <span><span class="v">1</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p049-b1-t10.html">
+      <h2>p049-b1-t10</h2>
+      <div class="query">buy-keracare-keracare-dry-itchy-shampoo-32oz</div>
+      
+      <div class="pills"><span class="pill clk">CLK 0</span><span class="pill def">DEF 4</span><span class="pill rej">REJ 0</span><span class="pill not">NA 9</span></div>
+      <div class="stats">
+        <span><span class="v">22.9s</span>duration</span>
+        <span><span class="v">293</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">4</span>ads</span>
       </div>
     </a>
     
@@ -1186,6 +1917,32 @@ section.group { margin-top: 36px; }
         <span><span class="v">591</span>cursor</span>
         <span><span class="v">9</span>organic</span>
         <span><span class="v">4</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p050-b2-t7.html">
+      <h2>p050-b2-t7</h2>
+      <div class="query">buy-clarins-clarins-7-wonders-gift-set</div>
+      
+      <div class="pills"><span class="pill clk">CLK 1</span><span class="pill def">DEF 3</span><span class="pill rej">REJ 0</span><span class="pill not">NA 8</span></div>
+      <div class="stats">
+        <span><span class="v">40.0s</span>duration</span>
+        <span><span class="v">476</span>cursor</span>
+        <span><span class="v">10</span>organic</span>
+        <span><span class="v">2</span>ads</span>
+      </div>
+    </a>
+    
+    <a class="card" href="trials/p050-b5-t10.html">
+      <h2>p050-b5-t10</h2>
+      <div class="query">buy-cadbury-cadbury-fruit-and-nut-400g</div>
+      
+      <div class="pills"><span class="pill clk">CLK 2</span><span class="pill def">DEF 9</span><span class="pill rej">REJ 1</span><span class="pill not">NA 2</span></div>
+      <div class="stats">
+        <span><span class="v">36.6s</span>duration</span>
+        <span><span class="v">680</span>cursor</span>
+        <span><span class="v">9</span>organic</span>
+        <span><span class="v">5</span>ads</span>
       </div>
     </a>
     </div>
