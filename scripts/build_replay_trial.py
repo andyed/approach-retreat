@@ -405,68 +405,15 @@ def build_trial(trial_id: str) -> dict | None:
                 "html_handle": c.get("html_handle"),
             })
 
-        # Pagination + related_searches live in #botstuff. Pagination has no
-        # CV bbox; related_searches has none either. Estimate both:
-        #   - pagination: anchored on JPG bottom (last 150 px of screenshot)
-        #   - related_searches: between deepest main-axis card and pagination
-        # Also: surface CV-detected chrome bboxes (footer/pagination-zone
-        # cells the chrome heuristic swept off-axis but have real coords).
-        pagination_cards = [c for c in typed_cards if c.get('type') == 'pagination']
-        related_searches_cards = [c for c in typed_cards if c.get('type') == 'related_searches']
-        chrome_with_coords = [c for c in typed_cards
-                              if c.get('type') == 'chrome'
-                              and c.get('x') is not None and c.get('y') is not None]
-
-        # Compute pagination y from JPG height
-        pag_y = None
-        pag_h = 80.0
-        if pagination_cards and jpg_out.exists():
-            try:
-                _img = Image.open(jpg_out)
-                jpg_h = _img.height
-            except Exception:
-                jpg_h = None
-            if jpg_h:
-                pag_y = max(0.0, float(jpg_h) - 150.0)
-
-        # Deepest main-axis card bottom (organic + ad in display order)
-        last_card_bottom = 0.0
-        for c in typed_cards:
-            if (c.get('position', -1) >= 0 and c.get('y') is not None
-                    and c.get('height') is not None):
-                last_card_bottom = max(last_card_bottom,
-                                        float(c['y']) + float(c['height']))
-
-        # related_searches: spans from last_card_bottom to pagination_y
-        if related_searches_cards and last_card_bottom > 0 and pag_y is not None:
-            rs_y = last_card_bottom + 30.0
-            rs_h = max(60.0, pag_y - rs_y - 20.0)
-            widget_bboxes.append({
-                "location": {"x": 162.0, "y": rs_y},
-                "size": {"width": 586.0, "height": rs_h},
-                "type": "related_searches",
-                "html_handle": related_searches_cards[0].get("html_handle"),
-                "estimated": True,
-            })
-
-        # chrome cells (CV-detected with coords; page-furniture-zone)
-        for c in chrome_with_coords:
-            widget_bboxes.append({
-                "location": {"x": float(c['x']), "y": float(c['y'])},
-                "size": {"width": float(c['width']), "height": float(c['height'])},
-                "type": "chrome",
-                "html_handle": None,
-            })
-
-        # pagination overlay (after rs_searches so it visually layers on top)
-        if pagination_cards and pag_y is not None:
-            widget_bboxes.append({
-                "location": {"x": 162.0, "y": pag_y},
-                "size": {"width": 586.0, "height": pag_h},
-                "type": "pagination",
-                "html_handle": pagination_cards[0].get("html_handle"),
-                "estimated": True,
-            })
+        # Off-axis widgets (pagination, related_searches, chrome) are NOT
+        # rendered. Their y/x coordinates would have to be estimated, and
+        # that compounded badly: estimated pagination + estimated
+        # related_searches + chrome cells all stacked at the bottom of the
+        # viewer with overlapping dashed rectangles. Visually messy without
+        # adding precision. We render ONLY widgets with measured CV bbox
+        # coordinates above (image_pack, paa, knowledge_panel, top_places,
+        # other_widget, unknown_widget).
+        pass
     else:
         widget_bboxes = list(organic.get("widget", []))
 
