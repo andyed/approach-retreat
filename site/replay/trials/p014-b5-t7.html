@@ -144,6 +144,7 @@ const AOI_STYLE = {
   dd_right:       { stroke: '#a855f7', fill: 'rgba(168,85,247,0.04)', label: '#a855f7', parent: true },
   dd_top_cell:    { stroke: '#f97316', fill: 'rgba(249,115,22,0.06)', label: '#f97316' },
   dd_right_cell:  { stroke: '#a855f7', fill: 'rgba(168,85,247,0.06)', label: '#a855f7' },
+  widget:         { stroke: '#888',    fill: 'rgba(136,136,136,0.04)', label: '#888', dashed: true },
 };
 const LABEL_STYLE = {
   CLICKED:            { fill: '#16a34a', text: '#fff', short: 'CLICKED' },
@@ -169,11 +170,11 @@ function drawAOIs() {
         fill: s.fill, stroke: s.stroke,
         'stroke-width': isParent ? 1 : (isApproached ? 3 : 1.5),
         'stroke-opacity': isParent ? 0.5 : (isApproached ? 0.95 : 0.6),
-        'stroke-dasharray': isParent ? '6,4' : '',
+        'stroke-dasharray': (isParent || s.dashed) ? '6,4' : '',
       });
       aoiSvg.appendChild(rect);
       // Position/kind tag (top-left corner)
-      const TAG_PREFIX = {organic_result: 'O', dd_top_cell: 'T', dd_right_cell: 'R', native_ad: 'NA', dd_top: 'dd_top', dd_right: 'dd_right'};
+      const TAG_PREFIX = {organic_result: 'O', dd_top_cell: 'T', dd_right_cell: 'R', native_ad: 'NA', dd_top: 'dd_top', dd_right: 'dd_right', widget: 'W'};
       const tag = (TAG_PREFIX[kind] || kind) + (it.position != null ? it.position : '');
       const tx = mkSvg('text', {x: x + 6, y: y + 18, fill: s.label, 'font-family': 'monospace', 'font-size': 12, 'font-weight': 'bold', stroke: '#000', 'stroke-width': 3, 'paint-order': 'stroke'});
       tx.textContent = tag;

@@ -191,6 +191,49 @@ def _m5() -> "m5_inference.M5Classifier":
     return _M5_CLF
 
 
+_AOI_CORRECTIONS_PATH = AR_ROOT / "site/replay/data/aoi_corrections.json"
+_AOI_CORRECTIONS_CACHE: dict | None = None
+
+
+def _load_aoi_corrections() -> dict:
+    global _AOI_CORRECTIONS_CACHE
+    if _AOI_CORRECTIONS_CACHE is not None:
+        return _AOI_CORRECTIONS_CACHE
+    if _AOI_CORRECTIONS_PATH.exists():
+        _AOI_CORRECTIONS_CACHE = json.loads(_AOI_CORRECTIONS_PATH.read_text())
+    else:
+        _AOI_CORRECTIONS_CACHE = {}
+    return _AOI_CORRECTIONS_CACHE
+
+
+def apply_aoi_corrections(trial_id: str, organic: dict) -> dict:
+    """Apply human-adjudicated AOI corrections from aoi_corrections.json.
+
+    Currently supports `demote_to_widget`: a list of organic positions to
+    reclassify as widget. Remaining organic positions are renumbered
+    contiguously. The demoted bbox is appended to organic['widget'] with
+    `reason: 'manual_correction'`.
+    """
+    corrections = _load_aoi_corrections().get(trial_id)
+    if not corrections:
+        return organic
+    demote = set(corrections.get("demote_to_widget", []))
+    if not demote:
+        return organic
+    organics = organic.get("organic_result", [])
+    kept, moved = [], []
+    for r in organics:
+        if r.get("position") in demote:
+            moved.append({**r, "reason": "manual_correction"})
+        else:
+            kept.append(r)
+    for i, r in enumerate(kept, 1):
+        r["position"] = i
+    organic["organic_result"] = kept
+    organic["widget"] = list(organic.get("widget", [])) + moved
+    return organic
+
+
 def derive_aoi_labels(cursor: list[dict], bboxes: dict, min_dwell_ms: int = 100) -> dict:
     """For each AOI, assign a four-class label using M5 (primary) and a
     bbox episode-count heuristic (secondary, for comparison).
@@ -335,11 +378,13 @@ def build_trial(trial_id: str) -> dict | None:
         Image.open(png).convert("RGB").save(jpg_out, "JPEG", quality=85, optimize=True)
 
     organic = json.loads(organic_json.read_text())
+    organic = apply_aoi_corrections(trial_id, organic)
     bboxes = {
         "organic_result": organic.get("organic_result", []),
         "native_ad":  organic.get("native_ad", []),
         "dd_top":     organic.get("dd_top", []),
         "dd_right":   organic.get("dd_right", []),
+        "widget":     organic.get("widget", []),
     }
     aoi_labels = derive_aoi_labels(cursor, bboxes)
 

@@ -1,0 +1,7 @@
+{
+  "_doc": "Human-adjudicated AOI corrections applied on top of the upstream organic-boundary-data extractor. Each entry maps a trial_id to per-trial corrections. Currently supported: demote_to_widget (list of organic positions to reclassify as widget). After demotion, remaining organic positions are renumbered contiguously. Add a 'note' field to record why.",
+  "p048-b1-t6": {
+    "demote_to_widget": [11],
+    "note": "Position 11 is Google 'Images for...' inline image carousel; extractor missed it (widget detector only catches bottom-of-page refinement widgets)."
+  }
+}
