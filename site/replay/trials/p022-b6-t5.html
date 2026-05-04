@@ -124,7 +124,7 @@ const cursor = document.getElementById('mouse-cursor');
 const viewer = document.getElementById('viewer');
 const playhead = document.getElementById('playhead');
 
-serpImg.addEventListener('load', () => {
+function onImgReady() {
   const h = serpImg.naturalHeight;
   for (const svg of [aoiSvg, overlaySvg]) {
     svg.setAttribute('width', W);
@@ -134,7 +134,13 @@ serpImg.addEventListener('load', () => {
   drawAOIs();
   drawCursorTrail();
   drawGazeFixations();
-});
+}
+if (serpImg.complete && serpImg.naturalWidth > 0) {
+  // Image already cached/loaded before listener attached — fire handler now.
+  onImgReady();
+} else {
+  serpImg.addEventListener('load', onImgReady);
+}
 
 // ── AOI overlay ───────────────────────────────────────────────────────
 const AOI_STYLE = {

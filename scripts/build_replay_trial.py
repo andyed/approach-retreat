@@ -404,6 +404,32 @@ def build_trial(trial_id: str) -> dict | None:
                 "type": c["type"],
                 "html_handle": c.get("html_handle"),
             })
+
+        # Pagination has no CV bbox (it's not in #rso or in any card-extracted
+        # zone; lives in #botstuff <div role="navigation">). Estimate the
+        # y-range from the bottom of the deepest main-axis card.
+        pagination_cards = [c for c in typed_cards if c.get('type') == 'pagination']
+        if pagination_cards:
+            # Find max y_bottom across main-axis CV-bbox cards (organics + ads)
+            main_bottoms = []
+            for c in typed_cards:
+                if (c.get('position', -1) >= 0 and c.get('y') is not None
+                        and c.get('height') is not None):
+                    main_bottoms.append(float(c['y']) + float(c['height']))
+            if main_bottoms:
+                # Pagination sits ~50 px below the deepest card; estimate height 80 px
+                pag_y = max(main_bottoms) + 50
+                pag_h = 80
+                # Use result-column x-range
+                pag_x = 162.0
+                pag_w = 586.0
+                widget_bboxes.append({
+                    "location": {"x": pag_x, "y": pag_y},
+                    "size": {"width": pag_w, "height": pag_h},
+                    "type": "pagination",
+                    "html_handle": pagination_cards[0].get("html_handle"),
+                    "estimated": True,  # flag: y-range is estimated, not measured
+                })
     else:
         widget_bboxes = list(organic.get("widget", []))
 
