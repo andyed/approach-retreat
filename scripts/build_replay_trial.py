@@ -405,27 +405,56 @@ def build_trial(trial_id: str) -> dict | None:
                 "html_handle": c.get("html_handle"),
             })
 
-        # Pagination overlay — anchored on JPG bottom. Pagination has no CV
-        # bbox; we estimate its y as `jpg_h - 220` to land at the actual
-        # Goooooogle row (not the locale/links footer below it). 80 px
-        # tall, result-column x range.
-        # related_searches and chrome are NOT estimated — they overlap
-        # pagination and each other and produce visual mess.
+        # Pagination + related_searches estimated overlays. Bounds are
+        # carved so they don't overlap each other:
+        #   pagination: y = jpg_h - 220, h = 140 (covers Goooooogle row)
+        #   related_searches: from last_main_card_bottom + 30 to pagination - 10
+        # Type-specific labels (PG / RS) keep them distinguishable in the
+        # viewer template (TAG_PREFIX / WIDGET_TAG).
         pagination_cards = [c for c in typed_cards if c.get('type') == 'pagination']
-        if pagination_cards and jpg_out.exists():
+        related_searches_cards = [c for c in typed_cards if c.get('type') == 'related_searches']
+
+        jpg_h = None
+        if jpg_out.exists():
             try:
-                _img = Image.open(jpg_out)
-                jpg_h = _img.height
+                jpg_h = Image.open(jpg_out).height
             except Exception:
                 jpg_h = None
-            if jpg_h:
+
+        # Deepest main-axis card bottom
+        last_card_bottom = 0.0
+        for c in typed_cards:
+            if (c.get('position', -1) >= 0 and c.get('y') is not None
+                    and c.get('height') is not None):
+                last_card_bottom = max(last_card_bottom,
+                                        float(c['y']) + float(c['height']))
+
+        pag_y = None
+        pag_h = 140.0  # tall enough to cover Goooooogle + page-numbers row
+        if pagination_cards and jpg_h:
+            pag_y = max(0.0, float(jpg_h) - 220.0)
+
+        # related_searches: between last main-axis card and pagination top
+        if (related_searches_cards and last_card_bottom > 0 and pag_y is not None):
+            rs_y = last_card_bottom + 30.0
+            rs_h = pag_y - rs_y - 10.0  # 10 px gap above pagination box
+            if rs_h >= 60.0:
                 widget_bboxes.append({
-                    "location": {"x": 162.0, "y": max(0.0, float(jpg_h) - 220.0)},
-                    "size": {"width": 586.0, "height": 80.0},
-                    "type": "pagination",
-                    "html_handle": pagination_cards[0].get("html_handle"),
+                    "location": {"x": 162.0, "y": rs_y},
+                    "size": {"width": 586.0, "height": rs_h},
+                    "type": "related_searches",
+                    "html_handle": related_searches_cards[0].get("html_handle"),
                     "estimated": True,
                 })
+
+        if pag_y is not None:
+            widget_bboxes.append({
+                "location": {"x": 162.0, "y": pag_y},
+                "size": {"width": 586.0, "height": pag_h},
+                "type": "pagination",
+                "html_handle": pagination_cards[0].get("html_handle"),
+                "estimated": True,
+            })
     else:
         widget_bboxes = list(organic.get("widget", []))
 
