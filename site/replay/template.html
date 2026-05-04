@@ -124,7 +124,7 @@ const cursor = document.getElementById('mouse-cursor');
 const viewer = document.getElementById('viewer');
 const playhead = document.getElementById('playhead');
 
-serpImg.addEventListener('load', () => {
+function onImgReady() {
   const h = serpImg.naturalHeight;
   for (const svg of [aoiSvg, overlaySvg]) {
     svg.setAttribute('width', W);
@@ -134,7 +134,12 @@ serpImg.addEventListener('load', () => {
   drawAOIs();
   drawCursorTrail();
   drawGazeFixations();
-});
+}
+// NB: synchronous-fallback trigger lives at the very bottom of this script
+// (after AOI_STYLE / LABEL_STYLE / drawAOIs / drawCursorTrail /
+// drawGazeFixations are all initialised) — declaring it here would hit the
+// `const`-temporal-dead-zone if the image is already cached.
+serpImg.addEventListener('load', onImgReady);
 
 // ── AOI overlay ───────────────────────────────────────────────────────
 const AOI_STYLE = {
@@ -173,9 +178,16 @@ function drawAOIs() {
         'stroke-dasharray': (isParent || s.dashed) ? '6,4' : '',
       });
       aoiSvg.appendChild(rect);
-      // Position/kind tag (top-left corner)
+      // Position/kind tag (top-left corner). For typed widgets, use
+      // type-specific short labels so a stack of widgets is distinguishable.
       const TAG_PREFIX = {organic_result: 'O', dd_top_cell: 'T', dd_right_cell: 'R', native_ad: 'NA', dd_top: 'dd_top', dd_right: 'dd_right', widget: 'W'};
-      const tag = (TAG_PREFIX[kind] || kind) + (it.position != null ? it.position : '');
+      const WIDGET_TAG = {image_pack: 'IP', knowledge_panel: 'KP', paa: 'PAA', top_places: 'TP', related_searches: 'RS', pagination: 'PG', other_widget: 'OW', unknown_widget: '?W', chrome: 'CH'};
+      let tag;
+      if (kind === 'widget' && it.type && WIDGET_TAG[it.type]) {
+        tag = WIDGET_TAG[it.type];
+      } else {
+        tag = (TAG_PREFIX[kind] || kind) + (it.position != null ? it.position : '');
+      }
       const tx = mkSvg('text', {x: x + 6, y: y + 18, fill: s.label, 'font-family': 'monospace', 'font-size': 12, 'font-weight': 'bold', stroke: '#000', 'stroke-width': 3, 'paint-order': 'stroke'});
       tx.textContent = tag;
       aoiSvg.appendChild(tx);
@@ -539,5 +551,12 @@ function mkSvg(tag, attrs) {
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
   return el;
+}
+
+// Cache-safe image-load trigger. If the image was already loaded before
+// the addEventListener('load', ...) call further up, fire the handler now.
+// Placed at end-of-script so all const declarations are initialised.
+if (serpImg.complete && serpImg.naturalWidth > 0) {
+  onImgReady();
 }
 </script></body></html>

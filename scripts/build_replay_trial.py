@@ -379,12 +379,91 @@ def build_trial(trial_id: str) -> dict | None:
 
     organic = json.loads(organic_json.read_text())
     organic = apply_aoi_corrections(trial_id, organic)
+
+    # Load typed AOI map (HTML+vision joint typing) and pull non-ad widgets
+    # into the `widget` bbox slot. When the typed map is available it
+    # supersedes the unlabeled CV widgets in organic-boundary-data; when
+    # absent we fall back to the legacy unlabeled widget list.
+    typed_aoi_path = (Path.home() / "Documents/dev/attentional-foraging"
+                      / "data/aoi-typed" / f"{trial_id}.json")
+    if typed_aoi_path.exists():
+        widget_bboxes = []
+        typed_cards = json.loads(typed_aoi_path.read_text())
+        widget_types = {"image_pack", "knowledge_panel", "paa", "top_places",
+                        "related_searches", "other_widget", "unknown_widget"}
+        for c in typed_cards:
+            if c.get("position", -1) < 0:
+                continue  # off-axis (chrome / dd_right / botstuff / rhs)
+            if c.get("type") not in widget_types:
+                continue
+            if c.get("x") is None or c.get("y") is None:
+                continue
+            widget_bboxes.append({
+                "location": {"x": float(c["x"]), "y": float(c["y"])},
+                "size": {"width": float(c["width"]), "height": float(c["height"])},
+                "type": c["type"],
+                "html_handle": c.get("html_handle"),
+            })
+
+        # Pagination + related_searches estimated overlays. Bounds are
+        # carved so they don't overlap each other:
+        #   pagination: y = jpg_h - 220, h = 140 (covers Goooooogle row)
+        #   related_searches: from last_main_card_bottom + 30 to pagination - 10
+        # Type-specific labels (PG / RS) keep them distinguishable in the
+        # viewer template (TAG_PREFIX / WIDGET_TAG).
+        pagination_cards = [c for c in typed_cards if c.get('type') == 'pagination']
+        related_searches_cards = [c for c in typed_cards if c.get('type') == 'related_searches']
+
+        jpg_h = None
+        if jpg_out.exists():
+            try:
+                jpg_h = Image.open(jpg_out).height
+            except Exception:
+                jpg_h = None
+
+        # Deepest main-axis card bottom
+        last_card_bottom = 0.0
+        for c in typed_cards:
+            if (c.get('position', -1) >= 0 and c.get('y') is not None
+                    and c.get('height') is not None):
+                last_card_bottom = max(last_card_bottom,
+                                        float(c['y']) + float(c['height']))
+
+        pag_y = None
+        pag_h = 140.0  # tall enough to cover Goooooogle + page-numbers row
+        if pagination_cards and jpg_h:
+            pag_y = max(0.0, float(jpg_h) - 220.0)
+
+        # related_searches: between last main-axis card and pagination top
+        if (related_searches_cards and last_card_bottom > 0 and pag_y is not None):
+            rs_y = last_card_bottom + 30.0
+            rs_h = pag_y - rs_y - 10.0  # 10 px gap above pagination box
+            if rs_h >= 60.0:
+                widget_bboxes.append({
+                    "location": {"x": 162.0, "y": rs_y},
+                    "size": {"width": 586.0, "height": rs_h},
+                    "type": "related_searches",
+                    "html_handle": related_searches_cards[0].get("html_handle"),
+                    "estimated": True,
+                })
+
+        if pag_y is not None:
+            widget_bboxes.append({
+                "location": {"x": 162.0, "y": pag_y},
+                "size": {"width": 586.0, "height": pag_h},
+                "type": "pagination",
+                "html_handle": pagination_cards[0].get("html_handle"),
+                "estimated": True,
+            })
+    else:
+        widget_bboxes = list(organic.get("widget", []))
+
     bboxes = {
         "organic_result": organic.get("organic_result", []),
         "native_ad":  organic.get("native_ad", []),
         "dd_top":     organic.get("dd_top", []),
         "dd_right":   organic.get("dd_right", []),
-        "widget":     organic.get("widget", []),
+        "widget":     widget_bboxes,
     }
     aoi_labels = derive_aoi_labels(cursor, bboxes)
 
