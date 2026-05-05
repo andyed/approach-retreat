@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-05-05 — Y-pixel coverage fix in upstream `attentional-foraging` (branch `bbox-y-coverage-fix`)
+
+Companion to the AF cascade (see `attentional-foraging/CHANGELOG.md` 2026-05-05). Tracks the AR-side work needed to consume the new `typed_gapfill` flavor.
+
+### Why
+
+Upstream AF audited click attribution under `typed` AOI extraction and found 22.7 % silent contamination of `approached & clicked` records via Y-band-only attribution rolling right-rail (dd_right) and page-chrome clicks into adjacent organics. The mitigation is a new `typed_gapfill` flavor (midpoint-split organic bboxes + X+Y bbox-aware click attribution + `is_main_axis_click()` trial filter).
+
+The replay viewer at `site/replay/` and any model JSON / cursor-approach episode export that referenced upstream typed bboxes need to consume the gapfill outputs and reflect the change visually before AR's K-claims can be updated.
+
+### What landed (this branch)
+
+(In progress.) Initial branching done; awaiting upstream verification on the 6 confirmed-issue trials before rebuilding the replay set.
+
+### What's pending
+
+- Replay-set rebuild to consume `attentional-foraging/data/aoi-typed-gapfill/{tid}.json` instead of `data/aoi-typed/{tid}.json`. Visual verification on:
+  - `p008-b3-t7` (right-rail click rolled into organic 3 under legacy)
+  - `p009-b5-t2` (page-chrome click rolled into dd_top 0)
+  - `p041-b5-t2` (right-rail no-shipped-rect click rolled into organic 2)
+  - `p038-b4-t3` (off-target click 92 px right of column rolled into organic 7)
+  - `p005-b2-t2`, `p006-b2-t7` (in-column-edge clicks recovered by midpoint-split)
+- Re-derivation of cursor-approach episode JSONs from `cursor-approach-features-typed-gapfill.json`.
+- Review of `site/replay/data/aoi_corrections.json` for stale entries that demoted positions because the original bbox was over-tight; may become unnecessary under gapfill.
+
+### Pointers
+
+- [`attentional-foraging/docs/null-findings/2026-05-05-bbox-y-coverage.md`](../attentional-foraging/docs/null-findings/2026-05-05-bbox-y-coverage.md)
+- [`attentional-foraging/docs/methodology/attribution-cascade-synthesis.md §1.06`](../attentional-foraging/docs/methodology/attribution-cascade-synthesis.md)
+
+---
+
 ## 2026-05-01 — AOI rebuild on bbox attribution (branch `feat/aoi-rebuild-2026-05-01`)
 
 ### Why

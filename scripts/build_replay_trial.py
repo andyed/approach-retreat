@@ -24,10 +24,24 @@ from PIL import Image
 from pathlib import Path
 
 AF_ROOT = Path.home() / "Documents/dev/attentional-foraging/AdSERP/data"
+# When the AdSERP screenshot volume isn't mounted, fall back to the local
+# cache. The cache covers a subset of trials (~111 of 2,776) but is enough
+# for visual verification on the curated replay set.
+SCREENSHOT_FALLBACK = AF_ROOT / "full-page-screenshots.local-cache.bak"
 AR_ROOT = Path(__file__).resolve().parent.parent
 SITE_DATA = AR_ROOT / "site/replay/data"
 PNG_OUT = SITE_DATA / "png"
 TRIALS_OUT = SITE_DATA / "trials"
+
+
+def _resolve_screenshot(trial_id: str) -> Path | None:
+    primary = AF_ROOT / "full-page-screenshots" / f"{trial_id}.png"
+    if primary.exists():
+        return primary
+    fallback = SCREENSHOT_FALLBACK / f"{trial_id}.png"
+    if fallback.exists():
+        return fallback
+    return None
 
 SCREENSHOT_WIDTH = 1280  # all shipped PNGs are 1280px wide
 
@@ -344,12 +358,32 @@ def derive_aoi_labels(cursor: list[dict], bboxes: dict, min_dwell_ms: int = 100)
     return out
 
 
-def build_trial(trial_id: str) -> dict | None:
-    png = AF_ROOT / "full-page-screenshots" / f"{trial_id}.png"
-    ad_json = AF_ROOT / "ad-boundary-data" / f"{trial_id}.json"
-    organic_json = AF_ROOT / "organic-boundary-data" / f"{trial_id}.json"
+def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
+    """Build a per-trial replay JSON.
 
-    if not png.exists():
+    flavor (post-2026-05-05 cascade):
+      - 'typed_gapfill' (default) — reads from organic-boundary-data-gapfill/
+        and aoi-typed-gapfill/. The midpoint-split AOI bboxes match the
+        ones used by `attribute_click_to_typed_gapfill` upstream, so the
+        replay's overlay rectangles align with the click/fixation
+        attribution that downstream analyses use.
+      - 'typed' — legacy tight bboxes from organic-boundary-data/ and
+        aoi-typed/. Retained for cascade audits.
+    """
+    png = _resolve_screenshot(trial_id)
+    ad_json = AF_ROOT / "ad-boundary-data" / f"{trial_id}.json"
+
+    if flavor == "typed_gapfill":
+        organic_dir = "organic-boundary-data-gapfill"
+        aoi_typed_dir = "data/aoi-typed-gapfill"
+    elif flavor == "typed":
+        organic_dir = "organic-boundary-data"
+        aoi_typed_dir = "data/aoi-typed"
+    else:
+        raise ValueError(f"unknown flavor: {flavor!r}")
+    organic_json = AF_ROOT / organic_dir / f"{trial_id}.json"
+
+    if png is None:
         print(f"  SKIP {trial_id}: screenshot missing", file=sys.stderr)
         return None
     if not ad_json.exists() or not organic_json.exists():
@@ -385,7 +419,7 @@ def build_trial(trial_id: str) -> dict | None:
     # supersedes the unlabeled CV widgets in organic-boundary-data; when
     # absent we fall back to the legacy unlabeled widget list.
     typed_aoi_path = (Path.home() / "Documents/dev/attentional-foraging"
-                      / "data/aoi-typed" / f"{trial_id}.json")
+                      / aoi_typed_dir / f"{trial_id}.json")
     if typed_aoi_path.exists():
         widget_bboxes = []
         typed_cards = json.loads(typed_aoi_path.read_text())
@@ -499,13 +533,20 @@ def build_trial(trial_id: str) -> dict | None:
 
 
 def main() -> int:
-    if len(sys.argv) < 2:
-        print(__doc__, file=sys.stderr)
-        return 2
+    import argparse
+    parser = argparse.ArgumentParser(description=(__doc__ or "build replay JSON"))
+    parser.add_argument("trials", nargs="+", help="Trial IDs, e.g. p005-b2-t2")
+    parser.add_argument(
+        "--flavor", default="typed_gapfill",
+        choices=["typed_gapfill", "typed"],
+        help="AOI source flavor (default typed_gapfill — midpoint-split bboxes "
+             "matching attribute_click_to_typed_gapfill).",
+    )
+    args = parser.parse_args()
     TRIALS_OUT.mkdir(parents=True, exist_ok=True)
     n_ok = 0
-    for tid in sys.argv[1:]:
-        bundle = build_trial(tid)
+    for tid in args.trials:
+        bundle = build_trial(tid, flavor=args.flavor)
         if bundle is None:
             continue
         out = TRIALS_OUT / f"{tid}.json"
@@ -513,7 +554,7 @@ def main() -> int:
         m = bundle["_meta"]
         print(f"  {tid}: {m['n_cursor']} cursor, {m['n_fixations']} fix, {m['n_pupil']} pupil — {bundle['duration_ms']}ms")
         n_ok += 1
-    print(f"\nWrote {n_ok}/{len(sys.argv) - 1} → {TRIALS_OUT}")
+    print(f"\nWrote {n_ok}/{len(args.trials)} → {TRIALS_OUT} (flavor={args.flavor})")
     return 0
 
 
