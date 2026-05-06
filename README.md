@@ -1,5 +1,13 @@
 # Approach/Retreat
 
+> ## 📄 Enroute to arXiv: AllSERP
+>
+> **AllSERP: Exhaustive Per-Element Enrichment of the Versatile AdSERP Dataset** is under technical and moderation review at arXiv (submission `submit/7558357`, 2026-05-06). Announcement expected within a few business days; the public arXiv ID and DOI will be added here when it lands.
+>
+> The accepted-format PDF is committed to this repo for early sharing: [`allserp-paper.pdf`](./allserp-paper.pdf). It documents the typed AOI extraction (used here for AOI labels in the replay viewer) and the per-element behavioral inventory the cursor-episode library complements.
+
+---
+
 Two motor signal families for **ranked list layouts** (search result pages, recommendation feeds, comparison tables, product grids):
 
 1. **Approach-retreat episodes** — per-result enter / dwell / exit behavior, classified into a four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached). Cursor-based; desktop-only.
