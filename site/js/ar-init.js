@@ -68,10 +68,26 @@ export function initApproachRetreat({ layoutName, queryMeta, onEpisode, onClick 
 
   const ar = new ApproachRetreat({
     resultSelector: '[data-result]',
-    includeSamplesInEpisodeJson: true,
     onEpisode: chainedEpisode,
     onClick: chainedClick,
   });
+
+  // Make captureSummary idempotent across the explicit (handleRunClick) and
+  // implicit (visibilitychange/pagehide via bind) call paths. Without this,
+  // a user who completes a mission generates two ar_session_summary events
+  // per click — same ar_session_id, near-identical payload — inflating
+  // analysis counts. Confirmed undercount at the 2026-05-06 conference demo
+  // (1 summary captured per 5 sessions); the explicit call in handleRunClick
+  // is the primary path, bind() is the safety net for sessions that exit
+  // without clicking.
+  const originalCaptureSummary = adapter.captureSummary.bind(adapter);
+  let summaryFired = false;
+  adapter.captureSummary = (arInstance) => {
+    if (summaryFired) return;
+    summaryFired = true;
+    return originalCaptureSummary(arInstance);
+  };
+
   adapter.bind(ar);
   ar.refresh();
 

@@ -76,6 +76,7 @@
 
     let debugUpdate = () => {};
     let arRef = null;
+    let adapterRef = null;
     const handleRunClick = (clickInfo) => {
       const run = getActiveRun();
       if (!run) {
@@ -94,23 +95,31 @@
         ar: { classification, signals, clicked_position: clickInfo.position },
         episodes,
       });
-      // Soft-redirect — let any pending capture flush first.
+      // Capture summary synchronously before navigation. The bind() listener
+      // on visibilitychange/pagehide is unreliable on fast same-origin
+      // navigation — confirmed at the 2026-05-06 conference demo, where
+      // 4/5 sessions lost their ar_session_summary. The 250 ms hold gives
+      // PostHog's batch buffer time to flush before the page detaches.
+      if (adapterRef && typeof adapterRef.captureSummary === 'function') {
+        adapterRef.captureSummary(arRef);
+      }
       setTimeout(() => {
         window.location.href = `../missions/done.html?m=${encodeURIComponent(meta.id)}`;
-      }, 50);
+      }, 250);
     };
 
     const onClick = isRunMode
       ? handleRunClick
       : ({ target }) => target.classList.toggle('expanded');
 
-    const { ar } = initApproachRetreat({
+    const { ar, adapter } = initApproachRetreat({
       layoutName: LAYOUT,
       queryMeta: meta,
       onClick,
       onEpisode: () => debugUpdate(),
     });
     arRef = ar;
+    adapterRef = adapter;
     debugUpdate = wireDebugOverlay(ar);
     ar.refresh();
   </script>
