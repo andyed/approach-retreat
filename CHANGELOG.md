@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.2.1 — 2026-05-07 — Reliable session-summary capture on mission flow
+
+Telemetry-reliability patch on the data-collection site. No library API change.
+
+### Why
+
+At the 2026-05-06 movies.mindbendingpixels.com conference demo (n=5 engaged users), 103 `ar_episode` events and 45 `ar_click` events landed cleanly — but only **1** `ar_session_summary` was captured across all 5 sessions. The 80 % loss rate meant the per-session M4 nine-feature rollups, classification counts, and viewport-band aggregates (the inputs the CIKM paper consumes) were missing for most attendees.
+
+### Root cause
+
+The PostHog adapter's `bind()` listener captures the summary on `visibilitychange:hidden` / `pagehide`. With the missions flow's 50 ms post-click `setTimeout` redirect to `done.html`, PostHog's batch buffer didn't have time to flush before the page detached, and bfcache could swallow `pagehide` entirely.
+
+### What changed
+
+- `site/serps/rich-thumbnail.html`: `handleRunClick` now calls `adapter.captureSummary(ar)` synchronously before scheduling the redirect. Redirect delay grows to 250 ms so the batch buffer can flush.
+- `site/js/ar-init.js`: `captureSummary` is wrapped with a `summaryFired` guard inside `initApproachRetreat` so the explicit click-time call and the implicit `bind()` pagehide call cooperate — whichever fires first wins; the other becomes a no-op. `bind()` remains as the safety net for sessions that close without clicking.
+- Drops `includeSamplesInEpisodeJson: true` — `samples` was duplicated by the flattened `ar_trajectory` (stride 10) field, ~halving per-event payload and reducing PostHog per-property-size drop risk.
+
+### Verification
+
+Re-run the mbp-dash check after the next data-collection session:
+
+```sql
+SELECT event_name, COUNT(*) AS n, COUNT(DISTINCT session_id) AS sessions
+FROM events
+WHERE host = 'movies.mindbendingpixels.com'
+  AND ts >= '2026-05-07'
+GROUP BY event_name;
+```
+
+Expect `ar_session_summary` count ≈ session count for sessions that include at least one click.
+
 ## 2026-05-05 — Y-pixel coverage fix in upstream `attentional-foraging` (branch `bbox-y-coverage-fix`)
 
 Companion to the AF cascade (see `attentional-foraging/CHANGELOG.md` 2026-05-05). Tracks the AR-side work needed to consume the new `typed_gapfill` flavor.
