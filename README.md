@@ -1,10 +1,10 @@
 # Approach/Retreat
 
-> ## 📄 Enroute to arXiv: AllSERP
+> ## 📄 Now on arXiv: AllSERP
 >
-> **AllSERP: Exhaustive Per-Element Enrichment of the Versatile AdSERP Dataset** is under technical and moderation review at arXiv (submission `submit/7558357`, 2026-05-06). Announcement expected within a few business days; the public arXiv ID and DOI will be added here when it lands.
+> **AllSERP: Exhaustive Per-Element Enrichment of the Versatile AdSERP Dataset** — [arXiv:2605.04949](https://arxiv.org/abs/2605.04949) (2026). It documents the typed AOI extraction (used here for AOI labels in the replay viewer) and the per-element behavioral inventory the cursor-episode library complements.
 >
-> The accepted-format PDF is committed to this repo for early sharing: [`allserp-paper.pdf`](./allserp-paper.pdf). It documents the typed AOI extraction (used here for AOI labels in the replay viewer) and the per-element behavioral inventory the cursor-episode library complements.
+> A local PDF is also committed for offline reading: [`allserp-paper.pdf`](./allserp-paper.pdf).
 
 ---
 
