@@ -15,8 +15,8 @@ The `approach-retreat` library claims that a handful of cursor-geometry features
 Three reasons the Attentive Cursor Dataset (ACD, Leiva & Arapakis 2020) is the right external test:
 
 1. **No eye tracking.** ACD collected cursor data from 2,737 users on real SERPs with no eye tracker at all — just browser `mousemove` events, click outcomes, and a post-task attention Likert (1–5). The library's feature extractor has to produce its 11 features from cursor data alone, with no fixation timestamps to key off. This is the cleanest possible test of "the feature set is cursor-only" because gaze data is not available to cheat with.
-2. **Published baseline.** Brückner, Arapakis & Leiva (SIGIR '21) reported a scalar-mouse-length classifier on this exact dataset under a 60/10/30 train/val/test protocol. We reproduce that protocol (same split ratios, same 5-seed averaging) so the numbers are directly comparable.
-3. **Different target than AdSERP.** The native-ad subset has one AOI per session (the ad), so the four-class taxonomy of `approach-retreat` collapses to a binary clicked / non-clicked decision. This is structurally different from AdSERP's ten-result SERPs, so it tests the feature set's transfer rather than just re-fitting on a familiar shape.
+2. Published baseline. Brückner, Arapakis & Leiva (SIGIR '21) reported a scalar-mouse-length classifier on this exact dataset under a 60/10/30 train/val/test protocol. We reproduce that protocol (same split ratios, same 5-seed averaging) so the numbers are directly comparable.
+3. Different target than AdSERP. The native-ad subset has one AOI per session (the ad), so the four-class taxonomy of `approach-retreat` collapses to a binary clicked / non-clicked decision. This is structurally different from AdSERP's ten-result SERPs, so it tests the feature set's transfer rather than just re-fitting on a familiar shape.
 
 A feature set that survives all three constraints is load-bearing; one that doesn't, isn't.
 
@@ -36,7 +36,7 @@ A feature set that survives all three constraints is load-bearing; one that does
 | `min_dist + retreat_dist + ever_in_target` | 0.798 ± 0.036 | 0.649 ± 0.019 |
 | Retreat-only (`retreat_dist + retreat_path + retreat_arc_ratio`) | 0.705 ± 0.020 | 0.586 ± 0.016 |
 
-**Reading the table.** The 17-feature classifier (approach-retreat + cursor-in-viewport bands) beats scalar Brückner by **+0.163 AUC** (0.859 vs 0.696) and beats the 11-feature retreat-only baseline by **+0.036 AUC** (0.859 vs 0.823). Bands alone (0.828) are a shade ahead of retreat alone (0.823), and the two signals combine additively — cursor motion and viewport residence carry largely independent information even in WILD. Scalar mouse-length is well above chance (0.5) but far below what the geometry-aware features recover. A three-feature subset (`min_dist + retreat_dist + ever_in_target`) already reaches 0.798, meaning most of the retreat gain is captured by just those three; the remaining eight retreat features contribute a further +0.023 AUC, and adding cursor-in-viewport bands on top adds another +0.036. Retreat features alone (without any approach or dwell) get to 0.705, slightly above the Brückner baseline — retreat geometry is carrying real signal independently, not just as a correlate of something else.
+**Reading the table.** The 17-feature classifier (approach-retreat + cursor-in-viewport bands) beats scalar Brückner by +0.163 AUC (0.859 vs 0.696) and beats the 11-feature retreat-only baseline by +0.036 AUC (0.859 vs 0.823). Bands alone (0.828) are a shade ahead of retreat alone (0.823), and the two signals combine additively — cursor motion and viewport residence carry largely independent information even in WILD. Scalar mouse-length is well above chance (0.5) but far below what the geometry-aware features recover. A three-feature subset (`min_dist + retreat_dist + ever_in_target`) already reaches 0.798, meaning most of the retreat gain is captured by just those three; the remaining eight retreat features contribute a further +0.023 AUC, and adding cursor-in-viewport bands on top adds another +0.036. Retreat features alone (without any approach or dwell) get to 0.705, slightly above the Brückner baseline — retreat geometry is carrying real signal independently, not just as a correlate of something else.
 
 **A band-analog on ACD — WILD semantics vs LAB semantics.** Viewport bands
 on AdSERP are *AOI-center-in-viewport-third* dwell: per-AOI cumulative ms in
@@ -45,7 +45,7 @@ scroll-Y in the logs (scroll events fire but carry `(xpos=0, ypos=0)`), so
 the ad's viewport-y cannot be reconstructed from the dataset without
 solving for it from the corner-distance geometry in `extras.{topRight,
 topLeft, bottomRight, bottomLeft}`. This first-pass port uses the simpler
-**cursor-in-viewport-third** (where the cursor sits, not where the ad
+cursor-in-viewport-third (where the cursor sits, not where the ad
 sits) + in-target-by-third variants — a cursor-only analog of the LAB
 signal. The strongest coefficient in the combined model is
 `vp_cursor_bot_in_ms = −1.556` (cursor at bottom-of-viewport while inside
@@ -107,10 +107,10 @@ Feature-importance fit on the full dataset (standardized logistic regression, ap
 The story this tells:
 
 - **`dwell_in_target_ms` is the strongest positive signal.** Sessions in which the cursor lingers inside the ad's bounding box are much more likely to end in a click. This is the "evaluation" part of approach-retreat — the user is actively considering the ad, not just skimming past.
-- **`retreat_dist` is the strongest negative motor signal.** Sessions with large retreats are sessions where the user actively disengaged after evaluating — the hard-negative signature. This is the "retreat" part.
-- **`n_events` is the strongest negative overall.** A high mousemove count, once controlled for dwell and retreat, predicts *non*-click. Interpretation: sessions with high cursor activity but no dwell-in-target are "browsers" who scan the page without committing to the ad. This matches the AdSERP "chattiness" finding that chatty cursor users fixate fewer result positions.
-- **`total_mouse_length` is effectively zero** (−0.024) when placed alongside the geometry-aware features. Once you know how close the cursor got, how long it dwelt, how far it retreated, and how many events there were, the total path length adds almost nothing. This is why the Brückner scalar baseline plateaus at 0.696 while the geometry-aware model reaches 0.821 — the scalar is not wrong, it's just redundant once you have the shape features.
-- **`min_dist` alone looks weak in the full fit (+0.017)**, but as the third row of the first table shows, it reaches 0.564 AUC on its own — meaning it carries signal, but that signal is mostly captured by `ever_in_target` and `dwell_in_target_ms` in the joint model. Collinearity, not irrelevance.
+- `retreat_dist` is the strongest negative motor signal. Sessions with large retreats are sessions where the user actively disengaged after evaluating — the hard-negative signature. This is the "retreat" part.
+- `n_events` is the strongest negative overall. A high mousemove count, once controlled for dwell and retreat, predicts *non*-click. Interpretation: sessions with high cursor activity but no dwell-in-target are "browsers" who scan the page without committing to the ad. This matches the AdSERP "chattiness" finding that chatty cursor users fixate fewer result positions.
+- `total_mouse_length` is effectively zero (−0.024) when placed alongside the geometry-aware features. Once you know how close the cursor got, how long it dwelt, how far it retreated, and how many events there were, the total path length adds almost nothing. This is why the Brückner scalar baseline plateaus at 0.696 while the geometry-aware model reaches 0.821 — the scalar is not wrong, it's just redundant once you have the shape features.
+- `min_dist` alone looks weak in the full fit (+0.017), but as the third row of the first table shows, it reaches 0.564 AUC on its own — meaning it carries signal, but that signal is mostly captured by `ever_in_target` and `dwell_in_target_ms` in the joint model. Collinearity, not irrelevance.
 
 The three-feature subset result (`min_dist + retreat_dist + ever_in_target` at 0.798) is consistent with this story: approach-plus-retreat-plus-contact captures most of the signal, and the other eight features add diminishing returns.
 
@@ -133,8 +133,8 @@ The dataset ships two labels per session: `ad_clicked` (objective, did they clic
 The 11-feature classifier still beats the Brückner scalar (0.594 vs 0.505 — Brückner is at chance), but the ceiling is much lower than on `ad_clicked` (0.594 vs 0.821). Why:
 
 1. **Subjective labels are noisy.** "Noticed" is a Likert rating collected post-task, subject to memory bias, social desirability, and the usual self-report confounds. The ground truth is partly the cursor and partly the participant's reconstruction of what they were attending to.
-2. **The positive class is the majority (69.5 %).** At near-7:3 balance, a chance model sits at 0.5 AUC with F1w ~0.58, so the headroom for the classifier is smaller.
-3. **Attention is a weaker behavioral construct than intent.** Clicking an ad is a decision with motor commitment; noticing an ad is a perceptual state with no commitment signature. The cursor-geometry features were designed to capture commitment, not perception.
+2. The positive class is the majority (69.5 %). At near-7:3 balance, a chance model sits at 0.5 AUC with F1w ~0.58, so the headroom for the classifier is smaller.
+3. Attention is a weaker behavioral construct than intent. Clicking an ad is a decision with motor commitment; noticing an ad is a perceptual state with no commitment signature. The cursor-geometry features were designed to capture commitment, not perception.
 
 This is a result about the target, not a limitation of the feature set: the same 11 features that produce AUC 0.821 on a clean objective outcome produce AUC 0.594 on a noisy subjective one. If you are evaluating `approach-retreat` for your own use case, ask whether your downstream label is closer to "clicked" (objective, committed) or "noticed" (subjective, perceptual). The library targets the former.
 
@@ -161,8 +161,8 @@ A finer-grained view of the noticed-target story. Spearman ρ of each feature wi
 Three things worth noting:
 
 - **Dwell, entries, and contact are the only measures that monotonically track self-reported attention.** All three are positively correlated and significant at *p* < 0.001. The user's own report of "I noticed this ad" aligns with cursor contact and cursor time over the ad. This is behaviorally obvious but empirically worth confirming.
-- **Proximity features (`min_dist`, `max_dist`) correlate *negatively* with attention.** Closer cursor → higher reported attention. Expected direction.
-- **`total_mouse_length` is not significantly correlated with self-reported attention at all** (ρ = −0.027, p = 0.41). The Brückner baseline feature does not even weakly track the subjective label. The gap between ρ = +0.163 for `dwell_in_target_ms` and ρ = −0.027 for `total_mouse_length` is a direct illustration of what geometry-aware features buy over scalar primitives.
+- Proximity features (`min_dist`, `max_dist`) correlate *negatively* with attention. Closer cursor → higher reported attention. Expected direction.
+- `total_mouse_length` is not significantly correlated with self-reported attention at all (ρ = −0.027, p = 0.41). The Brückner baseline feature does not even weakly track the subjective label. The gap between ρ = +0.163 for `dwell_in_target_ms` and ρ = −0.027 for `total_mouse_length` is a direct illustration of what geometry-aware features buy over scalar primitives.
 
 ---
 
@@ -209,11 +209,11 @@ Runtime ~30 s on a modern laptop. Full captured output in [`results.txt`](./resu
 
 ## Why this lives in the `approach-retreat` repo
 
-The `approach-retreat` library's core claim is that a small set of cursor-geometry features — built around the evaluation → retreat dynamic — extracts more signal from cursor telemetry than scalar mouse-movement primitives. Validation of that claim should live with the library itself, not buried in a sibling repo, so that anyone evaluating whether to adopt `approach-retreat` can run the same test in one command.
+The `approach-retreat` library's core claim is that a small set of cursor-geometry features (built around the evaluation → retreat dynamic) extracts more signal from cursor telemetry than scalar mouse-movement primitives. Validation of that claim should live with the library itself, not buried in a sibling repo, so that anyone evaluating whether to adopt `approach-retreat` can run the same test in one command.
 
 The **`[LAB, AdSERP]`** validation (multi-AOI SERPs, ten results per page, four-class taxonomy, eye-tracked ground truth) lives in the sibling [`attentional-foraging`](https://github.com/andyed/attentional-foraging) repo, where the full task model and its notebook pipeline are maintained. Together, the two validations bracket the feature set's transfer:
 
 - **`[LAB, AdSERP]`** — full multi-AOI task-model taxonomy on eye-tracked ground truth in controlled lab conditions (47 participants, 2,776 trials, Gazepoint 150 Hz + cursor + pupil).
-- **`[WILD, ACD]`** — binary ad-click target on cursor-only in-the-wild crowdsourced data at scale (954 native-ad sessions, no eye tracker, no pupil).
+- `[WILD, ACD]` — binary ad-click target on cursor-only in-the-wild crowdsourced data at scale (954 native-ad sessions, no eye tracker, no pupil).
 
-Same feature set. Different labels, different populations, different instrumentation stacks. Claims that hold in **both** regimes earn the `[BOTH]` tag and are the only findings that survive to CIKM's "what deploys" argument; claims that hold in LAB only must be flagged as such. The numbers in both validations support the same headline — the cursor geometry is carrying the signal — which is exactly what an external test is supposed to establish.
+Same feature set. Different labels, different populations, different instrumentation stacks. Claims that hold in both regimes earn the `[BOTH]` tag and are the only findings that survive to CIKM's "what deploys" argument; claims that hold in LAB only must be flagged as such. The numbers in both validations support the same headline (the cursor geometry is carrying the signal) which is exactly what an external test is supposed to establish.

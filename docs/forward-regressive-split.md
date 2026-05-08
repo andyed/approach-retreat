@@ -10,7 +10,7 @@ Canonical methodology reference for how AdSERP fixations and episodes are partit
 
 > **A fixation is *forward* iff its scroll offset is within `hwm_tolerance` pixels of the running scroll high-water-mark sampled at all prior fixations. Otherwise it is *regressive*.**
 
-`hwm_tolerance` defaults to **50 px**. The HWM is monotonically nondecreasing across the trial — once you've scrolled to position Y, the HWM stays at Y until you scroll past it.
+`hwm_tolerance` defaults to 50 px. The HWM is monotonically nondecreasing across the trial — once you've scrolled to position Y, the HWM stays at Y until you scroll past it.
 
 ---
 
@@ -19,9 +19,9 @@ Canonical methodology reference for how AdSERP fixations and episodes are partit
 We needed a definition of *direction* that:
 
 1. **Operates on what production telemetry can see.** Scroll offset is observable from web telemetry without an eye tracker. First-visit-history and saccadic-direction need finer instrumentation.
-2. **Freezes at the decision moment.** A regressive re-examination should not be relabeled "forward" later if the user eventually scrolls past the HWM. Direction is set at the moment the user enters the result, not at the moment they leave.
-3. **Has a single tunable parameter** (`hwm_tolerance`) that captures the gap between strict-equality "at HWM" and slightly-back-from-HWM-due-to-scroll-snap.
-4. **Lifts cleanly from per-fixation to per-episode.** The same rule applies at both granularities. The episode classifier wraps the per-fixation rule and is parity-verified against it (4,036/4,036 fixations agree).
+2. Freezes at the decision moment. A regressive re-examination should not be relabeled "forward" later if the user eventually scrolls past the HWM. Direction is set at the moment the user enters the result, not at the moment they leave.
+3. Has a single tunable parameter (`hwm_tolerance`) that captures the gap between strict-equality "at HWM" and slightly-back-from-HWM-due-to-scroll-snap.
+4. Lifts cleanly from per-fixation to per-episode. The same rule applies at both granularities. The episode classifier wraps the per-fixation rule and is parity-verified against it (4,036/4,036 fixations agree).
 
 Three definitions were considered (from the plan doc):
 
@@ -80,11 +80,11 @@ Same parameter under a different name — the episode-level wrapper uses `tol_px
 
 ### Tolerance sweep ✓
 
-Tested at `hwm_tolerance` ∈ {25, 50, 100} px. The boundary is **stable across this range** — the 50 px default sits on a plateau, not a cliff. The phase boundary detected by the classifier does not flip between these tolerances.
+Tested at `hwm_tolerance` ∈ {25, 50, 100} px. The boundary is stable across this range — the 50 px default sits on a plateau, not a cliff. The phase boundary detected by the classifier does not flip between these tolerances.
 
 ### Fixation/episode parity ✓
 
-`classify_fixations` (per-fixation) vs `classify_episode` (per-episode) agree at **4,036 / 4,036 fixations** when the episode classifier is lifted to fixation granularity. No edge cases where the episode classifier disagrees with the underlying primitive.
+`classify_fixations` (per-fixation) vs `classify_episode` (per-episode) agree at 4,036 / 4,036 fixations when the episode classifier is lifted to fixation granularity. No edge cases where the episode classifier disagrees with the underlying primitive.
 
 ---
 
@@ -113,35 +113,35 @@ Some notebooks (e.g., the panel-2 dwell-by-rank chart that shows ranks 0–8 onl
 ## Open robustness questions worth running before paper freeze
 
 1. **HWM vs first-visit disagreement rate.** Compute both labelings on the full corpus; report the disagreement set as a percentage and audit any large clusters.
-2. **Tolerance sweep on the per-visit dwell shape.** The {25, 50, 100} stability check was on the proportion of fixations classified forward vs regressive. The same sweep should be re-run on the *per-visit dwell* shape (the panel-2 ρ ≈ −0.95 finding) to confirm the magnitude doesn't depend on the threshold.
-3. **Saccadic-regression overlay.** Detect within-viewport eye regressions and compute their overlap with scroll-regressions. Report what fraction of total "regression" effort is captured by the scroll-based rule alone.
-4. **Episode-merging sensitivity.** Re-run panel-2 dwell-by-rank with episode-merging at 50 px instead of 100 px. If ρ stays in [-0.99, -0.85], the result is robust. If it moves materially, we have a sensitivity story rather than a single point estimate.
+2. Tolerance sweep on the per-visit dwell shape. The {25, 50, 100} stability check was on the proportion of fixations classified forward vs regressive. The same sweep should be re-run on the *per-visit dwell* shape (the panel-2 ρ ≈ −0.95 finding) to confirm the magnitude doesn't depend on the threshold.
+3. Saccadic-regression overlay. Detect within-viewport eye regressions and compute their overlap with scroll-regressions. Report what fraction of total "regression" effort is captured by the scroll-based rule alone.
+4. Episode-merging sensitivity. Re-run panel-2 dwell-by-rank with episode-merging at 50 px instead of 100 px. If ρ stays in [-0.99, -0.85], the result is robust. If it moves materially, we have a sensitivity story rather than a single point estimate.
 
 ---
 
 ## What's robust regardless of tweaking
 
 - **Forward-visit count by rank (the F-shape, ρ = −1.00).** Definition-invariant — the count of trials reaching a position is mostly the same regardless of how you classify the fixation.
-- **Regression target concentration at top ranks (87% to positions 0–4).** Robust because it's a target-concentration finding, not a classifier-boundary finding. Even alternative definitions of "regression entry" preserve targeting concentration.
-- **The qualitative relationship F-shape >> per-visit dwell shape.** The F-shape is steeper than per-visit dwell across all tested classifier variants. Whether per-visit dwell ρ is −0.95 or −0.80 doesn't change the take-home: *count drives the position effect, per-visit effort is much flatter.*
+- Regression target concentration at top ranks (87% to positions 0–4). Robust because it's a target-concentration finding, not a classifier-boundary finding. Even alternative definitions of "regression entry" preserve targeting concentration.
+- The qualitative relationship F-shape >> per-visit dwell shape. The F-shape is steeper than per-visit dwell across all tested classifier variants. Whether per-visit dwell ρ is −0.95 or −0.80 doesn't change the take-home: *count drives the position effect, per-visit effort is much flatter.*
 
 ---
 
 ## Limitations to disclose in papers
 
 - **Scroll-based, not gaze-direction-based.** The classifier sees what the user scrolled to, not where their eyes went within a viewport. Saccadic regressions inside the visible window are invisible to it.
-- **Frozen at entry, not adaptive.** A long-dwell episode that begins forward but ends after a fast scroll-up is classified "forward" because direction is locked at entry. This is a deliberate design choice (consistency over the episode duration) but it's a choice — alternative implementations could re-classify mid-episode.
-- **Last-known-value scroll lookup.** Between scroll events, scroll offset is treated as constant (piecewise). Episodes in long no-scroll gaps could be mis-timed by up to ~1s. Audit log: episodes where `entry_t - last_scroll_t > 2000ms` are flagged for review (see plan doc §7).
-- **The `regressive_scroller` trial-level tag is a different heuristic.** It was derived from scroll-sequence patterns before this episode-level classifier shipped. If the two strongly disagree on a trial, the episode-level result is canonical for paper claims; the trial-level tag is a coarser bucket retained for catalog continuity.
+- Frozen at entry, not adaptive. A long-dwell episode that begins forward but ends after a fast scroll-up is classified "forward" because direction is locked at entry. This is a deliberate design choice (consistency over the episode duration) but it's a choice — alternative implementations could re-classify mid-episode.
+- Last-known-value scroll lookup. Between scroll events, scroll offset is treated as constant (piecewise). Episodes in long no-scroll gaps could be mis-timed by up to ~1s. Audit log: episodes where `entry_t - last_scroll_t > 2000ms` are flagged for review (see plan doc §7).
+- The `regressive_scroller` trial-level tag is a different heuristic. It was derived from scroll-sequence patterns before this episode-level classifier shipped. If the two strongly disagree on a trial, the episode-level result is canonical for paper claims; the trial-level tag is a coarser bucket retained for catalog continuity.
 
 ---
 
 ## Where this rule appears in published / draft work
 
 - **OSEC paper §5.7** (task-model-paper.md) — methodology paragraph, with parity check and tolerance stability claim.
-- **CIKM paper-v3 §3** — episode-level direction as a feature of the approach-retreat construct.
-- **`approach-retreat/docs/validation/m5-calibration.md`** — direction as input to M5.
-- **NB17, NB20, NB23, NB24** — direction as a partition for forward-only vs pooled analyses.
+- CIKM paper-v3 §3 — episode-level direction as a feature of the approach-retreat construct.
+- `approach-retreat/docs/validation/m5-calibration.md` — direction as input to M5.
+- NB17, NB20, NB23, NB24 — direction as a partition for forward-only vs pooled analyses.
 
 When updating papers or notebooks, treat the implementations in `data_loader.py` and `episode_classifier.py` as canonical. Prose claims that disagree with the code are wrong.
 
@@ -151,6 +151,6 @@ When updating papers or notebooks, treat the implementations in `data_loader.py`
 
 - `notebooks-v2/data_loader.py` — `classify_fixations` docstring (canonical per-fixation source).
 - `notebooks-v2/episode_classifier.py` — module docstring + `classify_episode` (canonical per-episode source).
-- `docs/plans/forward-regressive-split.md` — design rationale, alternative definitions considered, downstream notebook update plan. **Status header is stale; mark "implemented 2026-04-08–04-26" if updating.**
+- `docs/plans/forward-regressive-split.md` — design rationale, alternative definitions considered, downstream notebook update plan. Status header is stale; mark "implemented 2026-04-08–04-26" if updating.
 - `docs/findings.md` §8 — ballistic backward scrolling kinematics; uses this classifier upstream.
 - `docs/methodological-threats.md` — broader robustness audit context.

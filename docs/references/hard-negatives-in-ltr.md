@@ -1,20 +1,20 @@
 # Hard negatives in learning-to-rank — and why approach-retreat is a new source of them
 
 **Topic:** behavioral hard-negative mining for dense retrieval and learning-to-rank
-**Last updated:** 2026-04-09
-**Audience:** anyone evaluating whether the four-class approach-retreat taxonomy (clicked / deferred / evaluated-rejected / not-approached) belongs in an IR pipeline
+Last updated: 2026-04-09
+Audience: anyone evaluating whether the four-class approach-retreat taxonomy (clicked / deferred / evaluated-rejected / not-approached) belongs in an IR pipeline
 
 ## Why this note exists
 
-The IR literature since ~2020 has been explicit and consistent that **the quality of negative training examples is the bottleneck on dense-retrieval performance**, and the last five years of research has been a progression of increasingly sophisticated ways to mine them. Random negatives leave most of the gradient signal on the table. BM25-based "hard" negatives improve on random but can hurt recall if used statically. Iteratively refreshed hard negatives (ANCE) improve further but require periodic corpus re-indexing. Cross-encoder-denoised hard negatives (RocketQA) improve again but introduce a separate filtering stage to catch false negatives.
+The IR literature since ~2020 has been explicit and consistent that the quality of negative training examples is the bottleneck on dense-retrieval performance, and the last five years of research has been a progression of increasingly sophisticated ways to mine them. Random negatives leave most of the gradient signal on the table. BM25-based "hard" negatives improve on random but can hurt recall if used statically. Iteratively refreshed hard negatives (ANCE) improve further but require periodic corpus re-indexing. Cross-encoder-denoised hard negatives (RocketQA) improve again but introduce a separate filtering stage to catch false negatives.
 
-The `approach-retreat` library extracts a behaviorally-verified hard-negative label from cursor telemetry — the **evaluated-rejected** class. This note maps the four-class taxonomy onto the modern hard-negative mining literature and argues that the behavioral signal sidesteps two of the literature's worst failure modes by construction.
+The `approach-retreat` library extracts a behaviorally-verified hard-negative label from cursor telemetry — the evaluated-rejected class. This note maps the four-class taxonomy onto the modern hard-negative mining literature and argues that the behavioral signal sidesteps two of the literature's worst failure modes by construction.
 
-## The four load-bearing findings from the literature
+## The four central findings from the literature
 
 ### 1. Random negatives leave most of the signal on the table
 
-ANCE — Xiong et al., ICLR 2021 — frames the problem in theoretical terms: *"the bottleneck of dense retrieval is the domination of uninformative negatives sampled in mini-batch training, which yield diminishing gradient norms, large gradient variances, and slow convergence."* Random negatives are almost always trivially non-relevant; once the model has learned basic topicality, additional random negatives contribute almost nothing to gradients. ANCE's fix is to globally re-mine hard negatives from the entire corpus every ~10k training steps using the current model's index. Their theoretical claim is that this approximates an oracle importance-sampling procedure that random sampling cannot match.
+ANCE (Xiong et al., ICLR 2021) frames the problem in theoretical terms: *"the bottleneck of dense retrieval is the domination of uninformative negatives sampled in mini-batch training, which yield diminishing gradient norms, large gradient variances, and slow convergence."* Random negatives are almost always trivially non-relevant; once the model has learned basic topicality, additional random negatives contribute almost nothing to gradients. ANCE's fix is to globally re-mine hard negatives from the entire corpus every ~10k training steps using the current model's index. Their theoretical claim is that this approximates an oracle importance-sampling procedure that random sampling cannot match.
 
 **Takeaway for approach-retreat:** the value of a hard negative is not that it is non-relevant, but that the model is currently *uncertain* about whether it is relevant. The model needs negative training signal at its current decision boundary. Whether you get those negatives from BM25, from the model's own embeddings, or from cursor telemetry, the gradient story is the same.
 
@@ -22,29 +22,29 @@ ANCE — Xiong et al., ICLR 2021 — frames the problem in theoretical terms: *"
 
 This is the finding that makes the approach-retreat contribution non-trivial, and it is not the textbook version of "hard negatives good."
 
-Zhan et al., SIGIR 2021 — *"Optimizing Dense Retrieval Model Training with Hard Negatives"* (the ADORE / STAR paper) — explicitly shows that **static BM25 hard negatives almost underperform random negatives on every metric** in their experimental setup. From their analysis: *"static hard negative sampling does not necessarily lead to performance improvements compared with random negative sampling. It improves the top-ranking performance but may harm the recall capability."* The value comes from dynamically updating the hard-negative set as the model improves — not from the mere "hardness" of the training candidates.
+Zhan et al., SIGIR 2021 (*"Optimizing Dense Retrieval Model Training with Hard Negatives"* (the ADORE / STAR paper)) explicitly shows that static BM25 hard negatives almost underperform random negatives on every metric in their experimental setup. From their analysis: *"static hard negative sampling does not necessarily lead to performance improvements compared with random negative sampling. It improves the top-ranking performance but may harm the recall capability."* The value comes from dynamically updating the hard-negative set as the model improves — not from the mere "hardness" of the training candidates.
 
 **The implication is uncomfortable for naive hard-negative mining:** the *quality of the labeling procedure* matters more than the *hardness of the candidates*. A source of hard negatives that systematically misses true-positive items can actively harm a dense retriever. Hardness is necessary but nowhere near sufficient.
 
 ### 3. False negatives are a real failure mode, not a theoretical one
 
-RocketQA — Qu et al., NAACL 2021 — directly addresses the false-negative problem with **denoised hard negatives**: filter the mined hard-negative pool using a stronger cross-encoder to remove candidates the cross-encoder scores as plausibly relevant. The denoising is load-bearing — RocketQA's contribution depends on the filter, not just on the mining of hard candidates. This empirically validates the concern that items which look like hard negatives in BM25 or in the current retriever's embedding space can be latent positives, and training on them pushes the model in the wrong direction.
+RocketQA (Qu et al., NAACL 2021) directly addresses the false-negative problem with denoised hard negatives: filter the mined hard-negative pool using a stronger cross-encoder to remove candidates the cross-encoder scores as plausibly relevant. The denoising is central — RocketQA's contribution depends on the filter, not just on the mining of hard candidates. This empirically validates the concern that items which look like hard negatives in BM25 or in the current retriever's embedding space can be latent positives, and training on them pushes the model in the wrong direction.
 
 The failure mode is concrete: the user's true relevance label is unobserved, the mining procedure picks candidates the model is currently uncertain about, and uncertainty correlates with the model not yet having seen evidence of relevance — which is exactly what you would expect for a latent positive. Denoising tries to correct for this.
 
 ### 4. DPR (Karpukhin et al., EMNLP 2020) — the baseline everyone compares against
 
-The dense-retrieval workhorse paper. Used **in-batch negatives + BM25 hard negatives** as its canonical training scheme, and the ablation table showed both contribute. DPR became state-of-the-art on open-domain QA at the time and is the baseline every subsequent hard-negative paper is benchmarked against. Historically the paper that established "hard negative mining + in-batch = the recipe" as the default.
+The dense-retrieval workhorse paper. Used in-batch negatives + BM25 hard negatives as its canonical training scheme, and the ablation table showed both contribute. DPR became state-of-the-art on open-domain QA at the time and is the baseline every subsequent hard-negative paper is benchmarked against. Historically the paper that established "hard negative mining + in-batch = the recipe" as the default.
 
 ### The behavioral-data precedent: Joachims et al. 2005
 
-**Joachims et al., CIKM 2005 — *Accurately Interpreting Clickthrough Data as Implicit Feedback*** — established the foundational behavioral move: **skipped results above a click are implicit negatives.** If the user clicked position 4, positions 1–3 are inferred to have been seen, evaluated, and rejected. This skip-above heuristic has been the dominant way to extract hard negatives from query logs for two decades.
+**Joachims et al., CIKM 2005 (*Accurately Interpreting Clickthrough Data as Implicit Feedback***) established the foundational behavioral move: skipped results above a click are implicit negatives. If the user clicked position 4, positions 1–3 are inferred to have been seen, evaluated, and rejected. This skip-above heuristic has been the dominant way to extract hard negatives from query logs for two decades.
 
 **The limitation of skip-above:** it infers "evaluated and rejected" from click position, not from observable behavior. A result the user skipped might have been genuinely considered and declined, or it might have been a total fly-by that never reached any depth of evaluation. Skip-above cannot distinguish those two cases. The approach-retreat motor signature can.
 
 ## What this means for the four-class taxonomy
 
-The four classes — *clicked / deferred / evaluated-rejected / not-approached* — are not just a convenient post-hoc partition of non-click outcomes. They are a **behaviorally-verified hard-negative labeling scheme**, and they sidestep two of the modern hard-negative mining literature's worst failure modes by construction:
+The four classes (*clicked / deferred / evaluated-rejected / not-approached*) are not just a convenient post-hoc partition of non-click outcomes. They are a behaviorally-verified hard-negative labeling scheme, and they sidestep two of the modern hard-negative mining literature's worst failure modes by construction:
 
 ### Failure mode 1: false-negative risk (the RocketQA problem)
 

@@ -2,7 +2,7 @@
 
 Compiled 2026-04-30 during pre-meeting prep for Jacek Gwizdka / RIPA2 team.
 
-**Scope.** What the literature has and has not done with *return movements* — scrolls back, regression saccades, cursor retreats, revisits — across IR, eye-tracking, reading research, and HCI. Frames where `approach-retreat`'s contribution sits.
+**Scope.** What the literature has and has not done with *return movements* (scrolls back, regression saccades, cursor retreats, revisits) across IR, eye-tracking, reading research, and HCI. Frames where `approach-retreat`'s contribution sits.
 
 **Companion doc.** A broader scroll-regressions review lives in `attentional-foraging/docs/lit-notes/lit-review-scroll-regressions.md`. This doc is approach-retreat-specific: cursor-episode geometry, AOI-level retreats, and where pre-committed motor execution differs from iterative re-examination.
 
@@ -30,7 +30,7 @@ The **Partially Sequential Click Model (PSCM)**. THUIR / Yiqun Liu group, Tsingh
 
 **Why this matters for approach-retreat.** CBCM's revisit primitive is the closest IR-side construct to what approach-retreat measures as a deferred-class episode (cursor returns to an already-evaluated AOI). CBCM treats it as a click-likelihood feature; approach-retreat captures the trajectory between the first leave and the second approach.
 
-**The gap.** Same as PSCM — click-model granularity, no within-episode geometry. CBCM's compare primitive is structurally close to the four-class taxonomy's *deferred* class but stops at the click-likelihood level.
+**The gap.** Same as PSCM — click-model granularity, no within-episode geometry. CBCM's compare primitive is close to the four-class taxonomy's *deferred* class but stops at the click-likelihood level.
 
 #### Borisov, Wardenaar, Markov & de Rijke — *Click Sequence Model* (SIGIR '18)
 
@@ -42,7 +42,7 @@ Neural seq2seq absorbing non-sequential patterns end-to-end. Direction is implic
 
 ### Lane 2 — Eye-tracking on SERPs with nonlinear scanpaths
 
-This lane has been describing return behavior since the mid-2000s without naming it as task-structurally important.
+This lane has been describing return behavior since the mid-2000s without naming it as task-relevant.
 
 #### Lorigo, Haridasan, Brynjarsdóttir et al. — *Eye Tracking and Online Search* (JASIST 2008)
 
@@ -58,7 +58,7 @@ Earlier, less formalized — reports a *rapid scan followed by re-examination* p
 
 Documents distinct examination patterns by snippet length and ad quality. Implicit phase structure, no formalization of return behavior as a phase-mode boundary.
 
-**Aggregate gap.** This lane has the empirical pattern (returns happen, often, on most trials) but treats it as scanpath statistics rather than task-structurally meaningful. Approach-retreat (and OSEC) reframes returns as a separable cognitive state with motor signatures.
+**Aggregate gap.** This lane has the empirical pattern (returns happen, often, on most trials) but treats it as scanpath statistics rather than task-relevant. Approach-retreat (and OSEC) reframes returns as a separable cognitive state with motor signatures.
 
 ---
 
@@ -68,7 +68,7 @@ This is a deeply formalized literature on within-text saccadic regressions, at a
 
 #### Rayner — *Eye Movements in Reading and Information Processing* (Psych. Bull. 1998)
 
-Canonical review. Establishes that **10–15% of fixations during text reading are saccadic regressions** used to recover comprehension. Process models like E-Z Reader formalize their dynamics.
+Canonical review. Establishes that 10–15% of fixations during text reading are saccadic regressions used to recover comprehension. Process models like E-Z Reader formalize their dynamics.
 
 **For approach-retreat.** Reading-research regressions are *within-word-sequence saccadic*. Approach-retreat's regressions are *within-trial scroll/AOI* movements. The constructs are related (both are "going back to recheck") but not identical. Approach-retreat's contribution is the SERP-evaluation analog of reading regressions, at AOI granularity.
 
@@ -86,7 +86,7 @@ The lane approach-retreat extends most directly. Most of these are already cited
 
 #### Huang, White & Buscher — *User See, User Point* (CHI '12)
 
-Cursor-gaze coupling at scale on Bing. ~700 ms median lag, behavior-dependent alignment from 233 px to 77 px. **Does not decompose by direction.** This is the gap approach-retreat fills.
+Cursor-gaze coupling at scale on Bing. ~700 ms median lag, behavior-dependent alignment from 233 px to 77 px. Does not decompose by direction. This is the gap approach-retreat fills.
 
 #### Arapakis & Leiva — *Predicting User Engagement* (SIGIR '16); *AdSight* (Villaizán-Vallelado et al. SIGIR '25)
 
@@ -117,9 +117,9 @@ Mouse-trajectory features for decision-relevance prediction. Includes some direc
 ## What's still open
 
 - **Compare PSCM/CBCM parameter estimates against approach-retreat episode geometry.** Are the with-click-direction tendencies in PSCM consistent with the 87% regression-target concentration at positions 0–4? Same phenomenon, two units?
-- **Run PSCM/CBCM on AdSERP.** No public re-analysis exists. The same eye-tracking-grounded framing as the dataset; testing whether THUIR's models can recover the four-class taxonomy from click data alone is an open empirical question.
-- **Test approach-retreat on RecGaze (carousel).** De León Martínez et al. SIGIR '25 documents F-pattern / golden-triangle browsing in a horizontal carousel. The "swipe back" in carousels is the horizontal analog of vertical scroll regressions. Approach-retreat's per-AOI episode unit transfers cleanly; the four-class taxonomy should test out-of-the-box.
-- **Reading-style regressions vs commitment-style regressions.** Approach-retreat's data say SERP regressions are commitment-driven re-examination. Does that hold for informational queries (longer reading, more comprehension load)? Or do informational queries produce a mixture of comprehension regressions (Rayner-style) and commitment regressions?
+- Run PSCM/CBCM on AdSERP. No public re-analysis exists. The same eye-tracking-grounded framing as the dataset; testing whether THUIR's models can recover the four-class taxonomy from click data alone is an open empirical question.
+- Test approach-retreat on RecGaze (carousel). De León Martínez et al. SIGIR '25 documents F-pattern / golden-triangle browsing in a horizontal carousel. The "swipe back" in carousels is the horizontal analog of vertical scroll regressions. Approach-retreat's per-AOI episode unit transfers cleanly; the four-class taxonomy should test out-of-the-box.
+- Reading-style regressions vs commitment-style regressions. Approach-retreat's data say SERP regressions are commitment-driven re-examination. Does that hold for informational queries (longer reading, more comprehension load)? Or do informational queries produce a mixture of comprehension regressions (Rayner-style) and commitment regressions?
 
 ---
 
