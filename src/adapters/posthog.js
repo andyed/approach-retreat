@@ -261,6 +261,14 @@ export function createPostHogAdapter(posthog, options = {}) {
   }
 
   let bound = false;
+  // Idempotence guard for captureSummary. Shared across the explicit
+  // call path (consumer invokes `adapter.captureSummary(ar)` before a
+  // same-origin navigation) and the implicit path (visibilitychange /
+  // pagehide listener wired by bind()). Without this, a session that
+  // ends via consumer-initiated navigation followed by visibilitychange
+  // fires the summary twice with the same ar_session_id and inflates
+  // analysis counts. First call wins; subsequent calls are no-ops.
+  let summaryFired = false;
 
   const adapter = {
     onEpisode(episode) {
@@ -318,6 +326,8 @@ export function createPostHogAdapter(posthog, options = {}) {
      * an AOI still has a nine-feature record for that result.
      */
     captureSummary(ar) {
+      if (summaryFired) return;
+      summaryFired = true;
       if (typeof ar.flush === 'function') ar.flush();
 
       const episodes = ar.getEpisodes();
@@ -451,20 +461,16 @@ export function createPostHogAdapter(posthog, options = {}) {
     /**
      * Wire automatic session-summary capture on page unload.
      * Uses visibilitychange (hidden) and pagehide because beforeunload is
-     * unreliable on mobile and bfcache-enabled browsers. Idempotent — the
-     * summary fires at most once per bind() call.
+     * unreliable on mobile and bfcache-enabled browsers. Idempotence is
+     * enforced inside captureSummary itself, so this listener can fire
+     * even after a consumer has called captureSummary explicitly without
+     * producing a duplicate event.
      */
     bind(ar) {
       if (bound) return;
       bound = true;
 
-      let fired = false;
-      const fire = () => {
-        if (fired) return;
-        fired = true;
-        this.captureSummary(ar);
-      };
-
+      const fire = () => this.captureSummary(ar);
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') fire();
       });
