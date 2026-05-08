@@ -576,6 +576,7 @@ export class ApproachRetreat {
     // each entry as forward (at/near HWM) or regressive (below HWM).
     this._scrollHwm = window.scrollY;
     this._observer = null;
+    this._everVisibleObserver = null;
     this._visibleResults = new Set();
     // Add-only mirror of _visibleResults: any element that has *ever*
     // intersected the viewport during this session. Used by the
@@ -638,7 +639,6 @@ export class ApproachRetreat {
           for (const entry of entries) {
             if (entry.isIntersecting) {
               this._visibleResults.add(entry.target);
-              this._everVisibleResults.add(entry.target);
             } else {
               this._visibleResults.delete(entry.target);
             }
@@ -651,6 +651,23 @@ export class ApproachRetreat {
           }
         },
         { threshold: 0.3 }
+      );
+      // Dedicated observer at threshold 0 for the not_approached rollup.
+      // The 30% threshold above can miss cards that scroll through the
+      // viewport faster than the polling cadence catches them at ≥30%
+      // intersection. A 0-threshold observer fires the moment the card
+      // enters at all, even if its peak visibility is brief — fine for
+      // "user saw this exists" semantics. Below-fold cards never enter,
+      // so they stay correctly absent from _everVisibleResults.
+      this._everVisibleObserver = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              this._everVisibleResults.add(entry.target);
+            }
+          }
+        },
+        { threshold: 0 }
       );
       this._observeResults();
     }
@@ -686,6 +703,7 @@ export class ApproachRetreat {
     const results = document.querySelectorAll(this.config.resultSelector);
     for (const el of results) {
       if (this._observer) this._observer.observe(el);
+      if (this._everVisibleObserver) this._everVisibleObserver.observe(el);
     }
     // Newly-observed AOIs should pick up their initial band state before the
     // next scroll/resize so the first attributable interval is well-defined.
