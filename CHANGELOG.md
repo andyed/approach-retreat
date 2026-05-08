@@ -1,5 +1,87 @@
 # Changelog
 
+## v0.3.0 — 2026-05-08 — getSignals not_approached fixes + adapter idempotence
+
+Three-commit data-correctness patch on top of v0.2.1, motivated by the
+movies.mindbendingpixels.com calibration substrate. No public API
+change; per-session AOI rollups now reflect what the user actually
+saw, and adapters can no longer double-count the session-end summary.
+This release also begins committing `dist/` so downstream consumers
+can pin against tags rather than rebuild locally.
+
+### Why
+
+The v0.2.1 patch closed the missing-summary loss rate. With
+`ar_session_summary` reliably landing, the next layer of artefacts
+surfaced:
+
+1. **Per-session `C+D+R+N` summed to 4-7 of 10 expected**, not 10.
+   AOIs the user scrolled past then out of view fell out of the
+   not_approached rollup entirely — the rollup consulted the
+   *currently*-intersecting set, not the *ever*-intersecting set.
+2. **Even after fixing (1)**, the threshold-0.3 IntersectionObserver
+   missed cards that flickered through the viewport faster than the
+   browser polling cadence caught them at ≥30% intersection. Same
+   end result: AOIs invisible to the rollup.
+3. **Consumers calling `adapter.captureSummary(ar)` explicitly**
+   before a same-origin navigation could still produce a duplicate
+   summary — the visibilitychange/pagehide listener wired by `bind()`
+   had its own `fired` guard, but it didn't see the explicit call.
+   The `movies-mindbendingpixels` consumer worked around this with a
+   wrapping shim; the workaround is no longer needed.
+
+### What changed
+
+- **`449b77a` getSignals: not_approached uses ever-visible, not
+  currently-visible.** Add-only `_everVisibleResults` mirror of
+  `_visibleResults`. The not_approached enumeration now consults the
+  add-only set so AOIs the user scrolled past stay in the rollup.
+  Below-fold AOIs that never intersected stay correctly absent.
+- **`283af59` posthog-adapter: captureSummary self-idempotent across
+  both call paths.** `summaryFired` lifted out of `bind()` and into
+  the adapter's outer scope. Explicit-call and visibilitychange
+  paths share the guard; first call wins, subsequent calls are
+  no-ops. `bind()` simplified.
+- **`8ae9d33` getSignals: dedicated threshold-0 observer for
+  everVisible enrollment.** `_everVisibleResults` now has its own
+  `IntersectionObserver` at `threshold: 0`. The original 30%-threshold
+  observer is unchanged (preserves band/dwell semantics). Below-fold
+  AOIs still correctly absent because they never intersect at all.
+
+### Verification
+
+Verified on `movies.mindbendingpixels.com` post-deploy
+(2026-05-08 03:39 UTC):
+
+- **everVisible:** deliberate-scroll dogfood pass produced
+  `C+D+R+N = 8` of 10 on the affected mission (vs 4-5 pre-fix). The
+  remaining 2-of-10 gap reflects browser IntersectionObserver
+  poll-rate limits — a card flickering through between polls during
+  very fast scroll. Out-of-scope for this release; would need a
+  mutation-observer fallback or a static "denominator from result
+  count" override at the consumer level.
+- **idempotency:** zero millisecond-class within-page-lifecycle
+  duplicates. Multi-row `(session_id, ar_query_id)` pairs do exist
+  (max 4 for one mission) but minimum inter-row gap is 14.1 seconds
+  — those are redo-button revisits, each spawning a fresh adapter,
+  which is the intended behavior.
+
+### Distribution policy change
+
+Starting with v0.3.0, `dist/` is committed to the repo and tagged.
+Downstream consumers can pin against the tag (e.g. `v0.3.0`) and
+verify a shipped sha256 rather than rebuild locally and trust their
+build environment. The `build` script still exists; CI/dev workflows
+just no longer required to ship.
+
+### Migration notes
+
+Consumers wrapping `adapter.captureSummary` to dedupe (e.g. the
+shim previously in `movies-mindbendingpixels`'s `js/ar-init.js`) can
+drop the wrap. Adapter is self-idempotent now.
+
+No public API change. No migration on stored data.
+
 ## v0.2.1 — 2026-05-07 — Reliable session-summary capture on mission flow
 
 Telemetry-reliability patch on the data-collection site. No library API change.

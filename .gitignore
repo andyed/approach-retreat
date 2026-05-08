@@ -1,6 +1,11 @@
 node_modules/
-dist/
 .DS_Store
+
+# dist/ is committed (consumers pin against tags). The build script
+# mirrors it into site/dist/ for the demo; that mirror stays untracked
+# so it doesn't pollute diffs on every rebuild — site/index.html links
+# to ../dist/ when needed.
+site/dist/
 *.log
 
 # Private working drafts — never sync to public repo
