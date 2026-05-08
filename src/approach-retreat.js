@@ -577,6 +577,14 @@ export class ApproachRetreat {
     this._scrollHwm = window.scrollY;
     this._observer = null;
     this._visibleResults = new Set();
+    // Add-only mirror of _visibleResults: any element that has *ever*
+    // intersected the viewport during this session. Used by the
+    // not_approached enumeration in getSignals() so AOIs the user
+    // scrolled past (visible → no longer visible) still count as
+    // "saw it, didn't approach" instead of vanishing from the rollup.
+    // Below-fold AOIs that never scrolled into view stay correctly
+    // absent.
+    this._everVisibleResults = new Set();
 
     // Per-result running aggregates for the nine M4 paper features.
     // resultEl → ResultFeatureTracker. Initialized on first mousemove
@@ -630,6 +638,7 @@ export class ApproachRetreat {
           for (const entry of entries) {
             if (entry.isIntersecting) {
               this._visibleResults.add(entry.target);
+              this._everVisibleResults.add(entry.target);
             } else {
               this._visibleResults.delete(entry.target);
             }
@@ -1404,12 +1413,18 @@ export class ApproachRetreat {
       return s;
     });
 
-    // Add NOT_APPROACHED for visible results with no episodes
+    // Add NOT_APPROACHED for any result that the viewport ever included
+    // during this session and that did not produce an episode. Using
+    // _everVisibleResults (rather than the currently-intersecting
+    // _visibleResults) keeps AOIs the user scrolled past in the rollup
+    // — capture-time viewport state otherwise drops them silently.
+    // Below-fold AOIs that never scrolled into view stay correctly
+    // absent because they were never observed intersecting.
     const allResults = document.querySelectorAll(this.config.resultSelector);
     const approachedPositions = new Set(results.map((r) => r.position));
     for (const el of allResults) {
       const pos = parseInt(el.getAttribute(this.config.positionAttr) || '0', 10);
-      if (!approachedPositions.has(pos) && this._visibleResults.has(el)) {
+      if (!approachedPositions.has(pos) && this._everVisibleResults.has(el)) {
         results.push({
           position: pos,
           outcome: Outcome.NOT_APPROACHED,
