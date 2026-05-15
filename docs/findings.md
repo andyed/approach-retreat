@@ -20,6 +20,16 @@ A skeptical reviewer could read `[AR-V1:K1]` and ask whether the signal is just 
 
 The answer is the 3-feature no-dwell ablation `[AR-V1:K2]`: `min_dist + retreat_dist + ever_in_target` reaches AUC 0.798 ± 0.036 with no dwell feature at all. That's still +0.102 AUC over the scalar baseline `[AR-V1:K7]`. Dwell contributes an additional +0.023 AUC in the full model (the difference between K1 and K2), which is consistent with a small non-mechanical pause component on top of the Fitts baseline — but the geometry-only signal stands without it.
 
+### Hover alone carries most of the load — a deployment frontier
+
+A single feature — `dwell_in_proximity_ms` (time the cursor spent within 100 px of the AOI center) — reaches **AUC 0.821** on the AdSERP LOSO click-prediction task, within 0.026 of the full seven-feature M4 (0.847). Adding `min_dist` as a second feature lifts that to **AUC 0.837**, within 0.010 of M4. Producer: `cikm-leakycursor-replicate/replicate/click_prediction_v0_1.py` (configs `hover_only`, `hover_plus_dist`); results in `results.json`.
+
+Among the 2,589 clicked AOIs in the buf500 cascade, **93.2 % receive any cursor proximity-dwell** (`dwell_in_proximity_ms > 0`); 82.7 % receive ≥ 500 ms, median 2.5 s on dwelled clicks. The hover signature is direct empirical evidence of motor-cognitive coupling at the per-result-AOI grain — not a derived statistic from a multi-feature combination.
+
+**Deployment implication.** A hover-counter readout per AOI is the cheapest possible runtime feature: point-in-100px-ball per cursor sample, no sqrt per AOI, no velocity tracking. The full M4 vector remains the accuracy reference; the hover subset is the minimum-cost deployment shape.
+
+**Cross-surface generalization.** The per-AOI engagement-episode primitive does not require a cursor channel. On touch surfaces, per-result viewport residence (which AOI is in the user's visible viewport, and for how long) replaces cursor proximity-dwell. The per-AOI partitioning rule (every result is its own observer) applies unchanged; only the proximity sensor changes. Hover, viewport-dwell, and gaze-fixation-dwell are three readouts of the same primitive, and a "mini" hover-listener implementation is a deferred-class-classifier-free deployment path worth scoping for the library.
+
 ### Attention/noticeability is harder
 
 On the noticed Likert target, the same LR reaches AUC 0.594 ± 0.007 `[AR-V1:K9]`. Brückner's BiLSTM on the analogous task lands in a wide 0.55–0.65 AUC band `[AR-V1:K11]` — the cohort is only 716 sessions with ~77 positives after the Likert filter, so the Wilson CIs are visibly wide. Our LR sits inside that band `[AR-V1:K12]`, which we read as "the linear classifier and the BiLSTM are indistinguishable within confidence intervals" rather than "the linear classifier matches the BiLSTM." An 11-feature LR achieving the same AUC band as a 2-layer BiLSTM with three orders of magnitude fewer parameters and directly interpretable coefficients is a useful engineering finding on this target.
@@ -107,6 +117,8 @@ The repo's central organizational axis (per `CLAUDE.md`) is which findings trans
 | Finding | LAB regime | WILD regime | Status |
 |---|---|---|---|
 | Click prediction with M4 features | LOSO AUC 0.821 (gaze-clean, AF NB21:K3) | AUC 0.821 ± 0.022 `[AR-V1:K1]` | **`[BOTH]`** |
+| Hover-only click prediction (1 feat) | LOSO AUC 0.821 (post-cascade buf500 M4-canonical) | (not yet run on ACD) | `[LAB]` headline; mobile generalization open |
+| Hover + min_dist (2 feats) | LOSO AUC 0.837 (post-cascade buf500 M4-canonical) | (not yet run on ACD) | `[LAB]` headline |
 | 3-feature no-dwell click prediction | (not run as primary on AdSERP) | AUC 0.798 ± 0.036 `[AR-V1:K2]` | `[WILD]` headline |
 | Retreat + viewport bands combined | AUC 0.842 `[AR-V3:K5]` | (TODO: port to ACD) | `[LAB]` for now |
 | M5 deferred-class detection | AUC 0.709 `[AR-V2:K1]` | structurally uncomputable (single AOI / session) | `[LAB]` only |
