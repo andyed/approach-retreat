@@ -69,7 +69,20 @@ def parse_log(log_path: Path):
     return rows
 
 
-def compute_features(events):
+def compute_features(events, click_buffer_ms: int = 0):
+    """Compute approach-retreat features from a session's mouse events.
+
+    click_buffer_ms: if > 0 and the session contains an ad-click, all
+        feature inputs are truncated at click_t - Δ. Mirrors the LAB
+        protocol of attentional-foraging/scripts/compute_cursor_approach_features.py
+        and excludes the terminal-cursor lock-on window from feature
+        aggregation. Non-click sessions are untouched.
+    """
+    if click_buffer_ms > 0:
+        click_ts = [e[0] for e in events if e[3] == 'click']
+        if click_ts:
+            cutoff = int(click_ts[-1]) - int(click_buffer_ms)
+            events = [e for e in events if e[0] < cutoff]
     if len(events) < 3:
         return None
     ts = np.array([e[0] for e in events], dtype=np.int64)
@@ -155,6 +168,14 @@ def compute_features(events):
 
 
 def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--click-buffer-ms', type=int, default=0,
+                    help='Truncate clicked-session events at click_t - Δ ms before feature aggregation.')
+    ap.add_argument('--drop-retreat-dist', action='store_true',
+                    help='Drop retreat_dist from the feature vector (leakage-screened variant).')
+    args = ap.parse_args()
+
     gt = pl.read_csv(DATA / "groundtruth.tsv", separator="\t")
     parts = pl.read_csv(
         DATA / "participants.tsv",
@@ -173,7 +194,7 @@ def main():
     for row in native.iter_rows(named=True):
         log_path = DATA / "logs" / f"{row['log_id']}.csv"
         events = parse_log(log_path)
-        feats = compute_features(events)
+        feats = compute_features(events, click_buffer_ms=args.click_buffer_ms)
         if feats is None:
             n_skipped += 1
             continue
@@ -207,19 +228,36 @@ def main():
         "retreat_arc_ratio", "total_mouse_length", "dwell_in_target_ms",
         "ever_in_target", "n_target_entries", "n_events", "session_ms",
     ]
+    if args.drop_retreat_dist:
+        feature_cols = [c for c in feature_cols if c != "retreat_dist"]
+        print(f"[leakage-screened] dropped retreat_dist; {len(feature_cols)}-feature vector",
+              file=sys.stderr)
     X_full = df_feat.select(feature_cols).to_numpy().astype(np.float64)
     X_full = np.nan_to_num(X_full, nan=0.0, posinf=1e9, neginf=-1e9)
 
     for target in ["noticed", "ad_clicked"]:
         y = df_feat[target].to_numpy().astype(np.int64)
         print(f"\n=== target: {target}  (pos rate {y.mean():.3f}) ===")
+        # M4-analog (clean): drop both the dwell aggregate (LAB-analog of
+        # total_dwell_ms) and total_mouse_length (the WILD baseline) so the
+        # M4-analog vector excludes its own baseline, mirroring how LAB M4
+        # excludes its baseline (position).
+        m4_clean = [c for c in feature_cols
+                    if c not in ("dwell_in_target_ms", "total_mouse_length")]
+        m4_strict_with_baseline = [c for c in feature_cols if c != "dwell_in_target_ms"]
         configs = [
-            ("approach-retreat (11 feats)", feature_cols),
-            ("Brückner primitive (total_mouse_length only)", ["total_mouse_length"]),
+            (f"baseline: total_mouse_length only (M1-analog)", ["total_mouse_length"]),
+            (f"M2-analog: dwell_in_target_ms only", ["dwell_in_target_ms"]),
+            (f"M3-analog: dwell + {len(feature_cols)-1} approach ({len(feature_cols)} feats)", feature_cols),
+            (f"M4-analog (CLEAN): {len(m4_clean)} approach feats (no dwell, no baseline)", m4_clean),
+            (f"M4-analog (w/ baseline): {len(m4_strict_with_baseline)} feats (no dwell, keeps mouse_length)", m4_strict_with_baseline),
             ("min_dist only", ["min_dist"]),
-            ("min_dist + retreat_dist + ever_in_target", ["min_dist", "retreat_dist", "ever_in_target"]),
-            ("retreat-only (dist + path + arc_ratio)", ["retreat_dist", "retreat_path", "retreat_arc_ratio"]),
         ]
+        if "retreat_dist" in feature_cols:
+            configs.extend([
+                ("min_dist + retreat_dist + ever_in_target", ["min_dist", "retreat_dist", "ever_in_target"]),
+                ("retreat-only (dist + path + arc_ratio)", ["retreat_dist", "retreat_path", "retreat_arc_ratio"]),
+            ])
         for label, cols in configs:
             idx = [feature_cols.index(c) for c in cols]
             Xs = X_full[:, idx]
