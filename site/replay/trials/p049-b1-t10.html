@@ -192,8 +192,8 @@ function drawAOIs() {
       tx.textContent = tag;
       aoiSvg.appendChild(tx);
       // Four-class label badge (top-right corner) — skip NOT_APPROACHED.
-      // Skip parent dd_top / dd_right entirely — labels live on cells.
-      if (isApproached && !isParent) {
+      // Parents (dd_top, dd_right) get labels too when no cells split them.
+      if (isApproached) {
         const ls = LABEL_STYLE[lbl.label];
         // Source-tagged primary text: M5 for organics, EPISODE for ads
         const isOrganic = (kind === 'organic_result');
