@@ -1,0 +1,95 @@
+{
+  "task": "ACD non-click Likert \u2265 3 recalibration (\u00a74.3 WILD analog)",
+  "cohort": {
+    "n_sessions": 665,
+    "n_noticed": 431,
+    "noticed_rate": 0.6481203007518797
+  },
+  "features": {
+    "cols": [
+      "min_dist",
+      "max_dist",
+      "retreat_dist",
+      "retreat_path",
+      "retreat_arc_ratio",
+      "ever_in_target",
+      "n_target_entries",
+      "n_events",
+      "session_ms"
+    ],
+    "n_features": 9,
+    "feature_set": "WILD M4-analog (approach features, no dwell, no baseline)"
+  },
+  "cv": {
+    "scheme": "StratifiedKFold(5, shuffle=True, random_state=0)",
+    "note": "ACD has no participant grouping; KFold not LOSO."
+  },
+  "pooled_oof": {
+    "auc": 0.5271084934658021,
+    "auc_per_fold_sd": 0.05224684822957534,
+    "youden_j_threshold": 0.47978912177279376,
+    "precision": 0.6824644549763034,
+    "recall": 0.6682134570765661,
+    "f1": 0.675263774912075
+  },
+  "per_fold": [
+    {
+      "fold": 1,
+      "n_train": 532,
+      "n_test": 133,
+      "auc": 0.4965017491254373,
+      "youden_j_threshold": 0.5781641269690379,
+      "f1_at_threshold": 0.4806201550387597
+    },
+    {
+      "fold": 2,
+      "n_train": 532,
+      "n_test": 133,
+      "auc": 0.4619000494804552,
+      "youden_j_threshold": 0.4950673791168258,
+      "f1_at_threshold": 0.6025641025641025
+    },
+    {
+      "fold": 3,
+      "n_train": 532,
+      "n_test": 133,
+      "auc": 0.5915388421573478,
+      "youden_j_threshold": 0.48554005399673383,
+      "f1_at_threshold": 0.7126436781609196
+    },
+    {
+      "fold": 4,
+      "n_train": 532,
+      "n_test": 133,
+      "auc": 0.5942602671944581,
+      "youden_j_threshold": 0.4768484144250583,
+      "f1_at_threshold": 0.7176470588235294
+    },
+    {
+      "fold": 5,
+      "n_train": 532,
+      "n_test": 133,
+      "auc": 0.5482434438396833,
+      "youden_j_threshold": 0.49962126398157053,
+      "f1_at_threshold": 0.6410256410256411
+    }
+  ],
+  "lab_headline_for_comparison": {
+    "source": "CIKM paper \u00a74.3",
+    "task": "AdSERP non-click gaze-regression deferred target",
+    "protocol": "LOSO 47-fold",
+    "auc": 0.753,
+    "youden_j_threshold": 0.449,
+    "precision": 0.867,
+    "recall": 0.771,
+    "f1": 0.816
+  },
+  "cross_dataset_gap": {
+    "delta_auc": -0.22589150653419787,
+    "delta_threshold": 0.03078912177279375,
+    "delta_precision": -0.18453554502369662,
+    "delta_recall": -0.10278654292343392,
+    "delta_f1": -0.14073622508792494
+  },
+  "interpretation": "Likert \u2265 3 is a noisier proxy for the \u00a74.3 gaze-revisited deferred construct than AdSERP's fixation-based label. Cross-dataset gap quantifies how far the LAB-calibrated operating threshold travels when retargeted on a different attention construct."
+}
