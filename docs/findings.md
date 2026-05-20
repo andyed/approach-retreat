@@ -129,6 +129,30 @@ The repo's central organizational axis (per `CLAUDE.md`) is which findings trans
 
 ---
 
+## 5. The AdSERP corpus spans diverse, modern SERP layouts
+
+The rank-position absorption result — M4 drops explicit rank position and loses no predictive power (M3 ≈ M4) — is a *layout-resilience* claim only if the corpus it holds across is itself layout-diverse. It is.
+
+Across all 2,776 AdSERP trials, the typed-gapfill AOI maps show **every SERP (100 %) carries at least one non-organic element** — not one trial is a plain ten-blue-links list. A typical page runs **≈16 AOIs spanning a median of 6 distinct element types** (range 2–12), only about half of them organic results.
+
+| Element type | Present in |
+|---|---|
+| organic results | 100 % of trials |
+| native ad | 95.4 % |
+| `dd_top` — top ad block, typically a product carousel | 57.0 % |
+| image pack | 56.9 % |
+| `dd_right` — right-rail ads | 31.0 % |
+| people-also-ask | 27.7 % |
+| knowledge panel | 27.6 % |
+
+(Plus page furniture present on most trials: pagination 97 %, related-searches 65 %, chrome 51 %.)
+
+These are exactly the elements that break classical position-bias click models — multi-column carousels, image packs, and knowledge panels all disrupt the single-column top-to-bottom scan the position-bias assumption rests on. That M3 ≈ M4 holds across a corpus where *every* page mixes these verticals is the empirical substrate for the layout-resilience claim: the absorption is not an artifact of a uniform ranked list.
+
+Producer: `attentional-foraging/scripts/serp_layout_diversity.py` → `output/serp_layout_diversity/summary.json`.
+
+---
+
 ## How citations work
 
 In paper drafts and external prose: cite `[AR-V1:K1]` (etc.). The reader follows the link to [`key-claims.md`](key-claims.md), reads the row, and from there can trace back to the producing script and output. If the prose value disagrees with the K-ID row, the prose is wrong.
