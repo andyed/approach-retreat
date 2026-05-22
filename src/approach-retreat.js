@@ -322,6 +322,33 @@ const DEFAULTS = {
   // fresh band snapshot. Feature-detected; absence degrades to
   // scroll + window.resize coverage only (safe for non-reflowing pages).
   trackViewportReflow: true,
+
+  // Maximum mousemove feature-sampling rate, in Hz. `_onMouseMove` runs
+  // `_updateApproachFeatures()` (O(N) feature accumulation) plus an
+  // over-result hit-test that forces N synchronous layout reads
+  // (`getBoundingClientRect`) per event. Native `mousemove` fires at
+  // ~60 Hz (more on high-refresh displays), so the uncapped path imposes
+  // ~60×/s of forced layout on the user's browser for as long as the
+  // page is open.
+  //
+  // A fixed-rate cap is *uniform time-decimation*: a kept event is
+  // processed exactly as before, a throttled-out event is dropped before
+  // ANY state (`_lastMouse`, velocity, feature trackers) is touched, so
+  // the next kept event computes velocity/Δt cleanly over the wider gap.
+  // The §5.1 cursor sampling-rate ablation
+  // (attentional-foraging/scripts/sampling_rate_ablation.py, commit
+  // 7be3d345) downsampled the AdSERP cursor stream from ~59 Hz to 1 Hz
+  // and re-ran the M4 LOSO click-prediction: AUC is flat at
+  // 0.847 ± 0.001 across the whole range. The seven approach features
+  // are per-episode aggregates (closest approach, integrated proximity
+  // dwell, monotonicity counts) and rate-invariant by construction, so
+  // 15 Hz carries large accuracy headroom while cutting the layout cost
+  // ~4×. Default-on for all consumers.
+  //
+  // Set 0 (or Infinity) to disable the throttle and process every native
+  // event — for research/replication against a native-rate-trained model.
+  // `click` is a separate listener and is never throttled.
+  maxSampleHz: 15,
 };
 
 /**
@@ -571,6 +598,15 @@ export class ApproachRetreat {
     this._visitCounts = new Map(); // resultEl → visit count
     this._lastMouse = null;    // {x, y, t}
     this._velocity = { vx: 0, vy: 0 };
+    // Timestamp (performance.now()) of the last mousemove event that was
+    // *kept* — i.e. passed the maxSampleHz throttle and ran the feature
+    // path. null until the first kept event. Used purely to gate the
+    // throttle: the next event is dropped if it arrives < the configured
+    // inter-sample interval after this one. Tracked separately from
+    // `_lastMouse.t` because a kept event is the only thing that advances
+    // both, but the throttle decision must happen *before* `_lastMouse`
+    // is touched, so it needs its own field.
+    this._lastKeptSampleTime = null;
     this._scrollY = window.scrollY;
     // Scroll high-water mark — running max of scrollY. Used to classify
     // each entry as forward (at/near HWM) or regressive (below HWM).
@@ -721,6 +757,29 @@ export class ApproachRetreat {
 
   _onMouseMove(e) {
     const now = performance.now();
+
+    // Fixed-rate throttle (uniform time-decimation). Drop this event if
+    // it arrived less than one inter-sample interval after the last KEPT
+    // event. The early-return happens before `_lastMouse`, velocity, or
+    // any feature-tracker state is touched, so a dropped event is fully
+    // invisible: the next kept event computes velocity and Δt cleanly
+    // over the wider (~67 ms at 15 Hz) gap, which is exactly what
+    // downsampling the raw stream to maxSampleHz would produce.
+    //
+    // maxSampleHz <= 0 (or Infinity) disables the throttle — every native
+    // event is processed, the pre-throttle full-rate behavior.
+    const maxHz = this.config.maxSampleHz;
+    if (maxHz > 0 && Number.isFinite(maxHz)) {
+      const minIntervalMs = 1000 / maxHz;
+      if (
+        this._lastKeptSampleTime !== null &&
+        now - this._lastKeptSampleTime < minIntervalMs
+      ) {
+        return;
+      }
+    }
+    this._lastKeptSampleTime = now;
+
     const x = e.clientX;
     const y = e.clientY;
     const pageY = y + this._scrollY;
@@ -1555,6 +1614,10 @@ export class ApproachRetreat {
     this._resultPageYCenter.clear();
     this._resultHalfHeight.clear();
     this._viewportBandTimes.clear();
+    // Clear the throttle gate so the first mousemove after a reset is
+    // kept immediately rather than being dropped against a stale
+    // pre-reset timestamp.
+    this._lastKeptSampleTime = null;
   }
 
   destroy() {

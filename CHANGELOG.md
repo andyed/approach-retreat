@@ -1,5 +1,55 @@
 # Changelog
 
+## Unreleased — `maxSampleHz` fixed-rate throttle on the cursor feature path
+
+`ApproachRetreat._onMouseMove` ran on every native `mousemove` (~60 Hz,
+more on high-refresh displays). Per event it accumulated the approach
+features and did an over-result hit-test that calls
+`getBoundingClientRect()` on every result — one forced synchronous
+layout read per result, ~60×/s, for as long as the page is open. This
+was over-sampling: a measurable user-CPU/battery cost for zero accuracy
+gain.
+
+### Why
+
+The §5.1 cursor sampling-rate ablation downsamples the AdSERP cursor
+stream from its native ~59 Hz to 1 Hz and re-runs the M4 LOSO
+click-prediction. M4 AUC is flat at 0.847 ± 0.001 across the whole
+range — no floor, no degradation. The seven approach features are
+per-episode aggregates (closest approach, integrated proximity dwell,
+monotonicity counts) and rate-invariant by construction. A
+WILD-deployed telemetry library has no accuracy reason to sample above
+~15 Hz.
+
+A fixed-rate throttle *is* uniform time-decimation, the exact regime
+the ablation tested — so it is directly evidence-backed, unlike
+scroll-triggered or distance-triggered schemes (which change the
+sampling distribution and would need separate re-validation; left out
+of scope, see `TODO.md`).
+
+### What changed
+
+- **New `maxSampleHz` config option, default `15`.** `_onMouseMove`
+  early-returns if the event arrives less than `1000 / maxSampleHz` ms
+  (~66.7 ms at 15 Hz) after the last *kept* event. The early-return
+  happens before `_lastMouse`, velocity, or any feature-tracker state
+  is touched, so a dropped event is fully invisible — the next kept
+  event computes velocity and Δt cleanly over the wider gap. Set `0`
+  or `Infinity` to disable the throttle and process every native event
+  (for research / replication against a native-rate-trained model).
+- **`click` is unaffected.** It is a separate listener (`_onClick`)
+  and is never throttled — clicks are never dropped.
+- **Default-on behavior change.** All consumers now sample at 15 Hz
+  unless they opt out. `dwell_in_proximity_ms` integrates Δt between
+  kept samples, so it stays correct across the wider (~67 ms) gap; the
+  2000 ms tab-switch gap filter is untouched.
+- **New `scripts/test_throttle_sanity.js`** — drives synthetic
+  high-rate streams through the throttle and asserts kept-sample rate
+  and inter-sample gaps. The three existing parity tests
+  (`test_feature_tracker_parity`, `test_viewport_bands_parity`,
+  `test_viewport_analytics_parity`) exercise pure functions below the
+  `_onMouseMove` layer and are unchanged — they still pass to 1e-6.
+
 ## v0.3.0 — 2026-05-08 — getSignals not_approached fixes + adapter idempotence
 
 Three-commit data-correctness patch on top of v0.2.1, motivated by the

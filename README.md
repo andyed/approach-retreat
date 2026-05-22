@@ -228,6 +228,36 @@ ar.getApproachFeatures();
 // ]
 ```
 
+### Sampling rate (`maxSampleHz`)
+
+The cursor feature path runs on `mousemove`, which fires at ~60 Hz (more
+on high-refresh displays). Each event accumulates the approach features
+and does an over-result hit-test that forces one synchronous layout read
+per result — ~60×/s of forced layout for as long as the page is open.
+
+`maxSampleHz` caps that. It defaults to **15** — a fixed-rate throttle
+that keeps at most one `mousemove` per `1000 / maxSampleHz` ms (~66.7 ms
+at 15 Hz) and drops the rest before any state is touched. This is
+*uniform time-decimation*: a kept event is processed exactly as at full
+rate, velocity and Δt are simply measured over the wider gap.
+
+```js
+const ar = new ApproachRetreat({
+  maxSampleHz: 15,   // default — cap the mousemove feature path at 15 Hz
+});
+
+// Disable the throttle (process every native event) for research /
+// replication against a native-rate-trained model:
+const arFullRate = new ApproachRetreat({ maxSampleHz: 0 }); // or Infinity
+```
+
+The §5.1 cursor sampling-rate ablation downsampled the AdSERP cursor
+stream from ~59 Hz to 1 Hz and re-ran the M4 LOSO click-prediction: AUC
+held flat at 0.847 ± 0.001 across the whole range. The seven approach
+features are per-episode aggregates and rate-invariant by construction,
+so 15 Hz carries large accuracy headroom while cutting the layout cost
+~4×. `click` is a separate listener and is **never** throttled.
+
 ## Sending events to your analytics
 
 ### PostHog adapter (bundled)
