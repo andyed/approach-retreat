@@ -209,6 +209,17 @@ documents the click-buffer leakage screen that distinguishes the seven
 buffer-robust features from `final_dist` and `retreat_dist` — see
 [`docs/research.md`](docs/research.md) for the deployment caveat.
 
+<p align="center">
+<img src="site/assets/feature-dt-panels.png" alt="Seven approach features annotated on a cursor-to-AOI distance trace d(t)" width="420"/>
+</p>
+
+*Every feature is a geometric property of one deliberation episode's
+cursor-to-AOI distance `d(t)` — no gaze, no click. **(a) Commitment**,
+proximity: `min_dist`, `mean_dist`, `dwell_in_proximity_ms`.
+**(b) Decisiveness**, approach rate: `mean_approach_velocity`,
+`max_approach_velocity`. **(c) Vacillation**, monotonicity:
+`direction_changes`, `frac_decreasing`. Synthetic trace.*
+
 ```js
 ar.getApproachFeatures();
 // [
