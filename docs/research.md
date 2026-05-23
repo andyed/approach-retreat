@@ -68,6 +68,20 @@ target. The nine-feature legacy variant (the +0.030 → +0.051 numbers cited
 in earlier README revisions) lives in version history, not in current
 deployment recommendations.
 
+**Sampling rate — 15 Hz default.** The deployable extractor caps the
+`mousemove` feature path at 15 Hz via `maxSampleHz` (since
+[`9d4efc2`](https://github.com/andyed/approach-retreat/commit/9d4efc2)).
+The §5.1 cursor sampling-rate ablation shows M4 click-prediction AUC flat
+at 0.847 ± 0.001 from ~59 Hz down to 1 Hz — native browser rate is pure
+over-sampling for the per-AOI episode features, costing user CPU /
+battery via repeated `getBoundingClientRect` forced layouts for no
+predictive lift. Time-uniform decimation (1000 / `maxSampleHz` ms gate)
+preserves the seven-feature buffer-robust signal because each feature is
+a running aggregate against a 100 px proximity zone whose
+crossing-events are easily resolved at 15 Hz. Set `maxSampleHz` to `0`
+or `Infinity` to disable for native-rate research replication; `click`
+is a separate listener and is never throttled.
+
 ### Viewport channel (cursor-free, scroll + DOM bboxes)
 
 The viewport-dynamics extractor operates wherever scroll events plus DOM
