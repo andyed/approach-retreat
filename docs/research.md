@@ -164,7 +164,7 @@ SERP thread began.
 | Year | Release | Primitive | Modern re-derivation |
 |---|---|---|---|
 | 2001 | [Optimoz](http://optimoz.mozdev.org/) — Firefox gesture extension, [Slashdotted](https://www.flickr.com/photos/andyed/125275288/) | Real-time cursor-vector compression via gesture-recognition algorithm | Villaizán-Vallelado et al. SIGIR 2025 — Seq2Seq Transformer over raw cursor-trajectory embeddings |
-| 2003 | Edmonds. *[Uzilla: A new tool for Web usability testing](https://link.springer.com/article/10.3758/BF03202549)* (BRMIC 35(2):194–201) | "Mouse miles" — integrated cursor path length + horizontal/vertical decomposition | Brückner, Arapakis & Leiva SIGIR 2021 — *When Choice Happens* |
+| 2003 | Edmonds. *[Uzilla: A new tool for Web usability testing](https://link.springer.com/article/10.3758/BF03202542)* (BRMIC 35(2):194–201) | "Mouse miles" — integrated cursor path length + horizontal/vertical decomposition | Brückner, Arapakis & Leiva SIGIR 2021 — *When Choice Happens* |
 
 Uzilla also introduced the DOM-path click signature (identifying click
 targets by full DOM-tree path, not pixel position), now silently embedded
@@ -250,7 +250,7 @@ same data.
 
 ## References
 
-- Edmonds (2003). [*Uzilla: A new tool for Web usability testing*](https://link.springer.com/article/10.3758/BF03202549) — instrumented Mozilla, "mouse miles," DOM-path click signature, cursor-vector compression. Behavior Research Methods, Instruments, & Computers 35(2):194–201.
+- Edmonds (2003). [*Uzilla: A new tool for Web usability testing*](https://link.springer.com/article/10.3758/BF03202542) — instrumented Mozilla, "mouse miles," DOM-path click signature, cursor-vector compression. Behavior Research Methods, Instruments, & Computers 35(2):194–201.
 - Huang, White & Buscher (2012). ["User see, user point"](https://jeffhuang.com/papers/GazeCursor_CHI12.pdf) — gaze-cursor alignment on SERPs (CHI 2012).
 - Guo & Agichtein (2012). ["Beyond dwell time"](https://dl.acm.org/doi/10.1145/2187836.2187914) — post-click cursor signals (WWW 2012).
 - Arapakis & Leiva (2016). ["Predicting user engagement with direct displays"](https://dl.acm.org/doi/10.1145/2911451.2911505) — 638 cursor features (SIGIR 2016).
