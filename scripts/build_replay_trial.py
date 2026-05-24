@@ -24,6 +24,13 @@ from PIL import Image
 from pathlib import Path
 
 AF_ROOT = Path.home() / "Documents/dev/attentional-foraging/AdSERP/data"
+# Cell-aware AOI snapshot from AF's typed cascade (probe_cellsplit_features.py
+# / m4_nb21_hybrid_rerun_cellsplit.py). Provides dd_top_cell / dd_right_cell /
+# organic_cell sub-bboxes that the parent dd_top / dd_right entries split into.
+# Coverage: 1,708 / 2,776 trials had cells emitted (69% — the rest had no
+# horizontal carousel or sub-cell structure to split).
+AF_CASCADE_DIR = (Path.home() /
+                  "Documents/dev/attentional-foraging/scripts/output/cascade-baseline/aoi-snapshot-v1")
 # When the AdSERP screenshot volume isn't mounted, fall back to the local
 # cache. The cache covers a subset of trials (~111 of 2,776) but is enough
 # for visual verification on the curated replay set.
@@ -358,6 +365,31 @@ def derive_aoi_labels(cursor: list[dict], bboxes: dict, min_dwell_ms: int = 100)
     return out
 
 
+def _load_cell_subbboxes(trial_id: str) -> dict:
+    """Pull enriched cell sub-bboxes from AF's cell-aware cascade snapshot.
+
+    Returns a dict with any of dd_top_cell / dd_right_cell / organic_cell
+    that are non-empty for this trial. Returns {} when the snapshot file
+    is missing or carries no cells (typical for SERPs without horizontal
+    carousels — about 31% of trials in the 2,776-trial AdSERP corpus).
+
+    Schema mirrors organic-boundary-data entries: each cell has
+    `position`, `location.{x,y}`, `size.{width,height}`. The viewer
+    template (site/replay/template.html) renders these via AOI_STYLE
+    entries keyed by kind (dd_top_cell / dd_right_cell), inheriting
+    the parent's color at a slightly higher fill opacity.
+    """
+    snap_path = AF_CASCADE_DIR / f"{trial_id}.json"
+    if not snap_path.exists():
+        return {}
+    snap = json.loads(snap_path.read_text())
+    return {
+        kind: snap[kind]
+        for kind in ("dd_top_cell", "dd_right_cell", "organic_cell")
+        if snap.get(kind)
+    }
+
+
 def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
     """Build a per-trial replay JSON.
 
@@ -499,6 +531,11 @@ def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
         "dd_right":   organic.get("dd_right", []),
         "widget":     widget_bboxes,
     }
+    # Augment with cell-aware sub-bboxes from AF's cellsplit cascade.
+    # Cells inherit the parent's color in the viewer template but render
+    # their own four-class heuristic label per cell (M5 stays organic-only).
+    cells = _load_cell_subbboxes(trial_id)
+    bboxes.update(cells)
     aoi_labels = derive_aoi_labels(cursor, bboxes)
 
     return {
