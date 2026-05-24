@@ -69,3 +69,125 @@ Twenty-five years in the same corner of this problem means I have watched a lot 
 - Brückner, L., Arapakis, I. & Leiva, L. A. (2021). *When Choice Happens: A Systematic Examination of Mouse Movement Length for Decision Making in Web Search.* SIGIR '21.
 - Villaizán-Vallelado, M. et al. (2025). *AdSight: Scalable and Accurate Quantification of User Attention in Multi-Slot Sponsored Search.* SIGIR '25.
 - Edmonds, A. (2026). *ClickSense.* `github.com/andyed/clicksense`
+
+---
+
+# Code archaeology: how the per-AOI grain materialized, 2026-04-01 to 2026-05-17
+
+The deep lineage above explains where the *primitives* came from. This section is the proximate code archaeology — six weeks of commits in two repositories during which the per-(trial, position) AOI grain went from a prose framing to a typed module boundary. It is reconstructed from `git log` across `attentional-foraging/` (AF) and `approach-retreat/` (AR) and the session-cartographer event index.
+
+## Phase 1 — Pre-AOI: single scalar per trial. 2026-04-01 to 2026-04-04
+
+The AF repo opened on **2026-04-01** with commit `010c0da2` — *"p(click) conditioning on mouse-gaze distance"*. One scalar per trial. Twenty other commits landed the same day (scroll dynamics, lexical priming, dataset-first README). The unit of analysis was the trial, not the result.
+
+Per-result framing crept in over the next three days, but only in prose and process modeling:
+
+- 2026-04-01 `c03596e5` — `docs(v2): rewrite README — lead with measurement, add per-result table`. First explicit per-result framing. No per-result data structure yet.
+- 2026-04-03 `65502aec` — `§3e forward-pass vs regression episode decomposition`. Episode becomes a named unit.
+- 2026-04-03 `6652be58` — `replace raw 220 ms fixation claim with episode-level reading depth`. Granularity collapsing from fixation toward episode.
+- 2026-04-04 `b8f85658` — `feat: OSEC explainer — Orient–Survey–Evaluate–Commit visual essay`. The process model that predicts *why* per-result will be the load-bearing grain.
+
+What is missing through 2026-04-04 is per-AOI code. Notebooks operate at trial grain.
+
+## Phase 2 — NB15: per-(trial, position) cursor features land. 2026-04-05
+
+Commit `567833cd` is the materialization moment.
+
+> **`feat(analysis): cursor approach as covert evaluation signal (notebook 15)`**
+>
+> Per-result cursor approach features across 2,340 trials (15,397 result-position records).
+> - 14.8 % of fixated results approached within 100 px then rejected
+> - Retreat signature: 244 px rejected vs 119 px clicked (p = 5.3 × 10⁻⁹²)
+> - Click prediction AUC: 0.618 (position) → 0.823 (+approach features)
+
+The notebook header makes the conceptual move explicit:
+
+> *"Finding #10 established the gradient: min gaze-cursor distance predicts click rate at 11× baseline. 14 % of non-clicked results had cursor within click threshold (58 px) — the 'almost clicked' set. This notebook goes deeper."*
+
+The feature schema instantiated here is what becomes M3/M4: `min_dist, mean_dist, final_dist, retreat_dist, dwell_in_proximity_ms, mean_approach_velocity, max_approach_velocity, direction_changes, frac_decreasing`. Each row is one (trial, position) tuple. The *15,397 result-position records* phrasing in the commit message is the unit-of-analysis declaration. Per-AOI now exists as a data structure, not just rhetoric.
+
+The notebook footer target was already explicit: *"CIKM 2026. The gain is not 'your model is wrong' but 'here's a signal your model can't see.'"*
+
+## Phase 3 — NB21 + NB22: per-AOI gets a label scheme. 2026-04-06
+
+Less than 24 hours later, commit `8c4e2de6` lands both companion notebooks:
+
+> **`feat(analysis): add click prediction and 4-class taxonomy notebooks`**
+>
+> - Notebook 21: LOSO logistic regression for binary click prediction (AUC 0.827) and 3-class taxonomy.
+> - Notebook 22: splits approached-NC into deferred vs evaluated-rejected using per-result scroll regression. Both classes separable (F1 0.70 / 0.66), zero cross-confusion.
+
+Two things matter about NB22:
+
+1. **The splitter was gaze regression, not cursor.** The deferred / evaluated-rejected distinction was derived from eye tracker data — the eyes coming back to a result they had already passed. The cursor was being validated as a *predictor* of a gaze-defined label. The feature named `scroll_regressed_back` in the early code reads `fix['y']`, not scroll events; the name was clarified to *gaze regression* later (commit `8c7f7de7`, 2026-04-14).
+2. **NB21 fixed three methodology bugs in NB15** — participant leakage in random KFold, scaler leakage from fitting on all data, missing position+dwell baseline. The AUC 0.823 from 24 hours earlier got re-derived honestly at 0.827 under LOSO. The per-AOI grain survived the rigor pass.
+
+The order matters: **per-AOI features came first (NB15), then the four-class label scheme used them as inputs (NB22)**. The labels are downstream of the grain, not upstream.
+
+## Phase 4 — approach-retreat repo split. 2026-04-07
+
+The day after NB22, the AR repo was bootstrapped. Five commits in twelve hours:
+
+- `5bd69d1` — `feat: initial approach-retreat library and SERP experiment site`
+- `b9c676e` — `feat: four-class taxonomy and fictional SERP data`. Labels ship before real data.
+- `46f2ff4` — `fix retreat distance tracking`. The very first bug fixed in the new repo is per-AOI retreat geometry.
+- `32976bb` — `docs: theory + one-pager, drop epistemic action framing`. The Kirsh–Maglio reading is abandoned; the library survives the theoretical reframe.
+- `623f284` — `docs: reframe contribution as better negatives for ML ranking`. The labels-not-features pitch is set in writing within 24 hours of the taxonomy notebook.
+
+The split was intentional. AF holds the science (notebooks, audits, claim IDs); AR holds the deployable instrumentation (browser library, schema, signal testbed). Same per-AOI primitive, two repos.
+
+## Phase 5 — Forward/regressive split, M5, canonical M4. 2026-04-08 to 2026-04-15
+
+The per-AOI grain stabilized into a public extractor. Work proceeded in parallel across both repos:
+
+| Date | AF | AR |
+|---|---|---|
+| 2026-04-08 | `0771e284` forward/regressive episode split across retreat, rank, convergence, and pupil notebooks | `d361ee1` `feat(episode): forward/regressive direction classification on Episode` |
+| 2026-04-13 | `1c88490a` NB22 K5 dissociation bulletproof across 50–200 px threshold | `03059d5` retract curved-close/straight-far retreat metaphor (audit fix) |
+| 2026-04-14 | `8e5d5203` canonical four-class episode distributions [LAB]; `14e0d5ff` **M5 — cursor-only bootstrap of NB22 gaze-regression taxonomy** | `39fb0e2` adopt [LAB]/[WILD] regime convention |
+| 2026-04-15 | — | `5074d34` **ship canonical M4 nine-feature extractor for v0.1.0** |
+
+`Episode` becomes a class in AR and a split column in AF on the same day. **M5 on 2026-04-14** is the load-bearing piece: a cursor-only bootstrap of the gaze-defined NB22 taxonomy, LOSO AUC 0.794. This is the moment the four-class labels can be recovered without a gaze stream at inference time. M4 ships the next day as v0.1.0.
+
+## Phase 6 — AOI cascade and bbox attribution. 2026-04-28 to 2026-05-17
+
+The schema gets exported as a stable data contract, then promoted to a typed module boundary:
+
+- 2026-04-28 `e1ea834` (AR) — `feat(data): emit master per-(trial,position) CSV with four-class labels`. The canonical per-AOI export.
+- 2026-04-30 `cee14805` (AF) — `data: per-trial AOI export keyed by canonical trial id`.
+- 2026-05-01 `4555cb25` (AF) — `feat(aoi-consumer-cascade): consumer API + producer migrations + K-ID delta evidence`. The cascade architecture: one producer (NB15) emits `cursor-approach-features-*.json`; multiple consumers (NB21, NB22, NB30) read it. AOI becomes a typed boundary between code modules, not just a row schema.
+- 2026-05-01 `8bb800fd` (AF) — `feat(aoi-cascade): NB15 producer migrated; cursor-approach-features-organic.json`.
+- 2026-05-02 `fd10e27c` → `95bc267e` → `79cdc3dd` (AF) — NB22 + four-class taxonomy + canonical synthesis under bbox-organic attribution. The LAB anchor moves from heuristic AOIs to bbox AOIs. The earlier `[LAB] 0.821 = [WILD] 0.821` framing breaks: LAB lifts to 0.864 under cleaner attribution while WILD stays at 0.821. The divergence is reported, not papered over.
+- 2026-05-05 `ac92bbb4` (AF) — `feat(aois): typed_gapfill flavor — midpoint-split + X+Y bbox click attribution`. Same day, `d6be69e6` adds the typed-cascade LTR with the four-class spec.
+- 2026-05-17 `c7dd202f` (AF) — `cellsplit: paper-canonical 4-class LTR — +0.043 ΔMRR (90 % of canonical boost)`. Per-AOI four-class labels lift MRR in a learning-to-rank pipeline, which is the CIKM payoff the very first NB15 cell predicted.
+
+## Phase summary
+
+| Idea-step | Code-step in AF | Code-step in AR | Days from day 0 |
+|---|---|---|---|
+| Trial-grain scalar | 2026-04-01 `010c0da2` | — | 0 |
+| Per-result framing in prose | 2026-04-01 `c03596e5` | — | 0 |
+| Episode unit | 2026-04-03 `65502aec` / `6652be58` | — | +2 |
+| OSEC phase model | 2026-04-04 `b8f85658` | — | +3 |
+| **Per-(trial, position) cursor features (NB15)** | **2026-04-05 `567833cd`** | — | **+4** |
+| Per-AOI + four-class label (NB21+NB22) | 2026-04-06 `8c4e2de6` | — | +5 |
+| Repo split | — | 2026-04-07 `5bd69d1` | +6 |
+| Forward/regressive on `Episode` | 2026-04-08 `0771e284` | 2026-04-08 `d361ee1` | +7 |
+| Cursor-only recovery of the gaze taxonomy (M5) | 2026-04-14 `14e0d5ff` | — | +13 |
+| Canonical M4 extractor v0.1.0 | — | 2026-04-15 `5074d34` | +14 |
+| Per-(trial, position) CSV export | — | 2026-04-28 `e1ea834` | +27 |
+| AOI cascade producer / consumer API | 2026-05-01 `4555cb25` | — | +30 |
+| Typed AOI cascade + paper-canonical LTR | 2026-05-05 `ac92bbb4` / `d6be69e6`, 2026-05-17 `c7dd202f` | — | +30 to +46 |
+
+## Reading the arc
+
+The per-AOI idea did not arrive as a deliberate design choice. It arrived as a data shape that survived a sequence of empirical surprises. The chronology rules out a top-down derivation:
+
+1. **NB10's "almost-clicked" set** — ~14 % of non-clicked results within click threshold — created a population that only existed at per-result grain. Trial-level couldn't see it.
+2. **NB15 (2026-04-05)** computed per-result cursor approach features to characterize that population. AUC jumped from 0.618 (position) to 0.823 (position + approach features).
+3. **NB22 (2026-04-06)** used per-result gaze regression to split "approached but didn't click" into deferred vs evaluated-rejected. The dissociation was clean (F1 0.70 / 0.66, zero cross-confusion), which made the four-class taxonomy a publication-grade label.
+4. **AR repo (2026-04-07)** wrapped the per-(trial, position) extractor in a browser library and renamed the contribution from "epistemic action" to "better negatives for ML ranking" — same code, different selling story. The per-AOI grain made both stories possible, but only the second one matched the data.
+5. **M5 (2026-04-14)** confirmed the per-AOI cursor features carried enough signal to recover the gaze-defined taxonomy without a gaze stream. That is what extended the library's reach beyond the AdSERP lab to gaze-free WILD data.
+6. **The cascade migration (2026-05-01)** turned per-AOI from a row schema into a typed module boundary. Producers emit `cursor-approach-features-*.json`; consumers don't recompute. Per-AOI stopped being a notebook convention and became an architectural commitment.
+
+The compressed answer: per-AOI emerged on **2026-04-05** in NB15 as a unit-of-analysis declaration — *15,397 result-position records, not 2,340 trials*. It held through six weeks of audits, repo splits, attribution rewrites, and rigor passes because every empirical follow-up needed the same row shape to land.
