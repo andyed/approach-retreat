@@ -138,7 +138,7 @@ Telemetry-reliability patch on the data-collection site. No library API change.
 
 ### Why
 
-At the 2026-05-06 movies.mindbendingpixels.com conference demo (n=5 engaged users), 103 `ar_episode` events and 45 `ar_click` events landed cleanly — but only **1** `ar_session_summary` was captured across all 5 sessions. The 80 % loss rate meant the per-session M4 nine-feature rollups, classification counts, and viewport-band aggregates (the inputs the CIKM paper consumes) were missing for most attendees.
+At the 2026-05-06 movies.mindbendingpixels.com conference demo (n=5 engaged users), 103 `ar_episode` events and 45 `ar_click` events landed cleanly — but only **1** `ar_session_summary` was captured across all 5 sessions. The 80 % loss rate meant the per-session M4 nine-feature rollups, classification counts, and viewport-band aggregates (the inputs the methods paper consumes) were missing for most attendees.
 
 ### Root cause
 
@@ -345,13 +345,13 @@ Source: `attentional-foraging/scripts/viewport_time_calibration.py`,
 
 First tagged release. Ships the cursor episode decomposition library, the
 four-class outcome taxonomy, the PostHog adapter, the gh-pages Quora-SERP
-demo, and the canonical M4 nine-feature extractor used by the Edmonds 2026
-CIKM paper.
+demo, and the canonical M4 nine-feature extractor used by the methods
+paper (submitted).
 
 ### Added
 
 - **`ResultFeatureTracker`** — per-result running aggregates of the nine M4
-  approach features from the Edmonds 2026 CIKM paper. Computed against each
+  approach features from the methods paper. Computed against each
   result's page-space Y center (scroll-invariant) with O(1) memory per
   tracked result regardless of sample count.
 - **`ApproachRetreat.getApproachFeatures()`** — returns the nine features

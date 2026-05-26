@@ -353,7 +353,7 @@ const DEFAULTS = {
 
 /**
  * Per-result running aggregates of the nine M4 approach features
- * (Edmonds 2026, CIKM). One tracker per SERP result element, updated on
+ * (methods paper, submitted). One tracker per SERP result element, updated on
  * every mousemove with the cursor's page-space Y coordinate. O(1) memory
  * per tracked result; 13 floats of live state regardless of sample count.
  *
@@ -1401,7 +1401,7 @@ export class ApproachRetreat {
    * schema in attentional-foraging/scripts/m4_nb21_hybrid_rerun.py.
    *
    * This is the canonical feature vector referenced throughout the
-   * CIKM 2026 paper (§3.3, §4.1). Feed these directly into a trained
+   * methods paper (§3.3, §4.1). Feed these directly into a trained
    * M4 click-predictor or M5 deferred-class detector.
    */
   getApproachFeatures() {

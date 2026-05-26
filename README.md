@@ -236,7 +236,7 @@ ar.flush();         // finalize in-flight episodes without clearing history
 
 `ar.getApproachFeatures()` emits the canonical feature vector consumed by
 the click-prediction (M3) and deferred-class (M5) classifiers. One vector
-per result position per session. The Edmonds 2026 CIKM paper companion
+per result position per session. The companion paper (submitted)
 documents the click-buffer leakage screen that distinguishes the seven
 buffer-robust features from `final_dist` and `retreat_dist` — see
 [`docs/research.md`](docs/research.md) for the deployment caveat.
@@ -379,7 +379,7 @@ implications, see Leiva, Arapakis & Iordanou. "My Mouse, My Rules"
 ## For researchers
 
 The library is the runnable form of the cognitive task model in the
-forthcoming CIKM 2026 paper. The full research index — task model
+companion paper (submitted). The full research index — task model
 derivation, four-class taxonomy validation, click-buffer leakage screen,
 LAB / WILD numbers with provenance, foundation-model rebuttal, and the
 Leiva/Arapakis lineage — lives at
@@ -404,7 +404,7 @@ Ancillary docs:
 - [`docs/validation/viewport-bands-calibration.md`](docs/validation/viewport-bands-calibration.md) —
   bootstrap protocol for the retreat + bands AUC.
 - [`docs/validation/feature-ablation-cross-stage.md`](docs/validation/feature-ablation-cross-stage.md) —
-  full LOFO + group ablation matrix across CIKM paper's four modeling
+  full LOFO + group ablation matrix across the paper's four modeling
   stages (click classifier, deferred classifier, three LambdaMART
   rankers). The cross-stage view the paper §4.1/§4.3/§4.6 paragraphs
   imply but couldn't fit in page budget.

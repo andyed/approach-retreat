@@ -319,7 +319,7 @@ export function createPostHogAdapter(posthog, options = {}) {
      *
      * Also captures the nine M4 approach features per result position via
      * ar.getApproachFeatures(). These are the canonical feature vector
-     * referenced by the Edmonds 2026 CIKM paper (§3.3, §4.1) and are the
+     * referenced by the methods paper (§3.3, §4.1) and are the
      * input M4 click predictors and M5 deferred-class detectors consume.
      * They are whole-trial running aggregates against each result's
      * page-space center, not per-episode — a cursor that never entered

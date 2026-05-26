@@ -21,7 +21,7 @@ path that never got the same treatment.
 
 **This is over-sampling, and it costs user CPU.** The §5.1 cursor
 sampling-rate ablation (`attentional-foraging/scripts/sampling_rate_ablation.py`,
-output `scripts/output/cikm-2026/sampling_rate_ablation.json`, commit
+output `scripts/output/ablations/sampling_rate_ablation.json`, commit
 `7be3d345`) downsamples the AdSERP cursor stream from its native
 ~59 Hz down to 1 Hz and re-runs the M4 LOSO click-prediction: **M4 AUC
 is flat at 0.847 ± 0.001 across the whole range — no floor, no
