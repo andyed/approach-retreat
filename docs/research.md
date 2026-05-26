@@ -11,6 +11,15 @@ caveats a deployment must respect.
 > Dataset* — [arXiv:2605.04949](https://arxiv.org/abs/2605.04949) (2026).
 > Local PDF: [`allserp-paper.pdf`](../allserp-paper.pdf).
 
+> **Which bbox flavor produced these numbers?** The AOI cascade has run
+> through several revisions in the last few weeks; a further refinement is
+> in flight. Every numerical claim in this file carries a flavor tag of
+> the form `[LAB, AdSERP, <flavor>, NB##:K##]`. The current canonical
+> flavor is `typed_gapfill` (2026-05-05); carousel-resolved work uses
+> `cellsplit` (2026-05-17). See
+> [`docs/bbox-attribution-lineage.md`](bbox-attribution-lineage.md) for
+> the full table and how to read the tags.
+
 ---
 
 ## The task model in one paragraph

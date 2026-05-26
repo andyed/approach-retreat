@@ -392,6 +392,10 @@ Ancillary docs:
   four-class taxonomy, retreat geometry as deliberation indicator.
 - [`docs/positioning.md`](docs/positioning.md) — four-lane map of related
   work.
+- [`docs/bbox-attribution-lineage.md`](docs/bbox-attribution-lineage.md) —
+  sequence of AOI extraction flavors (band → bbox-organic → typed →
+  typed_gapfill → cellsplit), which is in use, and how to read flavor
+  tags in cited numbers. **Read before citing any AUC from this repo.**
 - [`docs/history.md`](docs/history.md) — Lucidity 2001 → Optimoz 2001 →
   Uzilla 2003 → ClickSense 2026 → approach-retreat 2026 lineage with
   Slashdot front-page screenshot.

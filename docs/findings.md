@@ -4,6 +4,14 @@
 
 For the theoretical frame (cursor episode decomposition, four-class taxonomy, LAB↔WILD bridge), see [`theory.md`](theory.md). For mechanism details on the forward-vs-regressive split, see [`forward-regressive-split.md`](forward-regressive-split.md). For the 1-pager pitch to non-academic audiences, see [`one-pager.md`](one-pager.md).
 
+> **Reading flavor tags.** Numbers below carry tags of the form
+> `[LAB, AdSERP, <flavor>, NB##:K##]`. The flavor token identifies the
+> bbox attribution cascade in force when that number was computed —
+> e.g. `absolute legacy`, `bbox-organic`, `organic_hybrid`, `typed_gapfill`,
+> `cellsplit`. See
+> [`bbox-attribution-lineage.md`](bbox-attribution-lineage.md) for the
+> full sequence, which is current, and which is still in flight.
+
 ---
 
 ## 1. Click-prediction signal survives the eye-tracker stripped away
