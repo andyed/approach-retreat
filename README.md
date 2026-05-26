@@ -1,27 +1,36 @@
 # Approach/Retreat
 
-Drop-in cursor + viewport instrumentation for ranked-list pages — search
-result pages, recommendation feeds, comparison tables, product grids. Two
-channels:
+Tells your SERP what users *did* with each result — beyond clicks, without
+an eye tracker. Drop-in instrumentation for ranked-list pages: search
+result pages, recommendation feeds, comparison tables, product grids.
 
-1. **Approach-retreat episodes** — per-result enter / dwell / exit behaviour
-   from cursor telemetry. Classified into a four-class taxonomy (clicked /
-   deferred / evaluated-rejected / not-approached). Desktop-only.
-2. **Viewport dynamics** — per-AOI session-level measurement of how each
-   result sits in, and moves through, the viewport. Cursor-free; works
-   wherever scroll events + DOM bounding boxes are available, including
+Two channels:
+
+1. **Approach-retreat episodes** *(desktop, cursor)* — per-result enter /
+   dwell / exit behaviour, classified into a four-class taxonomy:
+   **clicked**, **deferred** (considered, returned to, eventually skipped),
+   **evaluated-rejected** (approached, decided against), and
+   **not-approached**. These map directly onto the (0/1/2) graded-relevance
+   vocabulary that learning-to-rank consumes natively. Also produces the
+   seven-feature M4-7 vector used by the click-prediction and deferred-class
+   classifiers.
+2. **Viewport dynamics** *(any device, scroll-only)* — per-AOI residence,
+   MRC/IAB viewability, and scroll kinematics. No cursor required; works
+   wherever `scroll` events + DOM bounding boxes are available, including
    mobile and feed surfaces.
 
-Sister library to [ClickSense](https://github.com/andyed/clicksense). For
-the research backing — task model, four-class taxonomy derivation,
-validation against AdSERP and ACD — see
+Sister library to [ClickSense](https://github.com/andyed/clicksense), which
+captures the per-click commitment moment. Approach-retreat captures the
+evaluation phase that precedes it. For the research backing — task model,
+four-class taxonomy derivation, validation against AdSERP and ACD — see
 [`docs/research.md`](docs/research.md).
 
 ## See it in action
 
-Three AdSERP trials replayed against the original screenshots with
-four-class taxonomy labels inferred from cursor episodes alone (no eye
-tracker at inference time):
+Three AdSERP trials replayed against the original screenshots. The labels
+(CLK / DEF / REJ / NA) were inferred from cursor episodes alone — no gaze
+data at inference time. Boxes are AOIs from the dataset; labels are this
+library's output.
 
 <table>
 <tr>
@@ -32,8 +41,7 @@ tracker at inference time):
 </table>
 
 Backgrounds are raw AdSERP screenshots — what the participant saw, pixel
-for pixel. Boxes are AOIs; labels are this library's output, computed from
-the cursor stream alone. Full replay index:
+for pixel. Full replay index:
 [andyed.github.io/approach-retreat/replay/](https://andyed.github.io/approach-retreat/replay/) —
 86 curated trials.
 
@@ -42,6 +50,30 @@ The companion viewer at
 renders the same trials through a foveated-perception simulator (showing
 what the participant could *resolve* at each fixation). Different view of
 the same data.
+
+## Run it yourself
+
+Two live deployments of the library you can poke at right now. Same code,
+different surfaces — clone the repo, fork the demos, or just open a URL
+and press `d` to watch the debug overlay light up as you move your cursor.
+
+**[andyed.github.io/approach-retreat/](https://andyed.github.io/approach-retreat/)**
+— 5 SERP layouts × 4 Q&A queries, 20 bookmarkable combinations. Pick a
+layout, pick a question, browse the answers like a search engine. Press
+`d` on any SERP for the in-page debug overlay showing live episode
+classification per result. Same `ar_episode` / `ar_click` /
+`ar_session_summary` schema across all 20 — the layout is the variable,
+the instrumentation is the constant.
+
+**[movies.mindbendingpixels.com](https://movies.mindbendingpixels.com)** —
+the same library running in a different domain (a film-recommendation
+mission flow) against the same PostHog event contract. Portability
+proof: v0.2.1 and v0.3.0 of this library shipped data-correctness fixes
+discovered on that deployment (see [CHANGELOG](CHANGELOG.md)).
+
+Telemetry is live on both. Append `?ph=0` to any URL to opt out of
+capture. All site source is in [`site/`](site/) — fork it, drop in your
+own results, ship your own deployment.
 
 ---
 
@@ -325,16 +357,6 @@ small penalty for repeated retreats. The four-class taxonomy maps cleanly
 onto the (0/1/2) graded-relevance vocabulary that learning-to-rank
 consumes natively (clicked = 2, deferred = 1, evaluated-rejected = 0;
 not-approached excluded as no-evidence).
-
-## Live experiment
-
-The [gh-pages site](https://andyed.github.io/approach-retreat/) runs the
-library across five layout variants × four Q&A SERPs (20 bookmarkable
-combinations). Same library contract, same episode schema across all of
-them — the layout is the variable, the instrumentation is the constant.
-
-Telemetry is live. Press `d` on any SERP page for the in-page debug
-overlay. Append `?ph=0` to disable capture.
 
 ## Privacy
 
