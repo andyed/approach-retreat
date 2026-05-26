@@ -62,7 +62,7 @@ The four classes (*clicked / deferred / evaluated-rejected / not-approached*) ar
 
 A behaviorally-verified, deployment-scalable, denoising-by-construction source of hard negatives that does not require iterative model updates or cross-encoder filtering. The IR literature has not had this — the closest precedent is Joachims 2005's skip-above heuristic, which infers rejection from click position rather than observing rejection from cursor behavior.
 
-The CIKM 2026 contribution is therefore not just *"we introduce a four-class taxonomy of non-click outcomes"* but *"we introduce a behaviorally-verified source of hard negatives for dense retrieval and learning-to-rank, complementary to BM25-based and model-based mining, addressing the false-negative and re-indexing failure modes by construction."* The first framing is interesting to HCI researchers; the second is a contribution the IR field has an established literature to receive.
+The contribution is therefore not just *"we introduce a four-class taxonomy of non-click outcomes"* but *"we introduce a behaviorally-verified source of hard negatives for dense retrieval and learning-to-rank, complementary to BM25-based and model-based mining, addressing the false-negative and re-indexing failure modes by construction."* The first framing is interesting to HCI researchers; the second is a contribution the IR field has an established literature to receive.
 
 ## Citations
 

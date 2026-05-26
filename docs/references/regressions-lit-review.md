@@ -36,7 +36,7 @@ The **Partially Sequential Click Model (PSCM)**. THUIR / Yiqun Liu group, Tsingh
 
 Neural seq2seq absorbing non-sequential patterns end-to-end. Direction is implicit, learned from data. Sequence-model successor to PSCM at the click level.
 
-**Why this matters.** Bag-of-features-over-sequence approach. Same gap as the cursor-feature classifier work in §2.1 of the CIKM paper: no per-result-AOI commitment, no explicit direction or revisit construct, no geometric descriptors.
+**Why this matters.** Bag-of-features-over-sequence approach. Same gap as the cursor-feature classifier work in §2.1 of the methods paper: no per-result-AOI commitment, no explicit direction or revisit construct, no geometric descriptors.
 
 ---
 

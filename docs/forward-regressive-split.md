@@ -139,7 +139,7 @@ Some notebooks (e.g., the panel-2 dwell-by-rank chart that shows ranks 0–8 onl
 ## Where this rule appears in published / draft work
 
 - **OSEC paper §5.7** (task-model-paper.md) — methodology paragraph, with parity check and tolerance stability claim.
-- CIKM paper-v3 §3 — episode-level direction as a feature of the approach-retreat construct.
+- Methods paper §3 — episode-level direction as a feature of the approach-retreat construct.
 - `approach-retreat/docs/validation/m5-calibration.md` — direction as input to M5.
 - NB17, NB20, NB23, NB24 — direction as a partition for forward-only vs pooled analyses.
 

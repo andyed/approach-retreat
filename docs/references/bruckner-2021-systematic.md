@@ -35,8 +35,8 @@ Brückner *et al.* explicitly framed mouse-length as the natural cursor-only bas
 
 - No per-result attribution: the cursor stream is treated as a session-level signal.
 - No four-class taxonomy: the targets are session-outcome variables, not within-session AOI states.
-- No leakage screen / click-buffer protocol: the single ad-click ends the session, so terminal-cursor lock-on contaminates feature aggregation in the same way that motivates the `approach-retreat` click-buffer in CIKM §4.4.
+- No leakage screen / click-buffer protocol: the single ad-click ends the session, so terminal-cursor lock-on contaminates feature aggregation in the same way that motivates the `approach-retreat` click-buffer in the paper's §4.4.
 
-## Notes for the CIKM paper
+## Notes for the paper
 
 §4.5 cites this work as the **scalar mouse-length baseline** (0.653 ± 0.031 under the matched click-buffer). The 11-feature and 10-feature approach-retreat numbers in the same table are head-to-head against this baseline on identical data. Cite as `\cite{bruckner2021systematic}`.

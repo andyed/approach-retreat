@@ -22,7 +22,7 @@ The answer is the 3-feature no-dwell ablation `[AR-V1:K2]`: `min_dist + retreat_
 
 ### Hover alone carries most of the load — a deployment frontier
 
-A single feature — `dwell_in_proximity_ms` (time the cursor spent within 100 px of the AOI center) — reaches **AUC 0.821** on the AdSERP LOSO click-prediction task, within 0.026 of the full seven-feature M4 (0.847). Adding `min_dist` as a second feature lifts that to **AUC 0.837**, within 0.010 of M4. Producer: `cikm-leakycursor-replicate/replicate/click_prediction_v0_1.py` (configs `hover_only`, `hover_plus_dist`); results in `results.json`.
+A single feature — `dwell_in_proximity_ms` (time the cursor spent within 100 px of the AOI center) — reaches **AUC 0.821** on the AdSERP LOSO click-prediction task, within 0.026 of the full seven-feature M4 (0.847). Adding `min_dist` as a second feature lifts that to **AUC 0.837**, within 0.010 of M4. Producer: the methods-paper replicate repo, `replicate/click_prediction_v0_1.py` (configs `hover_only`, `hover_plus_dist`); results in `results.json`.
 
 Among the 2,589 clicked AOIs in the buf500 cascade, **93.2 % receive any cursor proximity-dwell** (`dwell_in_proximity_ms > 0`); 82.7 % receive ≥ 500 ms, median 2.5 s on dwelled clicks. The hover signature is direct empirical evidence of motor-cognitive coupling at the per-result-AOI grain — not a derived statistic from a multi-feature combination.
 

@@ -1,6 +1,6 @@
 """§4.3-analog deferred-class recalibration against ACD's Likert ≥ 3.
 
-The CIKM paper's §4.3 trains a cursor-only LR classifier on the AdSERP
+The methods paper's §4.3 trains a cursor-only LR classifier on the AdSERP
 LAB pool of approached non-click episodes to predict the gaze-regression
 "deferred" label (AUC 0.753, Youden-J threshold p = 0.449, precision
 86.7 %, recall 77.1 %, F1 0.816). §5 then lists four deployment-time
@@ -268,7 +268,7 @@ def main():
         },
         "runs": all_results,
         "lab_headline_for_comparison": {
-            "source": "CIKM paper §4.3",
+            "source": "methods paper §4.3",
             "task": "AdSERP non-click gaze-regression deferred target",
             "protocol": "LOSO 47-fold",
             "roc_auc": 0.753,

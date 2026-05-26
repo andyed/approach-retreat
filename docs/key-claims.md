@@ -232,4 +232,4 @@ The P0–P3-positive, P4–P5-attenuating pattern is preserved; the per-position
 
 ## How to cite
 
-In prose: `[AR-V1:K1]`, `[AR-V2:K8]`, `[AR-V3:K5]`, etc. In figure captions, paste the value alongside the K-ID for human-readable context. In the CIKM 2026 paper, the schema mirrors AF's `[NB##:K##]` so the two repos read consistently.
+In prose: `[AR-V1:K1]`, `[AR-V2:K8]`, `[AR-V3:K5]`, etc. In figure captions, paste the value alongside the K-ID for human-readable context. In the methods paper, the schema mirrors AF's `[NB##:K##]` so the two repos read consistently.

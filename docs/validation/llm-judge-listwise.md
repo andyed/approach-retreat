@@ -10,7 +10,7 @@ Scope tag: `[LAB, AdSERP]`. AdSERP is instructed-shop, not actual-purchase — t
 
 **Substrate.** 17,728 (trial_id, position) pairs from `episodes-typed-buf500.json` joined with title/snippet text from `serp-embeddings-split.json` and queries from `query-embeddings.json`. 400 SERPs sampled uniformly at random from trials with ≥3 reached positions.
 
-**Cursor labels.** The four-class taxonomy from §4.2 of the CIKM submission, derived via `derive_taxonomy(df, approach_threshold_px=100)`:
+**Cursor labels.** The four-class taxonomy from §4.2 of the methods paper, derived via `derive_taxonomy(df, approach_threshold_px=100)`:
 
 - `clicked` ← `was_clicked = True`
 - `not_approached` ← `min_dist ≥ 100`
@@ -19,7 +19,7 @@ Scope tag: `[LAB, AdSERP]`. AdSERP is instructed-shop, not actual-purchase — t
 
 Mapped to ordinal scale `3 / 2 / 1 / 0` for per-trial Spearman analysis.
 
-**Judge.** Claude-class subagent receiving the SERP's query plus the title, snippet, and etype for every reached position; ranks results listwise from best→worst against an explicit rubric (`data/llm_judge/rubric_v1.md` in `cikm-leakycursor-replicate`). The judge sees NO cursor, click, position-on-SERP, or participant identity.
+**Judge.** Claude-class subagent receiving the SERP's query plus the title, snippet, and etype for every reached position; ranks results listwise from best→worst against an explicit rubric (`data/llm_judge/rubric_v1.md` in the replicate repo). The judge sees NO cursor, click, position-on-SERP, or participant identity.
 
 **Rubric v1.** E-commerce shopper preference: exact match > brand match > retailer trust / acquisition ease > price > availability > specificity > intent.
 
@@ -67,7 +67,7 @@ The plain reading: top clicks are the consensus case where cursor and any sensib
 | organic | 305 | +0.068 | 16.7 % |
 | widget | 18 | −0.135 | 0.0 % |
 
-Ad-clicked trials show ~4× the top-pick agreement of organic-clicked trials. This is the same direction and approximately the same magnitude as the +0.100 vs +0.047 ΔMRR ad-side LTR lift reported in §4.6 of the CIKM submission (private decomposition record at `~/Documents/dev/cikm-leakycursor-ad-decomposition.md`). Independent confirmation under a different protocol that ad-side cursor labels carry tighter alignment with text-based relevance.
+Ad-clicked trials show ~4× the top-pick agreement of organic-clicked trials. This is the same direction and approximately the same magnitude as the +0.100 vs +0.047 ΔMRR ad-side LTR lift reported in the paper's §4.6 (private decomposition record kept local). Independent confirmation under a different protocol that ad-side cursor labels carry tighter alignment with text-based relevance.
 
 ## 5. Ad fraction on the SERP flips the sign
 
@@ -205,19 +205,19 @@ The +0.52 → −0.09 gradient with click depth is a strong empirical pattern bu
 
 ---
 
-## 9. Relevance to the CIKM submission
+## 9. Relevance to the submitted paper
 
 The paper's IR-voice framing is "graded relevance labels derived from per-result examination episodes," with +0.054 ΔMRR vs binary as the headline. The judge experiment does not invalidate that claim — LTR optimizes per-list ranking quality and the labels carry useful per-list signal even when per-SERP cursor↔judge Spearman is weak.
 
 It does suggest a more defensible secondary claim: the cursor labels are *competitive preference labels conditioned on the user's actual selection*, not absolute relevance grades. That distinction is consistent with the prior observation that fully-ranked LTR from cursor data underperformed binary classes — adding ordinal structure across deferred / eval_rejected / not_approached injects user-specific non-textual variance the model cannot ground.
 
-This experiment is not currently slated for the CIKM submission. It belongs as future work, either as a CHIIR-style methods paper on cursor-judge protocol design or as a §6 paragraph in a follow-on venue. Decision deferred.
+This experiment is not currently slated for inclusion. It belongs as future work, either as a methods paper on cursor-judge protocol design or as a §6 paragraph in a follow-on venue. Decision deferred.
 
 ---
 
 ## 10. Data and code
 
-- Source data and judging artifacts live in the private `cikm-leakycursor-replicate` repo under `data/llm_judge/`:
+- Source data and judging artifacts live in the private replicate repo under `data/llm_judge/`:
   - `judge_pairs.jsonl` — 17,728 reached pairs with cursor labels joined to query/title/snippet
   - `per_serp_v1_expanded.jsonl`, `per_serp_v1_new200.jsonl` — 400 sampled SERPs
   - `rankings_v1_*.jsonl` — v1 listwise judgments

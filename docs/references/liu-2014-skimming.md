@@ -25,10 +25,10 @@ per-rank  →  per-result AOI summary  →  per-result AOI episode geometry  →
 
 - **Internal episode geometry**, not just summary statistics. Approach-retreat measures `min_dist`, `retreat_dist`, `retreat_arc_ratio`, `direction_changes`, `frac_decreasing` *within* each AOI encounter. Liu's vector is per-result-summary (dwell, hover, presence) — coarser.
 - **The four-class taxonomy of non-click behavior**. Liu's two-stage model splits *whole-trial* behavior into skim/read; approach-retreat splits *per-result* behavior into clicked / deferred / evaluated-rejected / not-approached. The latter is the LTR-relevant graded-relevance shape.
-- **Click-buffer leakage controls.** Liu's per-result vector includes terminal-window samples; approach-retreat's seven canonical features are screened against terminal cursor lock-on (CIKM §3.4 / §4.4).
+- **Click-buffer leakage controls.** Liu's per-result vector includes terminal-window samples; approach-retreat's seven canonical features are screened against terminal cursor lock-on (paper §3.4 / §4.4).
 
-## Notes for the CIKM paper
+## Notes for the paper
 
 §2 cites this as **"the closest per-result-AOI precedent"** — the gap between Liu's per-result summary and approach-retreat's per-result *episode geometry* is what the paper's contribution sits in. Cite as `\cite{liu2014skimming}`.
 
-The OSEC Survey → Evaluate decomposition (CIKM §3.3, deliberation phase) is a distant cousin of Liu's skimming → reading split — both are two-phase task models for SERP evaluation. The tasks are different (Liu's outcome is click prediction across a session; approach-retreat's outcome is per-AOI engagement classification), but the two-phase decomposition itself is shared.
+The OSEC Survey → Evaluate decomposition (paper §3.3, deliberation phase) is a distant cousin of Liu's skimming → reading split — both are two-phase task models for SERP evaluation. The tasks are different (Liu's outcome is click prediction across a session; approach-retreat's outcome is per-AOI engagement classification), but the two-phase decomposition itself is shared.

@@ -46,7 +46,7 @@ For the long form: [`docs/theory.md`](theory.md), [`docs/one-pager.md`](one-page
 | `final_dist` | Last cursor-AOI distance in trial | `[LAB]` validated | **Click-buffer leak** — see below |
 | `retreat_dist` | `final_dist − min_dist` (post-closest drift) | `[LAB]` validated | **Click-buffer leak** — see below |
 
-**Click-buffer leakage (important for any production deployment).** The CIKM 2026
+**Click-buffer leakage (important for any production deployment).** The methods
 paper companion runs a click-buffer ablation (truncate the cursor stream at
 *click_t − Δ* for Δ ∈ {0, 200, 500, 1000} ms) and shows that `final_dist` and
 `retreat_dist` carry +0.022 LAB AUC at Δ = 0 that disappears once you screen
@@ -60,7 +60,7 @@ generalisation. If you are scoring at *inference* time before the click event
 is consumable, you are fine; if you are training on logged sessions, truncate
 your input window upstream of the click.
 
-The validated headline for click prediction (CIKM 2026): the seven
+The validated headline for click prediction: the seven
 buffer-robust features at Δ = 500 ms produce LOSO AUC 0.847 on
 `organic_hybrid` vs a position-only baseline of 0.668 (+0.179 lift,
 47-fold), and replicate to ACD/WILD at AUC 0.765 on the analogous binary
@@ -118,7 +118,7 @@ gaze-fixation sequence revisiting earlier result positions
 A scroll-only detector for the same partition is named future work.
 
 Headline LAB numbers (post-2026-05-01 bbox-organic cascade,
-post-CIKM-revision click-buffer screen):
+post-revision click-buffer screen):
 
 - **Click prediction (M3 / M4-7).** LOSO AUC 0.847 under `organic_hybrid` at
   Δ = 500 ms; 0.864 under `organic`; 0.870 under hybrid attribution

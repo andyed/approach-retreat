@@ -7,7 +7,7 @@ The participant-level taxonomy precedent. Dumais's group (with Buscher and Cutre
 ## Method
 
 - Eye-tracking on web search tasks, instrumented at the same Microsoft Research lab whose at-scale cursor work [Huang, White & Buscher 2012] follows two years later.
-- AOIs include the 10 organic results *plus* page chrome — ads, related searches, the SERP layout components contemporary search engines were adding around the organic core. The methodological choice of including non-organic AOIs is a precedent for `approach-retreat`'s `organic_hybrid` attribution in CIKM §3.1.
+- AOIs include the 10 organic results *plus* page chrome — ads, related searches, the SERP layout components contemporary search engines were adding around the organic core. The methodological choice of including non-organic AOIs is a precedent for `approach-retreat`'s `organic_hybrid` attribution in the paper's §3.1.
 - **Clustering** on per-participant gaze-pattern descriptors yielded a small number of groups with qualitatively distinct examination styles. The paper names the resulting taxonomy at the participant grain — *this person scans exhaustively, this person locks onto the first relevant-looking result, this person attends to ads*.
 
 ## Where approach-retreat extends this
@@ -20,11 +20,11 @@ Both levels of resolution are useful, and they answer different questions:
 |----------|-------|-----------|
 | What kind of searcher is this person? | Per-participant | Dumais 2010 clusters |
 | What kind of engagement did this AOI receive on this trial? | Per-(trial, position) | Approach-retreat 4-class taxonomy |
-| What kind of decision phase is the cursor in right now? | Per-fixation-window | Soft-constraints / Gray microstrategies (CIKM §3.3) |
+| What kind of decision phase is the cursor in right now? | Per-fixation-window | Soft-constraints / Gray microstrategies (paper §3.3) |
 
-The mapping from per-trial-position to per-participant is a sum or distribution over the participant's trials — Dumais's taxonomy is recoverable from approach-retreat's grid by aggregation. The reverse is not true: approach-retreat's per-(trial, position) labels carry information the participant-level cluster cannot represent, which is what makes the four-class taxonomy a graded-relevance label generator (CIKM §4.6).
+The mapping from per-trial-position to per-participant is a sum or distribution over the participant's trials — Dumais's taxonomy is recoverable from approach-retreat's grid by aggregation. The reverse is not true: approach-retreat's per-(trial, position) labels carry information the participant-level cluster cannot represent, which is what makes the four-class taxonomy a graded-relevance label generator (paper §4.6).
 
-## Notes for the CIKM paper
+## Notes for the paper
 
 §2 cites this work as the **participant-level taxonomy precedent**:
 

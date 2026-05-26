@@ -106,7 +106,7 @@ The notebook header makes the conceptual move explicit:
 
 The feature schema instantiated here is what becomes M3/M4: `min_dist, mean_dist, final_dist, retreat_dist, dwell_in_proximity_ms, mean_approach_velocity, max_approach_velocity, direction_changes, frac_decreasing`. Each row is one (trial, position) tuple. The *15,397 result-position records* phrasing in the commit message is the unit-of-analysis declaration. Per-AOI now exists as a data structure, not just rhetoric.
 
-The notebook footer target was already explicit: *"CIKM 2026. The gain is not 'your model is wrong' but 'here's a signal your model can't see.'"*
+The notebook footer target was already explicit: *"the submission. The gain is not 'your model is wrong' but 'here's a signal your model can't see.'"*
 
 ## Phase 3 — NB21 + NB22: per-AOI gets a label scheme. 2026-04-06
 
@@ -159,7 +159,7 @@ The schema gets exported as a stable data contract, then promoted to a typed mod
 - 2026-05-01 `8bb800fd` (AF) — `feat(aoi-cascade): NB15 producer migrated; cursor-approach-features-organic.json`.
 - 2026-05-02 `fd10e27c` → `95bc267e` → `79cdc3dd` (AF) — NB22 + four-class taxonomy + canonical synthesis under bbox-organic attribution. The LAB anchor moves from heuristic AOIs to bbox AOIs. The earlier `[LAB] 0.821 = [WILD] 0.821` framing breaks: LAB lifts to 0.864 under cleaner attribution while WILD stays at 0.821. The divergence is reported, not papered over.
 - 2026-05-05 `ac92bbb4` (AF) — `feat(aois): typed_gapfill flavor — midpoint-split + X+Y bbox click attribution`. Same day, `d6be69e6` adds the typed-cascade LTR with the four-class spec.
-- 2026-05-17 `c7dd202f` (AF) — `cellsplit: paper-canonical 4-class LTR — +0.043 ΔMRR (90 % of canonical boost)`. Per-AOI four-class labels lift MRR in a learning-to-rank pipeline, which is the CIKM payoff the very first NB15 cell predicted.
+- 2026-05-17 `c7dd202f` (AF) — `cellsplit: paper-canonical 4-class LTR — +0.043 ΔMRR (90 % of canonical boost)`. Per-AOI four-class labels lift MRR in a learning-to-rank pipeline, which is the payoff the very first NB15 cell predicted.
 
 ## Phase summary
 

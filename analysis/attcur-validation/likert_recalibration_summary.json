@@ -168,7 +168,7 @@
     }
   },
   "lab_headline_for_comparison": {
-    "source": "CIKM paper \u00a74.3",
+    "source": "methods paper \u00a74.3",
     "task": "AdSERP non-click gaze-regression deferred target",
     "protocol": "LOSO 47-fold",
     "roc_auc": 0.753,

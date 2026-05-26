@@ -206,7 +206,7 @@ parameters should:
   contiguous similar-relevance results) should produce more
   direction changes and lower frac_decreasing.
 
-The CIKM paper does not formally fit a DDM (a proper DDM fit would
+The methods paper does not formally fit a DDM (a proper DDM fit would
 require multi-trial RT distributions per condition); instead it
 shows that **the cursor-derived parameter estimators predict click
 outcome at AUC 0.847 LOSO**, with the M3 ≈ M4 result establishing
@@ -219,7 +219,7 @@ models had only been encoding indirectly.
 
 ## Pulling these claims into the paper
 
-The Edmonds 2026 CIKM submission cites this lineage as follows:
+The methods paper cites this lineage as follows:
 
 - **§3.4 "The seven approach features (M4 cursor probe)"** — the
   paragraph immediately after the feature table introduces the
@@ -261,7 +261,7 @@ The Edmonds 2026 CIKM submission cites this lineage as follows:
   by ML reviewers as a principled probabilistic decision model, not as
   cognitive-science speculation.
 - **One sentence in the main paper.** Per the strategic framing in
-  the CIKM submission, the DDM citation is a one-sentence anchor in
+  the methods paper, the DDM citation is a one-sentence anchor in
   §3.4 — a reviewer who wants to follow it up can; one who does not
   can read past it without the paper becoming "about" cognitive
   modeling.

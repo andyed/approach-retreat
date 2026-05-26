@@ -2,11 +2,10 @@
 ## Key Claims from Gray's *Milliseconds Matter* and the *Soft Constraints Hypothesis*
 
 This document captures the foundational claims from Wayne Gray and
-collaborators that anchor the theoretical frame of the Edmonds 2026 CIKM
-paper (*Cognitive Task Models Recover SERP Examination Signal Invisible to
-Atheoretic Cursor Feature Extraction*) and the `approach-retreat` library
-itself. Each claim has a stable K-ID, a verified citation, and a relevance
-note explaining how it bears on cursor-cognition coupling on SERPs.
+collaborators that anchor the theoretical frame of the methods paper
+(submitted) and the `approach-retreat` library itself. Each claim has a
+stable K-ID, a verified citation, and a relevance note explaining how it
+bears on cursor-cognition coupling on SERPs.
 
 The intellectual chain is: **Simon (1956) → Anderson rational analysis
 (1990) → Gray *Milliseconds Matter* (2000) → Gray *Soft Constraints
@@ -44,7 +43,7 @@ deferred-class taxonomy + nine-feature M4 result are demonstrations.
 | **Az-2014** | Azzopardi, L. (2014). *Modelling interaction with economic models of search.* **SIGIR '14**, pp. 3–12. DOI: 10.1145/2600428.2609574 |
 | **M&Az-2018** | Maxwell, D. & Azzopardi, L. (2018). *Information scent, searching and stopping.* **ECIR '18**. Foraging-grounded SERP-level stopping rules. |
 | **ATM-2019** | Azzopardi, L., Thomas, P. & Moffat, A. (2019). *cwl_eval: An evaluation tool for information retrieval.* **SIGIR '19**, pp. 1321–1324. DOI: 10.1145/3331184.3331398. The canonical C/W/L framework paper. |
-| **Az&Zu-2019** | Azzopardi, L. & Zuccon, G. (2019). *Building economic models of human computer interaction.* **CHI EA '19**. DOI: 10.1145/3290607.3299022. Extends the economic-model program from search to HCI broadly — the citation anchor for the Edmonds 2026 conclusion's "extend the move to other domains" call. |
+| **Az&Zu-2019** | Azzopardi, L. & Zuccon, G. (2019). *Building economic models of human computer interaction.* **CHI EA '19**. DOI: 10.1145/3290607.3299022. Extends the economic-model program from search to HCI broadly — the citation anchor for the paper's conclusion's "extend the move to other domains" call. |
 
 ---
 
@@ -155,7 +154,7 @@ has not made it the central organizing frame.
 **Relevance to cursor-cognition coupling on SERPs.** The IR literature has
 been building empirical scaffolding for what bounded-rationality theory
 predicts directly, and the lineage was on the author line of the founding
-paper. The Edmonds 2026 paper closes the loop by:
+paper. The methods paper closes the loop by:
 
 1. Identifying *which phase* the coupling concentrates in (Evaluate, via
    OSEC) using a task model.
@@ -212,8 +211,8 @@ foraging applied to multi-action search sessions. Gray's microstrategies
 and SCH operate at the *motor execution* grain — sub-1000 ms continuous
 mixing of perceptual, motor, and cognitive resources during a single
 interactive action. **These are the same intellectual program at different
-timescales**, and bringing them together is the move the Edmonds 2026
-paper makes. Azzopardi being a co-author on the paper is therefore not
+timescales**, and bringing them together is the move the methods paper
+makes. Azzopardi being a co-author on the paper is therefore not
 incidental — his fifteen-year IR-side program is one of the two pillars
 the paper rests on (the other being Gray's motor-side program). The
 contribution is bringing the strategic-side and motor-side bounded-
@@ -250,13 +249,13 @@ single process, jointly optimized at the millisecond scale, and they
 **carry the decision in different places at different times** as the soft
 constraints rebalance. Locating where the cursor carries the decision is
 a task-model question; measuring it there is the empirical step. This is
-the framing the CIKM paper adopts.
+the framing the methods paper adopts.
 
 ---
 
 ## Pulling these claims into the paper
 
-These five K-claims are cited in the Edmonds 2026 CIKM paper as follows:
+These five K-claims are cited in the methods paper as follows:
 
 - **Abstract** — bounded rationality is the opening frame (K1 + K2). The
   Anderson-on-the-founding-paper observation (K3) is also surfaced briefly
@@ -291,7 +290,7 @@ The Gray papers are in **top-tier psychology venues** (J Exp Psych: Applied
 2006 paper has 200+ citations), and have been replicated. Gray is a
 long-standing ACT-R community member at RPI. The work has direct empirical
 hooks (stopwatch-style task measurements, ACT-R model fits to behavior)
-that translate cleanly to the kinds of evidence a CIKM reviewer values.
+that translate cleanly to the kinds of evidence an IR reviewer values.
 The references are not philosophical / theory-only.
 
 The minimum-memory-hypothesis vs. soft-constraints comparison in
@@ -305,10 +304,10 @@ the canonical venue for IR research, the C/W/L framework has its own
 implementation toolkit (`cwl_eval`, available on GitHub at
 [ireval/cwl](https://github.com/ireval/cwl)), and the framework is
 presented as a unification that subsumes RBP, INST, TBG, and U-measure.
-A CIKM reviewer will recognize Azzopardi's program as established IR work,
+A reviewer will recognize Azzopardi's program as established IR work,
 and the strategic-side / motor-side bridge framing positions the paper as
 *continuing* his program rather than displacing it. Azzopardi being a
-co-author on the Edmonds 2026 paper provides additional intellectual
+co-author on the methods paper provides additional intellectual
 provenance.
 
 The **Anderson co-authorship of Chen, Anderson & Sohn 2001 (K3)** is the

@@ -1,7 +1,6 @@
 # Feature ablation across modeling stages
 
-Companion analysis to *The Leaky Cursor: Approach-Retreat Geometry as a
-Per-Result Deliberation Channel* (CIKM 2026, under review). The paper
+Companion analysis to the methods paper (submitted). The paper
 uses the seven-feature M4 cursor vector at four modeling stages —
 click-prediction classifier (§4.1), deferred-class classifier (§4.3),
 and LambdaMART rankers under three label flavors (§4.6). Page budget
@@ -158,8 +157,7 @@ Three observations the cross-stage view makes explicit.
 
 Two harnesses produce the matrix.
 
-**Replicate repository** (`cikm-leakycursor-replicate`, private until
-CIKM camera-ready):
+**Replicate repository** (private until camera-ready):
 
 | Script | Produces |
 |---|---|
@@ -179,12 +177,11 @@ CIKM camera-ready):
 **Public artifact for reviewers:** this document.
 The matrices and discussion above can be verified against the §4.1 /
 §4.3 / §4.6 paragraphs in the paper. The producer scripts will be
-public-readable from the cikm-leakycursor-replicate repository on
-camera-ready release.
+public-readable from the replicate repository on camera-ready release.
 
 ---
 
-*Generated 2026-05-15. Cross-references CIKM 2026 paper-v5 §3.4 (canonical
+*Generated 2026-05-15. Cross-references paper-v5 §3.4 (canonical
 seven-feature M4), §4.1 (click prediction), §4.3 (deferred-class
 classifier + two-production-paths framing), §4.6 (LambdaMART with
 graded labels).*

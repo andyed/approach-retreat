@@ -6,7 +6,7 @@
 
 ## What this is
 
-The `approach-retreat` library ships a nine-feature cursor approach extractor (§3.6 of the CIKM 2026 paper; `src/features.ts` in this repo). The features support two downstream tasks:
+The `approach-retreat` library ships a nine-feature cursor approach extractor (§3.6 of the methods paper; `src/features.ts` in this repo). The features support two downstream tasks:
 
 1. **Click prediction** via a supervised classifier trained on click labels. This is what the M1–M4 models in the paper do. On AdSERP, nine gaze-clean approach features reach LOSO AUC **0.821** (matching a 10-feature position-and-approach baseline at 0.820 within fold SD). On the Attentive Cursor Dataset, an 11-feature version of the same feature family — different task (`ad_clicked`), different population, different feature count — reaches AUC **0.821** against a scalar mouse-length baseline at 0.696. Same feature family, two datasets, gaze-free in both, AUC 0.821 on both.
 2. **Deferred-class detection** — identifying episodes in which the user approached a result, examined it, re-examined it, and still chose to decline. This is the hard-negative class the paper describes and is not directly observable from click logs alone.
@@ -61,7 +61,7 @@ The features are:
 **Two feature-extractor options** for a deployment:
 
 1. **Production (recommended):** use the `approach-retreat` library directly. The library binds a standard DOM `mousemove` listener, computes the nine features as running aggregates, and emits a per-episode record via `onEpisode`. It uses CSS-class-based DOM containment for result identification (`data-result` attribute or configurable selector), which is equivalent to the **xpath-grounded arm** of the paper's hybrid extractor (~31 % of AdSERP records, where observed mouse events on a result provide the bounding-box anchor). The paper's remaining ~69 % of records use a linear-fallback bounding box derived from page-height estimation, which is an offline-reconstruction artifact the library does not need: in production, `getBoundingClientRect()` at library initialization gives exact containment for every result by construction, so a library deployment has 100 % xpath-equivalent coverage without any fallback arm.
-2. **Offline replay:** if you have archived mouse-event logs and want to train M5 on a historical dataset, use `scripts/m4_nb21_hybrid_rerun.py` from the `attentional-foraging` repo as a template. The script implements the gaze-clean hybrid xpath + linear-fallback extractor used in the CIKM 2026 paper's §4.3 reference numbers, runs LOSO on a target set of (trial, result) records, and reports precision / recall / F1 for M5 on your data.
+2. **Offline replay:** if you have archived mouse-event logs and want to train M5 on a historical dataset, use `scripts/m4_nb21_hybrid_rerun.py` from the `attentional-foraging` repo as a template. The script implements the gaze-clean hybrid xpath + linear-fallback extractor used for the paper's §4.3 reference numbers, runs LOSO on a target set of (trial, result) records, and reports precision / recall / F1 for M5 on your data.
 
 ---
 
@@ -183,7 +183,7 @@ Runtime: ~30 seconds on a modern laptop (features are cached after the first run
 
 ## References
 
-- Edmonds, A., Dixon-Moses, P. & Azzopardi, L. (2026). *Cognitive Task Models Recover SERP Examination Signal Invisible to Atheoretic Cursor Feature Extraction.* CIKM 2026 *(in preparation)*.
+- The methods paper (submitted; full citation on acceptance).
 - Latifzadeh, K., Gwizdka, J. & Leiva, L. A. (2025). *The AdSERP Dataset.* SIGIR '25.
 - Leiva, L. A. & Arapakis, I. (2020). *The Attentive Cursor Dataset.* *Front. Hum. Neurosci.* 14:565664.
 - Joachims, T., Granka, L., Pan, B., Hembrooke, H. & Gay, G. (2005). *Accurately interpreting clickthrough data as implicit feedback.* SIGIR '05.

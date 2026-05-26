@@ -1,6 +1,6 @@
 # Attentive Cursor Dataset — External Validation
 
-> **Regime: [WILD, ACD]** — every number in this directory is computed on the Attentive Cursor Dataset (cursor + click, no eye tracker). See `../../CLAUDE.md` § "Role in the CIKM paper" for the LAB/WILD convention. This directory is the WILD half of the bridge; the LAB half (AdSERP, pupil + gaze + cursor) lives in the upstream `attentional-foraging` repo and carries `[LAB, NB##:K##]` tags there.
+> **Regime: [WILD, ACD]** — every number in this directory is computed on the Attentive Cursor Dataset (cursor + click, no eye tracker). See `../../CLAUDE.md` for the LAB/WILD convention. This directory is the WILD half of the bridge; the LAB half (AdSERP, pupil + gaze + cursor) lives in the upstream `attentional-foraging` repo and carries `[LAB, NB##:K##]` tags there.
 
 Independent empirical test of the `approach-retreat` feature set against a published baseline on a public dataset the library has never seen. Run time: ~30 s.
 
@@ -216,4 +216,4 @@ The **`[LAB, AdSERP]`** validation (multi-AOI SERPs, ten results per page, four-
 - **`[LAB, AdSERP]`** — full multi-AOI task-model taxonomy on eye-tracked ground truth in controlled lab conditions (47 participants, 2,776 trials, Gazepoint 150 Hz + cursor + pupil).
 - `[WILD, ACD]` — binary ad-click target on cursor-only in-the-wild crowdsourced data at scale (954 native-ad sessions, no eye tracker, no pupil).
 
-Same feature set. Different labels, different populations, different instrumentation stacks. Claims that hold in both regimes earn the `[BOTH]` tag and are the only findings that survive to CIKM's "what deploys" argument; claims that hold in LAB only must be flagged as such. The numbers in both validations support the same headline (the cursor geometry is carrying the signal) which is exactly what an external test is supposed to establish.
+Same feature set. Different labels, different populations, different instrumentation stacks. Claims that hold in both regimes earn the `[BOTH]` tag and are the only findings that survive the "what deploys" argument; claims that hold in LAB only must be flagged as such. The numbers in both validations support the same headline (the cursor geometry is carrying the signal) which is exactly what an external test is supposed to establish.

@@ -1,6 +1,6 @@
 # Where approach-retreat sits in the literature
 
-The contribution of `approach-retreat` is the *unit of feature aggregation*: the per-result-AOI deliberation episode. The CIKM 2026 paper (`The Leaky Cursor`) makes that explicit; this doc is the map readers reach for when they want to verify a positioning claim against the cited literatures.
+The contribution of `approach-retreat` is the *unit of feature aggregation*: the per-result-AOI deliberation episode. The methods paper (submitted) makes that explicit; this doc is the map readers reach for when they want to verify a positioning claim against the cited literatures.
 
 ## The four lanes
 
@@ -34,7 +34,7 @@ What this lineage establishes: cursor and gaze couple where the task demands fin
 - **Gray, Sims, Fu & Schoelles 2006 — soft constraints hypothesis** (`gray-bounded-rationality.md`).
 - **Azzopardi et al.** — IR-side bounded-rationality at the strategic-interaction grain (CWL, economic models). Citations live in `azzopardi2016two` and the `azzopardi-thomas-craswell-2018-sigir` entry.
 
-The CIKM paper extends Azzopardi's strategic-interaction grain *one level deeper* to the motor-execution grain where Gray's microstrategies operate. Approach-retreat geometry is the kinematic shadow of the marginal-rate calculation IFT × microeconomics requires.
+The methods paper extends Azzopardi's strategic-interaction grain *one level deeper* to the motor-execution grain where Gray's microstrategies operate. Approach-retreat geometry is the kinematic shadow of the marginal-rate calculation IFT × microeconomics requires.
 
 ### Behavioral relevance signals for IR training
 
@@ -44,14 +44,14 @@ The CIKM paper extends Azzopardi's strategic-interaction grain *one level deeper
 
 ## Three claims that depend on this positioning
 
-Each is in the CIKM §2 prose and verifiable from the lit-notes:
+Each is in the paper's §2 prose and verifiable from the lit-notes:
 
 1. **"The closest per-result-AOI precedent is Liu et al. [CIKM '14]"** — `liu2014skimming` in bib; lit-note pending.
 2. **"Cursor and gaze couple where the task demands fine-grained motor-cognitive coordination"** — `huang-white-buscher-2012.md` carries the empirical numbers.
 3. **"Joachims's skip-above rule infers 'examined and rejected' from rank position, not observable behavior"** — `joachims2005clickthrough` in bib; lit-note pending.
 
-Lit-notes are in `references/` for every citation in CIKM §2:
-- `bruckner-2021-systematic.md` — anchors the 0.653 ACD baseline cited in CIKM §4.5.
+Lit-notes are in `references/` for every citation in the paper's §2:
+- `bruckner-2021-systematic.md` — anchors the 0.653 ACD baseline cited in §4.5.
 - `joachims-2005-clickthrough.md` — anchors the four-class taxonomy's skip-above framing.
 - `liu-2014-skimming.md` — anchors "closest per-result-AOI precedent."
 - `stone-chapman-2023-unconscious.md` — gaze-mouse coupling residual as a dynamic UX signal.
@@ -59,7 +59,7 @@ Lit-notes are in `references/` for every citation in CIKM §2:
 
 ## What this repo's empirical work substantiates against the lineage
 
-| Claim in CIKM §4 / §5 | What in this repo backs it up |
+| Claim in §4 / §5 | What in this repo backs it up |
 |------------------------|------------------------------|
 | Approach-retreat episode geometry exists in WILD telemetry | `analysis/attcur-validation/` (954 ACD sessions, leakage-screened AUC 0.765 vs Brückner 0.653) |
 | Episode geometry generalizes beyond search to any ranked-list UI | `findings.md` + the `viewport-bands` calibration (`docs/validation/`) |

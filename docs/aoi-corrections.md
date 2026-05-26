@@ -47,7 +47,7 @@ Future-supported (add when first needed; don't pre-build):
 
 - Upstream `attentional-foraging/AdSERP/data/organic-boundary-data/<trial>.json` — unchanged.
 - Any `[NB##:K##]` claim or rank-type-tagged number — unchanged.
-- The CIKM paper's quantitative content — unchanged.
+- The paper's quantitative content — unchanged.
 
 If a critical mass of corrections accumulates (or one identifies a patternable extractor gap, e.g. "all inline image-pack carousels"), the right move is either:
 

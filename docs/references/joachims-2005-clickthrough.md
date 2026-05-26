@@ -24,9 +24,9 @@ The cells map onto the (0/1/2) graded relevance format LambdaMART consumes. The 
 
 ## Empirical lift over skip-above-style training
 
-CIKM §4.6 reports the comparison directly: a LambdaMART ranker trained on the four-class graded labels beats the binary-click baseline (the closest LambdaMART analog of skip-above) by ΔMRR@10 +0.051 on identical features. The improvement is the labeling refinement itself — same input vector, different labels — and the deferred-class signal click logs cannot recover.
+The paper's §4.6 reports the comparison directly: a LambdaMART ranker trained on the four-class graded labels beats the binary-click baseline (the closest LambdaMART analog of skip-above) by ΔMRR@10 +0.051 on identical features. The improvement is the labeling refinement itself — same input vector, different labels — and the deferred-class signal click logs cannot recover.
 
-## Notes for the CIKM paper
+## Notes for the paper
 
 §2 cites this work as the **behavioral precedent for inferring preference from rank position**, calling out the limitation that motivates our four-class taxonomy. Cite as `\cite{joachims2005clickthrough}`. The skip-above limitation is the most reviewer-relevant single-sentence framing in §2 — keep it sharp.
 

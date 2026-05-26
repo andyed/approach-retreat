@@ -46,7 +46,7 @@ M5 and the heuristic disagree often (~80% of approached organic AOIs in spot che
 
 **`[CURSOR-ONLY]` algorithm running on `[LAB]` data, supervision was `[LAB, NB22 gaze-derived]`.**
 
-Per the [LAB/WILD convention](../CLAUDE.md#role-in-the-cikm-paper-the-lab--wild-bridge), the four-class taxonomy is currently `[LAB]`-only because the canonical version is gaze-derived. M5 is the named cursor-only-bootstrap that earns `[BOTH]` *if* its agreement with the gaze-derived ground truth is high enough; M5's LOSO AUC of 0.794 against NB22 is the published evidence. The replay viewer is the visual inspection tool for that bootstrap — every disagreement between M5 and the heuristic on a specific AOI is a candidate for human adjudication.
+Per the LAB/WILD convention (see `../CLAUDE.md`), the four-class taxonomy is currently `[LAB]`-only because the canonical version is gaze-derived. M5 is the named cursor-only-bootstrap that earns `[BOTH]` *if* its agreement with the gaze-derived ground truth is high enough; M5's LOSO AUC of 0.794 against NB22 is the published evidence. The replay viewer is the visual inspection tool for that bootstrap — every disagreement between M5 and the heuristic on a specific AOI is a candidate for human adjudication.
 
 ## Selection rubric
 
