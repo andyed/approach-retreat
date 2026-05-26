@@ -393,3 +393,64 @@ CIKM paper.
   before every tagged release.
 - Coordinate convention: cursor Y is page-space throughout, matching
   `attentional-foraging`.
+
+---
+
+## Prior art
+
+The library is the deployable layer of a research stack. Three load-bearing
+prior artifacts, reverse-chronologically.
+
+### 2026-05 — AllSERP arXiv preprint
+
+*AllSERP: Exhaustive Per-Element Enrichment of the Versatile AdSERP
+Dataset* — [arXiv:2605.04949](https://arxiv.org/abs/2605.04949), local PDF
+at [`allserp-paper.pdf`](./allserp-paper.pdf).
+
+The dataset substrate. AllSERP wraps the AdSERP commercial-intent SERP
+corpus (2,776 trials, 150 Hz Gazepoint gaze + cursor + pupil) with
+screenshot-anchored typed AOI extraction across thirteen element types,
+midpoint-split gap-fill, and X+Y bbox click attribution that reaches
+91.7 % corpus coverage — closing the ~84.5 % attribution gap the original
+shipped ad-only AOI rectangles left open. Every replay-viewer AOI label,
+every gaze-grounded four-class label in the LAB validation, and every
+bbox-attribution audit in the AF cascade reads from those typed AOIs.
+v0.1.0's M4 extractor is calibrated against AllSERP-typed bboxes; v0.2.0's
+viewport bands are validated against AllSERP-typed AOI Y-coordinates; the
+2026-05-01 and 2026-05-05 attribution cascades above are direct consumers.
+Without AllSERP, the per-AOI cascade has no labelled ground truth at AOI
+grain.
+
+### 2026-04-01 — `attentional-foraging` research repo opened
+
+First commit `010c0da2` — *"p(click) conditioning on mouse-gaze distance"*
+— landed a trial-grain scalar with no per-result data structure. Four days
+later (`567833cd`, 2026-04-05) per-(trial, position) cursor features
+landed in NB15: 15,397 result-position records, click-prediction AUC
+0.618 → 0.823 over position alone. The day after, NB22 (`8c4e2de6`,
+2026-04-06) split approached-but-not-clicked into deferred vs
+evaluated-rejected from gaze-regression labels (F1 0.70 / 0.66, zero
+cross-confusion). The `approach-retreat` repo was bootstrapped on
+2026-04-07 (`5bd69d1`) as the deployable form of that science.
+
+The `[NB##:K##]` notation throughout this repo's docs threads back to
+`attentional-foraging/docs/notebook-key-claims.md` for every cited number.
+Full code archaeology of the per-AOI grain's emergence
+(2026-04-01 → 2026-05-17) lives in
+[`docs/history.md`](docs/history.md) under "Code archaeology."
+
+### 2001 — Lucidity → Optimoz → Uzilla (2003)
+
+Cursor-instrumentation lineage back twenty-five years: scroll-corrected
+entry timing (Lucidity, SourceForge 2001), real-time cursor-vector
+compression via gesture recognition (Optimoz, Firefox extension installed
+by millions, [Slashdotted October 2001](https://www.flickr.com/photos/andyed/125275288/)),
+"mouse miles" + DOM-path signature in an instrumented browser (Uzilla,
+*Behavior Research Methods, Instruments, & Computers* 35(2):194–201,
+2003), click-hold duration as a cognitive signal (2016 talk → ClickSense
+2026).
+
+Per-AOI episode decomposition and the four-class taxonomy are the new
+contributions in this library; the cursor primitives underneath have been
+load-bearing since 2001. Full lineage:
+[`docs/history.md`](docs/history.md).
