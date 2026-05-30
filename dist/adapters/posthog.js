@@ -1,4 +1,10 @@
 // src/adapters/posthog.js
+var AR_VERSION = true ? "0.3.0" : "0.3.0";
+var AR_BUILD = true ? "2026-05-30" : "dev";
+var versionProps = () => ({
+  approach_retreat_version: AR_VERSION,
+  approach_retreat_build: AR_BUILD
+});
 function buildSessionContext(extra = {}) {
   const url = new URL(window.location.href);
   const sid = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `ar-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -168,7 +174,8 @@ function createPostHogAdapter(posthog, options = {}) {
     onEpisode(episode) {
       const props = {
         ...flattenEpisode(episode),
-        ...getCtx()
+        ...getCtx(),
+        ...versionProps()
       };
       if (trajectoryStride > 0 && episode.samples) {
         const flat = buildTrajectory(episode.samples, trajectoryStride);
@@ -198,7 +205,8 @@ function createPostHogAdapter(posthog, options = {}) {
         ar_retreat_distance_before_click: ep.retreat_distance ?? null,
         ar_sample_count_before_click: ep.sample_count ?? null,
         ...targetFields,
-        ...getCtx()
+        ...getCtx(),
+        ...versionProps()
       });
     },
     /**
@@ -314,7 +322,8 @@ function createPostHogAdapter(posthog, options = {}) {
         ar_viewport_analytics_schema: analyticsContext.schema,
         ar_viewport_center_tol_px: analyticsContext.viewport_center_tol_px,
         ar_iab_viewable_threshold_ms: analyticsContext.iab_viewable_threshold_ms,
-        ...getCtx()
+        ...getCtx(),
+        ...versionProps()
       });
     },
     /**

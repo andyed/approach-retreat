@@ -1,11 +1,22 @@
 import * as esbuild from 'esbuild';
 import { cp, rm, mkdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+
+// Stamp the build with the package version + build date so every emitted
+// PostHog event carries approach_retreat_version / approach_retreat_build.
+// Injected via esbuild `define` on ALL outputs; the adapter source has a
+// typeof-guarded fallback so unbundled source still runs.
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
+const define = {
+  __AR_VERSION__: JSON.stringify(pkg.version),
+  __AR_BUILD__: JSON.stringify(new Date().toISOString().slice(0, 10)),
+};
 
 const shared = {
   entryPoints: ['src/index.js'],
   bundle: true,
   minify: true,
+  define,
 };
 
 const watch = process.argv.includes('--watch');
@@ -46,6 +57,7 @@ await esbuild.build({
   format: 'esm',
   bundle: true,
   minify: false, // keep adapter source legible for debugging
+  define,
 });
 
 // --- Mirror dist/ → site/dist/ so the static site (served from site/) can

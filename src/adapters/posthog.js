@@ -21,6 +21,20 @@
  *   adapter.bind(ar);
  */
 
+// Build-time stamped by esbuild `define` (see build.js). The typeof guard keeps
+// the raw source runnable (and unit-testable) without a build step: an
+// undeclared identifier is safe to `typeof`-probe and yields 'undefined', so we
+// fall through to the literals. Fallback version MUST track package.json.
+const AR_VERSION = (typeof __AR_VERSION__ !== 'undefined') ? __AR_VERSION__ : '0.3.0';
+const AR_BUILD = (typeof __AR_BUILD__ !== 'undefined') ? __AR_BUILD__ : 'dev';
+
+// The two version-stamp props added to EVERY emitted event so bundle-version
+// skew across embedding sites is queryable directly in the ar_* tables.
+const versionProps = () => ({
+  approach_retreat_version: AR_VERSION,
+  approach_retreat_build: AR_BUILD,
+});
+
 /**
  * Build a static session-level context object suitable for merging into
  * every captured event. Call once at page load.
@@ -275,6 +289,7 @@ export function createPostHogAdapter(posthog, options = {}) {
       const props = {
         ...flattenEpisode(episode),
         ...getCtx(),
+        ...versionProps(),
       };
       if (trajectoryStride > 0 && episode.samples) {
         const flat = buildTrajectory(episode.samples, trajectoryStride);
@@ -310,6 +325,7 @@ export function createPostHogAdapter(posthog, options = {}) {
         ar_sample_count_before_click: ep.sample_count ?? null,
         ...targetFields,
         ...getCtx(),
+        ...versionProps(),
       });
     },
 
@@ -455,6 +471,7 @@ export function createPostHogAdapter(posthog, options = {}) {
         ar_viewport_center_tol_px: analyticsContext.viewport_center_tol_px,
         ar_iab_viewable_threshold_ms: analyticsContext.iab_viewable_threshold_ms,
         ...getCtx(),
+        ...versionProps(),
       });
     },
 
