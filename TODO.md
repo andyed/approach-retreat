@@ -84,3 +84,85 @@ still open; each needs its own re-validation before shipping, as noted
 above. The paper's §7 deployment claim was reframed from a Nyquist
 "~15 Hz floor" to the measured rate-robustness result; the library now
 follows.
+
+## Close the naming-drift bug class — guard 6 + CI wiring
+
+`scripts/gen_feature_glossary.py` moved feature *names* out of human
+memory and into an executable check: five guards, exit 1 with a diff on
+any mismatch, no table emitted on failure. Two gaps remain, both small,
+both closing the same class.
+
+**The class.** Feature vocabulary lives on three surfaces that evolve
+independently — the JS library (`ResultFeatureTracker`), the Python
+extractor (`m4_nb21_hybrid_rerun.py::M4_FEATURES`), and paper prose.
+The parity tests guarantee the *values* match at 1e-6; nothing
+guaranteed the *names* did. On 2026-08-12 that gap produced three
+separate failures in one day: an external reader could not distinguish
+`total_dwell_ms` (LAB gaze-fixation dwell) from `dwell_in_target_ms`
+(WILD cursor-in-target analog) because neither was defined in-paper; the
+canonical script's LOSO row prints `M4 (9 approach)` while the paper's
+M4 is the seven buffer-robust features (`final_dist` / `retreat_dist`
+excluded by the §5.2 leakage screen); and mid-analysis the grid's M2
+was misread as cursor hover when it is gaze dwell, which briefly
+inverted a robustness conclusion until the isolating run corrected it.
+Same root cause each time: a name maintained by vigilance across
+surfaces.
+
+### Guard 6 — model-set composition, not just feature names
+
+Guards 1–2 pin the *nine-feature vector's* names and order across JS and
+Python. They do not pin what a **model set** is composed of, which is
+where the M4-9/M4-7 drift actually lived — in a row label, not a feature
+name. Rename nothing and the drift recurs.
+
+Add to `run_guards()`:
+
+- Parse the canonical extractor for its model-set definitions (the
+  `loso_auc(...)` call sites and their printed labels).
+- Assert the row labeled M4 is built from exactly
+  `M4_FEATURES − {final_dist, retreat_dist}` (seven), and that M2's dwell
+  term names which dwell it is (gaze `total_dwell_ms` vs cursor
+  `dwell_in_proximity_ms`).
+- Fail with the same diff format when a label and its feature slice
+  disagree.
+
+Blocked on the upstream fix landing first: `m4_nb21_hybrid_rerun.py`
+currently *prints* `M4 (9 approach)` for the nine-feature vector. Fix
+the label there (or emit both M4-7 and M4-9 rows, as the post-CIKM
+ablations do), then add the guard so it can't drift back. Note the
+paper's published 0.847 was verified as M4-7 @ buf500 — the mislabel is
+a code/reporting bug, not a published-number error.
+
+### CI wiring — make the guards run without being remembered
+
+The guards only fire when someone runs the generator. Wire them into the
+existing test path so a drifting rename fails the push, not the next
+manual regeneration:
+
+- Preferred: a vitest case (`tests/unit/glossary-drift.test.js`) that
+  shells out to `python3 scripts/gen_feature_glossary.py --check` and
+  asserts exit 0. **Depends on the vitest harness (`tests/`,
+  `vitest.config.js`) being committed — it is currently untracked
+  in-flight work from a concurrent session. Do not commit that harness
+  as a side effect of this item.**
+- Needs a `--check` flag on the generator: run guards, emit nothing,
+  exit 0/1. Today the script always rewrites its outputs, which is wrong
+  for CI (dirty tree) and wrong for a pre-commit hook.
+- Add the same call to `.github/workflows/deploy.yml` before
+  `npm run build`, so a drift breaks the deploy rather than shipping a
+  stale README table. Requires `python3` on the runner (ubuntu-latest
+  has it; no extra deps — the generator is stdlib-only).
+
+### Known limits (do not over-claim the fix)
+
+The guards cover *names* and *coverage*, not *usage*: prose can still
+say "dwell" and mean the wrong dwell. That was the M2 misread, and no
+guard catches it — the mitigation is that the definition is now one
+lookup away in both README and paper. Guard 6 narrows this by forcing
+model-set labels to name their dwell term, but the residual risk is
+editorial, not mechanical.
+
+### Status
+Guards 1–5 shipped (`scripts/gen_feature_glossary.py`, 2026-08-12).
+Guard 6 and CI wiring specced here, unstarted; guard 6 blocked on the
+upstream label fix, CI wiring blocked on the vitest harness landing.
