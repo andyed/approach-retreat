@@ -5,7 +5,7 @@ For each trial:
 - Read raw mouse-movement, fixation, pupil CSVs from the AdSERP cache
 - Read ad-boundary + organic-boundary JSONs
 - Read trial metadata XML for window/document dims
-- Scale cursor xpos to 1280-wide screenshot space (ypos stays document-space)
+- Scale cursor xpos AND ypos from document space into screenshot/AOI space
 - Compute xy-delta (cursor speed in px/ms per sample)
 - Emit one consolidated site/replay/data/trials/{trial_id}.json
 
@@ -68,8 +68,22 @@ def parse_metadata(trial_id: str) -> dict:
     }
 
 
-def read_cursor(trial_id: str, t0_ms: int, ratio_x: float) -> tuple[list[dict], list[dict]]:
-    """Return (cursor_samples, xy_delta_samples). Cursor xpos scaled to screenshot space."""
+def read_cursor(trial_id: str, t0_ms: int, ratio_x: float,
+                ratio_y: float) -> tuple[list[dict], list[dict]]:
+    """Return (cursor_samples, xy_delta_samples), cursor mapped into screenshot space.
+
+    evtrack records xpos/ypos in DOCUMENT space (1403 wide). Screenshots, and
+    the AOI boxes drawn over them, are SCREENSHOT space (1280 wide). The scale
+    is anisotropic -- x 0.9123, y 0.9000 -- so both axes need it and they need
+    different factors.
+
+    Previously only x was scaled, and by SCREENSHOT_WIDTH / window_width
+    (1280/1422 = 0.9001) rather than document width (1280/1403 = 0.9123). The
+    window overhangs the display on Windows, so it is the wrong denominator.
+    Net effect: x was off ~1.3% and y was off ~10%, which put every cursor
+    sample systematically BELOW the AOI it was nearest (median +8.5px) and
+    inflated mean cursor-to-AOI distance from 37.5px to 57.3px.
+    """
     csv_path = AF_ROOT / "mouse-movement-data" / f"{trial_id}.csv"
     cursor: list[dict] = []
     last_x = last_y = last_t = None
@@ -81,7 +95,7 @@ def read_cursor(trial_id: str, t0_ms: int, ratio_x: float) -> tuple[list[dict], 
                 continue
             t = int(row["timestamp"]) - t0_ms
             x = int(round(int(row["xpos"]) * ratio_x))
-            y = int(float(row["ypos"]))  # document-space — no scaling
+            y = int(round(float(row["ypos"]) * ratio_y))
             cursor.append({"t": t, "x": x, "y": y, "event": event})
             if event == "mousemove" and last_x is not None and t > last_t:
                 dx, dy, dt = x - last_x, y - last_y, t - last_t
@@ -424,9 +438,14 @@ def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
 
     meta = parse_metadata(trial_id)
     t0 = trial_t0(trial_id)
-    ratio_x = SCREENSHOT_WIDTH / meta["win_width"]
+    # Derive both ratios from the shipped artifacts rather than hardcoding, so a
+    # trial captured differently carries its own factors and the wrong
+    # denominator (window vs document) becomes inexpressible.
+    shot_w, shot_h = Image.open(png).size
+    ratio_x = shot_w / meta["doc_width"]
+    ratio_y = shot_h / meta["doc_height"]
 
-    cursor, xy_delta = read_cursor(trial_id, t0, ratio_x)
+    cursor, xy_delta = read_cursor(trial_id, t0, ratio_x, ratio_y)
     fixations = read_fixations(trial_id, t0)
     pupil = read_pupil(trial_id, t0)
     lfhf = compute_lfhf_track(pupil)
@@ -545,6 +564,7 @@ def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
         "doc_height": meta["doc_height"],
         "win_width": meta["win_width"],
         "ratio_x": round(ratio_x, 4),
+        "ratio_y": round(ratio_y, 4),
         "duration_ms": duration_ms,
         "task": meta["task"],
         "url": meta["url"],
