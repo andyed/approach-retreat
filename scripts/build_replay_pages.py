@@ -8,6 +8,7 @@ Run:    python3 scripts/build_replay_pages.py
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -235,6 +236,22 @@ def main() -> int:
         print(f"  {out.relative_to(REPLAY)}")
     idx = build_index(trials)
     print(f"\n  {idx.relative_to(REPLAY)}")
+
+    # Pages EMBED their trial data rather than fetching it, so a page with no
+    # bundle cannot be rebuilt and will serve whatever it was last built with,
+    # silently and indefinitely. On 2026-08-30 six such pages kept shipping
+    # pre-fix cursor coordinates through a corpus-wide rebuild because nothing
+    # compared the two counts. Fail loudly instead.
+    orphans = sorted({p.stem for p in TRIAL_HTML_DIR.glob("*.html")}
+                     - {p.stem for p in trial_files})
+    if orphans:
+        print(f"\n  ERROR: {len(orphans)} published page(s) have no trial JSON and "
+              f"were NOT rebuilt:", file=sys.stderr)
+        for t in orphans:
+            print(f"    {t}", file=sys.stderr)
+        print(f"  Regenerate their bundles (scripts/build_replay_trial.py "
+              f"{' '.join(orphans)}) or delete the pages.", file=sys.stderr)
+        return 1
     return 0
 
 
