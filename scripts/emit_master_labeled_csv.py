@@ -21,8 +21,8 @@ AF_NB = Path.home() / 'Documents/dev/attentional-foraging/notebooks-v2'
 sys.path.insert(0, str(AF_NB))
 from data_loader import (
     load_fixations, load_mouse_events, get_trial_meta,
-    interpolate_scroll, result_band_tops, assign_fixation_to_position,
-    extract_serp_results,
+    interpolate_scroll, assign_fixation_to_position,
+    typed_aoi_tops,
 )
 
 AF_DATA = Path.home() / 'Documents/dev/attentional-foraging/AdSERP/data'
@@ -51,10 +51,18 @@ for tid, recs in trial_records.items():
     if fix_t is None or meta_t is None or mouse_t is None or len(fix_t) < 5:
         skipped += 1
         continue
-    doc_h, _, _ = meta_t
-    serp = extract_serp_results(tid)
-    n_res = len(serp) if serp else 10
-    tops = result_band_tops(n_res, doc_h)
+    # Rank-space fix (2026-08-30): r['position'] in cursor-approach-features-
+    # typed.json is a typed display-order slot (index into typed_aoi_tops).
+    # The old code assigned fixations against result_band_tops() — the legacy
+    # ABSOLUTE band rank space — and then intersected the two spaces as bare
+    # integers, so `r['position'] in regressed` compared apples to oranges.
+    # Assign fixations in the same typed rank space the features carry.
+    tops = typed_aoi_tops(tid)
+    if not tops:
+        # alignment-excluded or no typed map — no typed rank space exists
+        skipped += 1
+        continue
+    n_res = len(tops)
     _, scrolls, _ = mouse_t
     s_ts = [s[0] for s in scrolls] if scrolls else [fix_t[0]['t']]
     s_ys = [s[1] for s in scrolls] if scrolls else [0]
@@ -78,7 +86,7 @@ for tid, recs in trial_records.items():
     for r in recs:
         regression_labels[r['_idx']] = r['position'] in regressed
 
-print(f'skipped trials (insufficient gaze): {skipped}', file=sys.stderr)
+print(f'skipped trials (insufficient gaze or no typed AOI map): {skipped}', file=sys.stderr)
 print(f'regressed records: {regression_labels.sum():,} ({regression_labels.mean()*100:.1f}%)',
       file=sys.stderr)
 

@@ -50,6 +50,10 @@ body { background: #111; color: #eee; font-family: system-ui, -apple-system, san
 .lbl-pill.lbl-def { background: #f59e0b; color: #000; }
 .lbl-pill.lbl-rej { background: #ef4444; color: #fff; }
 .lbl-pill.lbl-not { background: #2a2a2a; color: #888; }
+/* Alignment-suspect banner: text #ffd9d9 on #3a1010 is ~13:1 contrast. */
+.suspect-banner { width: 1280px; padding: 8px 16px; background: #3a1010; color: #ffd9d9;
+  border-top: 2px solid #ef4444; border-bottom: 2px solid #ef4444; font-size: 12px; line-height: 1.5; }
+.suspect-banner strong { letter-spacing: 0.5px; }
 </style></head><body>
 <div class="header">
   <div style="display:flex;align-items:center;gap:12px;">
@@ -68,6 +72,7 @@ body { background: #111; color: #eee; font-family: system-ui, -apple-system, san
     <button class="btn" id="reset-btn">Reset</button>
   </div>
 </div>
+__SUSPECT_BANNER__
 <div class="viewer" id="viewer">
   <div class="serp-container" id="serp-container">
     <img id="serp-img" src="__SCREENSHOT__" />

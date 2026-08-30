@@ -1,7 +1,8 @@
 {
-  "_doc": "Human-adjudicated AOI corrections applied on top of the upstream organic-boundary-data extractor. Each entry maps a trial_id to per-trial corrections. Currently supported: demote_to_widget (list of organic positions to reclassify as widget). After demotion, remaining organic positions are renumbered contiguously. Add a 'note' field to record why.",
+  "_doc": "Human-adjudicated AOI corrections applied on top of the upstream organic-boundary-data extractor. Each entry maps a trial_id to per-trial corrections. Currently supported: demote_to_widget (list of organic positions to reclassify as widget). After demotion, remaining organic positions are renumbered contiguously (survivors keep their upstream rank as source_position). Add a 'note' field to record why. expected_bbox pins each demoted position to the bbox it was adjudicated against ({pos: {y, height}}, page-space px): a bare integer position is not stable across upstream regenerations, so apply_aoi_corrections() skips the demotion loudly if the bbox at that position has drifted more than 4px.",
   "p048-b1-t6": {
     "demote_to_widget": [11],
-    "note": "Position 11 is Google 'Images for...' inline image carousel; extractor missed it (widget detector only catches bottom-of-page refinement widgets)."
+    "expected_bbox": {"11": {"y": 2006, "height": 286}},
+    "note": "Position 11 is Google 'Images for...' inline image carousel; extractor missed it (widget detector only catches bottom-of-page refinement widgets). Re-verified 2026-08-30 against the post-collision-fix AllSERP v1.1.0 maps: organic-boundary pos 11 (y=2006, h=286) matches the typed map's image_pack card at rso[9] (y=2006, h=286) exactly, so the demotion is corroborated by the typed extractor and stays."
   }
 }

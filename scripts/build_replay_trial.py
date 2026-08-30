@@ -229,6 +229,33 @@ def _m5() -> "m5_inference.M5Classifier":
 _AOI_CORRECTIONS_PATH = AR_ROOT / "site/replay/data/aoi_corrections.json"
 _AOI_CORRECTIONS_CACHE: dict | None = None
 
+# AF's alignment_suspect quality gate (y-DP geometric card<->bbox alignment).
+# Trials on this list have shift-periodic pages where a one-slot-wrong AOI
+# lattice cannot be ruled out geometrically; AF excludes them from every
+# typed-flavor feature derivation. AR keeps building their bundles (they are
+# pedagogically useful and pulling published pages is an editorial call) but
+# stamps them `alignment_suspect: true` so the viewer and index can badge
+# them. The list applies to BOTH typed and typed_gapfill — the exclusion
+# derives from render geometry, not flavor.
+_ALIGNMENT_EXCLUSIONS_PATH = (Path.home() / "Documents/dev/attentional-foraging"
+                              / "data/aoi-typed/alignment-exclusions.json")
+_ALIGNMENT_EXCLUSIONS_CACHE: dict | None = None
+
+
+def load_alignment_exclusions() -> dict:
+    """AF's canonical exclusion list: {'date', 'reason', 'rule', 'tids'}.
+
+    Returns {} when the file is missing (bundle then carries
+    alignment_suspect: false, which is the pre-gate behavior)."""
+    global _ALIGNMENT_EXCLUSIONS_CACHE
+    if _ALIGNMENT_EXCLUSIONS_CACHE is None:
+        if _ALIGNMENT_EXCLUSIONS_PATH.exists():
+            _ALIGNMENT_EXCLUSIONS_CACHE = json.loads(
+                _ALIGNMENT_EXCLUSIONS_PATH.read_text())
+        else:
+            _ALIGNMENT_EXCLUSIONS_CACHE = {}
+    return _ALIGNMENT_EXCLUSIONS_CACHE
+
 
 def _load_aoi_corrections() -> dict:
     global _AOI_CORRECTIONS_CACHE
@@ -248,6 +275,17 @@ def apply_aoi_corrections(trial_id: str, organic: dict) -> dict:
     reclassify as widget. Remaining organic positions are renumbered
     contiguously. The demoted bbox is appended to organic['widget'] with
     `reason: 'manual_correction'`.
+
+    Guard rails (2026-08-30, post AllSERP v1.1.0 realignment):
+    - A correction entry may carry `expected_bbox: {"<pos>": {"y", "height"}}`.
+      When present, the demotion only applies if the organic bbox at that
+      position still matches (±4 px). A bare integer position is not a
+      stable key across upstream regenerations — a drifted bbox means the
+      correction now points at a different result, so it is skipped loudly
+      instead of silently demoting the wrong AOI.
+    - Renumbered survivors keep their upstream position as
+      `source_position`, so the join back to AF's organic-boundary rank
+      space stays recoverable from the bundle.
     """
     corrections = _load_aoi_corrections().get(trial_id)
     if not corrections:
@@ -255,18 +293,66 @@ def apply_aoi_corrections(trial_id: str, organic: dict) -> dict:
     demote = set(corrections.get("demote_to_widget", []))
     if not demote:
         return organic
+    expected = corrections.get("expected_bbox", {})
     organics = organic.get("organic_result", [])
     kept, moved = [], []
     for r in organics:
-        if r.get("position") in demote:
+        pos = r.get("position")
+        if pos in demote:
+            exp = expected.get(str(pos))
+            if exp is not None:
+                got_y = float(r["location"]["y"])
+                got_h = float(r["size"]["height"])
+                if (abs(got_y - float(exp["y"])) > 4
+                        or abs(got_h - float(exp["height"])) > 4):
+                    print(f"  WARN {trial_id}: aoi_correction demote_to_widget"
+                          f"[{pos}] bbox drifted (expected y={exp['y']} "
+                          f"h={exp['height']}, got y={got_y} h={got_h}) — "
+                          f"correction skipped, re-adjudicate against the "
+                          f"current upstream maps", file=sys.stderr)
+                    kept.append(r)
+                    continue
             moved.append({**r, "reason": "manual_correction"})
         else:
             kept.append(r)
     for i, r in enumerate(kept, 1):
+        if r.get("position") != i:
+            r["source_position"] = r.get("position")
         r["position"] = i
     organic["organic_result"] = kept
     organic["widget"] = list(organic.get("widget", [])) + moved
     return organic
+
+
+# Main-axis membership for typed AOI cards (phase-07 join fix, 2026-08-30).
+#
+# The old gate was `card['position'] >= 0` — a positional test on the exact
+# field the y-DP realignment renumbers, so a card that shifted a slot was
+# silently added to or dropped from the widget overlay. The stable key the
+# maps already carry is `html_handle` (e.g. 'rso[2]', 'Odp5De[0]',
+# 'botstuff.nav[0]', '#rhs[0]'): the DOM container namespace survives
+# re-ranking. Namespace census over all 2,776 typed_gapfill maps
+# (2026-08-30): rso / Odp5De are main-column, botstuff.* / #rhs are
+# off-axis; chrome / native_ad / dd_top / dd_right / some unknown_widget
+# carry no handle and fall back to the positional test.
+_MAIN_AXIS_HANDLE_ROOTS = {"rso", "Odp5De"}
+_OFF_AXIS_HANDLE_ROOTS = {"botstuff", "#rhs", "chrome"}
+
+
+def _on_main_axis(card: dict) -> bool:
+    """True when a typed AOI card sits in the main scroll column.
+
+    Keyed on the html_handle namespace when the card has one; falls back
+    to the sign of `position` only for handle-less cards. An unrecognized
+    handle namespace also falls back rather than guessing."""
+    handle = card.get("html_handle") or ""
+    if handle:
+        root = handle.split("[", 1)[0].split(".", 1)[0]
+        if root in _OFF_AXIS_HANDLE_ROOTS:
+            return False
+        if root in _MAIN_AXIS_HANDLE_ROOTS:
+            return True
+    return card.get("position", -1) >= 0
 
 
 def derive_aoi_labels(cursor: list[dict], bboxes: dict, min_dwell_ms: int = 100) -> dict:
@@ -477,12 +563,12 @@ def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
         widget_types = {"image_pack", "knowledge_panel", "paa", "top_places",
                         "related_searches", "other_widget", "unknown_widget"}
         for c in typed_cards:
-            if c.get("position", -1) < 0:
-                continue  # off-axis (chrome / dd_right / botstuff / rhs)
+            if not _on_main_axis(c):
+                continue  # off-axis (chrome / dd_right / botstuff.* / #rhs)
             if c.get("type") not in widget_types:
                 continue
             if c.get("x") is None or c.get("y") is None:
-                continue
+                continue  # unplaced card (e.g. demoted phantom knowledge_panel)
             widget_bboxes.append({
                 "location": {"x": float(c["x"]), "y": float(c["y"])},
                 "size": {"width": float(c["width"]), "height": float(c["height"])},
@@ -557,8 +643,15 @@ def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
     bboxes.update(cells)
     aoi_labels = derive_aoi_labels(cursor, bboxes)
 
+    exclusions = load_alignment_exclusions()
+    alignment_suspect = trial_id in set(exclusions.get("tids", []))
+    if alignment_suspect:
+        print(f"  NOTE {trial_id}: on AF's alignment_suspect exclusion list "
+              f"({exclusions.get('date')}) — bundle flagged", file=sys.stderr)
+
     return {
         "trial_id": trial_id,
+        "alignment_suspect": alignment_suspect,
         "screenshot": f"png/{jpg_name}",
         "screenshot_width": SCREENSHOT_WIDTH,
         "doc_height": meta["doc_height"],
@@ -577,6 +670,11 @@ def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
         "lfhf": lfhf,
         "_meta": {
             "source": "AdSERP raw signals — no NB15 derivatives",
+            "alignment_exclusion": {
+                "listed": alignment_suspect,
+                "list_date": exclusions.get("date"),
+                "reason": exclusions.get("reason") if alignment_suspect else None,
+            },
             "t0_unix_ms": t0,
             "n_cursor": len(cursor),
             "n_fixations": len(fixations),

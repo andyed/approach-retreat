@@ -37,6 +37,7 @@ h1 { font-size: 22px; margin-bottom: 6px; }
 .pill.def { background: #f59e0b; color: #000; }
 .pill.rej { background: #ef4444; color: #fff; }
 .pill.not { background: #2a2a2a; color: #888; }
+.pill.susp { background: #7f1d1d; color: #fff; border-color: #ef4444; }
 section.group { margin-top: 36px; }
 .group-title { font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
 .badge { background: #2a5a8a; color: #fff; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
@@ -59,6 +60,26 @@ section.group { margin-top: 36px; }
 """
 
 
+def suspect_banner(trial: dict) -> str:
+    """Visible badge for trials on AF's alignment_suspect exclusion list.
+
+    These pages stay published (pulling them is an editorial call) but the
+    AOI overlays cannot be trusted slot-for-slot, and the reader must see
+    that before reading the overlay."""
+    if not trial.get("alignment_suspect"):
+        return ""
+    meta = trial.get("_meta", {}).get("alignment_exclusion", {})
+    date = meta.get("list_date") or "2026-08-30"
+    return (
+        '<div class="suspect-banner"><strong>&#9888; ALIGNMENT SUSPECT</strong> '
+        f'&mdash; this trial is on AllSERP\'s alignment-exclusion list ({date}): '
+        'the y-DP geometric audit cannot rule out a one-slot-wrong AOI lattice '
+        'on this shift-periodic page. AOI overlays and per-AOI labels below may '
+        'be misattributed by one slot; the trial is excluded from typed-flavor '
+        'feature derivation upstream.</div>'
+    )
+
+
 def build_trial_page(trial_path: Path, template: str) -> Path:
     trial = json.loads(trial_path.read_text())
     tid = trial["trial_id"]
@@ -70,6 +91,7 @@ def build_trial_page(trial_path: Path, template: str) -> Path:
         .replace("__TRIAL_ID__", tid)
         .replace("__QUERY__", query)
         .replace("__SCREENSHOT__", f"../data/{trial['screenshot']}")
+        .replace("__SUSPECT_BANNER__", suspect_banner(trial))
         .replace("__TRIAL_DATA__", json.dumps(trial))
     )
     TRIAL_HTML_DIR.mkdir(parents=True, exist_ok=True)
@@ -111,6 +133,10 @@ def trial_card(t: dict, caption: str = "") -> str:
         f'<span class="pill rej">REJ {s.get("EVALUATED_REJECTED", 0)}</span>'
         f'<span class="pill not">NA {s.get("NOT_APPROACHED", 0)}</span>'
     )
+    if t.get("alignment_suspect"):
+        pills += ('<span class="pill susp" title="On AllSERP\'s alignment-'
+                  'exclusion list: AOI overlays may be off by one slot">'
+                  '&#9888; ALIGN-SUSPECT</span>')
     cap_html = f'<div class="caption">{caption}</div>' if caption else ""
     return f"""
     <a class="card" href="trials/{tid}.html">
