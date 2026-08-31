@@ -4,9 +4,18 @@ Reads:  site/replay/template.html, site/replay/data/trials/*.json
 Writes: site/replay/trials/{trial_id}.html, site/replay/index.html
 
 Run:    python3 scripts/build_replay_pages.py
+        python3 scripts/build_replay_pages.py --only p007-b2-t4
+
+A full run parses every trial bundle twice (once for the index, once per
+page) — a few hundred MB of JSON to touch one page. --only rebuilds just
+the named trials and skips the index, which is the right move when you
+have edited one bundle or the template. It is NOT the right move when
+adding a trial the index has never seen: the page would exist with
+nothing linking to it, so that case warns and tells you to do a full run.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -250,18 +259,53 @@ def build_index(trials: list[dict]) -> Path:
     return out
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Build per-trial replay HTML pages from template + trial JSONs.")
+    parser.add_argument(
+        "--only", nargs="+", metavar="TRIAL_ID", default=None,
+        help="rebuild only these trials' pages and skip the index rebuild")
+    args = parser.parse_args(argv)
+
     template = TEMPLATE.read_text()
     trial_files = sorted(TRIAL_JSON_DIR.glob("*.json"))
     if not trial_files:
         print(f"no trials in {TRIAL_JSON_DIR}")
         return 1
-    trials = [json.loads(p.read_text()) for p in trial_files]
-    for tp in trial_files:
+
+    build_files = trial_files
+    if args.only:
+        wanted = set(args.only)
+        build_files = [p for p in trial_files if p.stem in wanted]
+        missing = sorted(wanted - {p.stem for p in build_files})
+        if missing:
+            print(f"  ERROR: no trial bundle for: {', '.join(missing)}",
+                  file=sys.stderr)
+            print(f"  Build it first: scripts/build_replay_trial.py "
+                  f"{' '.join(missing)}", file=sys.stderr)
+            return 1
+
+    for tp in build_files:
         out = build_trial_page(tp, template)
         print(f"  {out.relative_to(REPLAY)}")
-    idx = build_index(trials)
-    print(f"\n  {idx.relative_to(REPLAY)}")
+
+    if args.only:
+        # Skipping the index is the point of --only, but a page the index
+        # does not link to is unreachable — the same silent-staleness family
+        # as the orphan check below, so say it out loud.
+        index_path = REPLAY / "index.html"
+        index_html = index_path.read_text() if index_path.exists() else ""
+        unlisted = [p.stem for p in build_files
+                    if f'trials/{p.stem}.html' not in index_html]
+        print(f"\n  {len(build_files)} page(s) rebuilt; index.html left as-is")
+        if unlisted:
+            print(f"\n  WARNING: nothing in index.html links to: "
+                  f"{', '.join(unlisted)}", file=sys.stderr)
+            print("  Re-run without --only to list them.", file=sys.stderr)
+    else:
+        # Parsed here rather than up front so --only never pays for it.
+        idx = build_index([json.loads(p.read_text()) for p in trial_files])
+        print(f"\n  {idx.relative_to(REPLAY)}")
 
     # Pages EMBED their trial data rather than fetching it, so a page with no
     # bundle cannot be rebuilt and will serve whatever it was last built with,
