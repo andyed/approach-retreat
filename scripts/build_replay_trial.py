@@ -257,6 +257,25 @@ def load_alignment_exclusions() -> dict:
     return _ALIGNMENT_EXCLUSIONS_CACHE
 
 
+# AF publishes its substrate identity (branch, commit, typed-maps content
+# hash) beside the exclusion list. Bundles stamp it into _meta so a page can
+# be traced to the exact map generation it was rendered from.
+_SUBSTRATE_PATH = (Path.home() / "Documents/dev/attentional-foraging"
+                   / "data/aoi-typed/substrate.json")
+_SUBSTRATE_CACHE: dict | None = None
+
+
+def load_substrate() -> dict:
+    """AF's substrate stamp; {} when AF hasn't published one (pre-2026-08-30)."""
+    global _SUBSTRATE_CACHE
+    if _SUBSTRATE_CACHE is None:
+        if _SUBSTRATE_PATH.exists():
+            _SUBSTRATE_CACHE = json.loads(_SUBSTRATE_PATH.read_text())
+        else:
+            _SUBSTRATE_CACHE = {}
+    return _SUBSTRATE_CACHE
+
+
 def _load_aoi_corrections() -> dict:
     global _AOI_CORRECTIONS_CACHE
     if _AOI_CORRECTIONS_CACHE is not None:
@@ -670,6 +689,11 @@ def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
         "lfhf": lfhf,
         "_meta": {
             "source": "AdSERP raw signals — no NB15 derivatives",
+            "flavor": flavor,
+            "substrate": {
+                k: load_substrate().get(k)
+                for k in ("branch", "substrate_commit", "typed_maps_content_hash")
+            } if load_substrate() else None,
             "alignment_exclusion": {
                 "listed": alignment_suspect,
                 "list_date": exclusions.get("date"),

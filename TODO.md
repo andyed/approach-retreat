@@ -1,5 +1,12 @@
 # approach-retreat — TODO
 
+## PAI proof images — stale after 2026-08-30 `.ias` regeneration (external: Duchowski)
+
+`p006-b4-t7` and `p019-b1-t8` proof images are stale — their `.ias` exports
+changed in the 2026-08-30 collision-fix rebuild. Regeneration needs
+Duchowski's `glias2poly`; external dependency, cannot be closed locally.
+`p047-b6-t1` is current. Re-check after the next glias2poly hand-off.
+
 ## Throttle the `mousemove` feature path — user-CPU cost
 
 `ApproachRetreatTracker` binds `mousemove` and runs `_onMouseMove` on
