@@ -14,11 +14,11 @@ Two classifiers run on every organic AOI; both are reported in the trial JSON an
 
 ### M5 (primary for organic AOIs)
 
-Logistic regression on the M4 nine-feature approach set, **trained against NB22 gaze-derived labels** (1916 deferred / 439 eval-rejected non-click episodes across 47 AdSERP participants). Trained in `attentional-foraging/scripts/m5_cursor_only_taxonomy.py`; coefficients shipped at `scripts/models/m5_final_model.json`.
+Logistic regression on the M4 nine-feature approach set, **trained against NB22 gaze-derived labels** (1,557 deferred / 513 eval-rejected non-click episodes across 47 AdSERP participants, `organic` attribution). Trained in `attentional-foraging/scripts/m5_cursor_only_taxonomy.py`; coefficients shipped at `scripts/models/m5_final_model.json`.
 
-- **LOSO AUC:** 0.794 (median per-participant 0.794, IQR [0.707, 0.869])
-- **Operating threshold:** p* = 0.395 (Youden-J on out-of-fold predictions)
-- **Predicted-deferred precision:** 90.2%
+- **LOSO AUC:** 0.769 `[LAB, AdSERP, organic]` — the 2026-05-02 gaze-clean retrain whose model file is the one deployed here (`[AR-V2:K-bbox-1]`). *(Corrected 2026-08-30 provenance audit: this section previously quoted 0.794 / p\* = 0.395 / precision 90.2 % — those are the retired 2026-04-14 `[absolute legacy]` **gaze-gated** diagnostic run `[AR-V2:K9]`, not the deployed model.)*
+- **Operating threshold:** p* = 0.489 (Youden-J on out-of-fold predictions)
+- **Predicted-deferred precision:** 87.8%
 - **Features (cursor-only, no gaze, no scroll):** `min_dist`, `mean_dist`, `final_dist`, `retreat_dist`, `dwell_in_proximity_ms`, `mean_approach_velocity`, `max_approach_velocity`, `direction_changes`, `frac_decreasing` — all geometric on cursor `pageY` relative to AOI y-center.
 - **Domain:** organic results only (M5's training population). Ad AOIs fall back to the heuristic.
 - **Approached-by-M5 definition:** `min_dist < 100px` (cursor came within 100px of the AOI's y-center). More permissive than the heuristic's bbox-containment definition.
@@ -46,7 +46,7 @@ M5 and the heuristic disagree often (~80% of approached organic AOIs in spot che
 
 **`[CURSOR-ONLY]` algorithm running on `[LAB]` data, supervision was `[LAB, NB22 gaze-derived]`.**
 
-Per the LAB/WILD convention (see `../CLAUDE.md`), the four-class taxonomy is currently `[LAB]`-only because the canonical version is gaze-derived. M5 is the named cursor-only-bootstrap that earns `[BOTH]` *if* its agreement with the gaze-derived ground truth is high enough; M5's LOSO AUC of 0.794 against NB22 is the published evidence. The replay viewer is the visual inspection tool for that bootstrap — every disagreement between M5 and the heuristic on a specific AOI is a candidate for human adjudication.
+Per the LAB/WILD convention (see `../CLAUDE.md`), the four-class taxonomy is currently `[LAB]`-only because the canonical version is gaze-derived. M5 is the named cursor-only-bootstrap that earns `[BOTH]` *if* its agreement with the gaze-derived ground truth is high enough; M5's gaze-clean LOSO AUC of 0.769 against NB22 `[LAB, AdSERP, organic; AR-V2:K-bbox-1]` is the published evidence (0.794 is the `[absolute legacy]` gaze-gated diagnostic ceiling `[AR-V2:K9]`, not deployable evidence). The replay viewer is the visual inspection tool for that bootstrap — every disagreement between M5 and the heuristic on a specific AOI is a candidate for human adjudication.
 
 ## Selection rubric
 

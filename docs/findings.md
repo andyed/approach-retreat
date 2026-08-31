@@ -57,8 +57,9 @@ Full discussion at [`docs/validation/attcur-bruckner.md`](validation/attcur-bruc
 The four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached) is `[LAB]`-only by construction: the deferred / evaluated-rejected split requires the gaze-fixation sequence revisiting an earlier result band, which no cursor-only stream provides. M5 closes that gap as a calibration methodology, not as a pre-trained artifact: train a logistic regression once against gaze-derived labels, then deploy at inference time on standard `mousemove` + click telemetry without any eye-tracker dependency.
 
 **On AdSERP — the gaze-clean reference point** `[LAB, AdSERP, organic]` (post-2026-05-01 cascade; trained against bbox-organic NB22 labels via `compute_regression_labels.py --attribution organic`):
-- LOSO AUC 0.769 `[AR-V2:K-bbox-1]` at the Youden-*J* threshold *p* = 0.489 `[AR-V2:K-bbox-2]`
+- LOSO AUC 0.769 `[AR-V2:K-bbox-1]` at the Youden-*J* threshold *p* = 0.489 `[AR-V2:K-bbox-2]` — legacy nine-feature set, includes the leakage-caveated `final_dist`/`retreat_dist` pair; this is the deployed model
 - Precision on predicted-deferred pool 87.8 % `[AR-V2:K-bbox-3]`, recall 71.6 % `[AR-V2:K-bbox-4]`, F1 0.789 `[AR-V2:K-bbox-5]`
+- Canonical leakage-screened variant (seven features, `final_dist`/`retreat_dist` dropped): LOSO AUC 0.752 `[AR-V2:K-bbox-6]`, precision 86.7 %, recall 77.1 %, F1 0.816 `[AR-V2:K-bbox-7–10]` — use these for head-to-head baseline tables where the click-buffer leakage caveat must not apply
 
 > Pre-cascade reference (legacy absolute attribution, retired 2026-05-01): LOSO AUC 0.709 / threshold 0.500 / precision 88.9 % / recall 73.0 % / F1 0.802 — preserved as `[AR-V2:K1–K5, absolute legacy]`. The cascade retrained the M5 model on `cursor-approach-features-organic.json` with bbox-derived AOIs; the +0.060 AUC gain reflects cleaner training data, not a different model architecture.
 
@@ -70,7 +71,7 @@ The training-target choice (gaze-regression label (NB22 ground truth) vs click l
 
 ### LAB diagnostic upper bound — not deployable
 
-A LAB gaze-gated feature extractor (sampling cursor at fixation timestamps) reaches AUC 0.794, F1 0.867, precision 90.2 % / recall 83.4 % `[AR-V2:K9–K12]`, supervision-signal ratio 2.18 × `[AR-V2:K13]`. These are an upper bound, not a target. The fidelity cost of going gaze-clean is −0.040 AUC, −10.4 pt recall, −0.065 F1, ×0.69 supervision-signal ratio `[AR-V2:K14]`. A production deployment cannot reproduce these without an eye tracker; the gaze-clean numbers are the deployable ceiling.
+A LAB gaze-gated feature extractor (sampling cursor at fixation timestamps) reaches AUC 0.794, F1 0.867, precision 90.2 % / recall 83.4 % `[AR-V2:K9–K12]`, supervision-signal ratio 2.18 × `[AR-V2:K13]` — all `[absolute legacy]`, computed 2026-04-14 on the pre-cascade substrate. These are an upper bound, not a target. The fidelity cost of going gaze-clean is −0.085 AUC *(corrected 2026-08-30; both sides of the K1-vs-K9 comparison are `absolute legacy`)*, −10.4 pt recall, −0.065 F1, ×0.69 supervision-signal ratio `[AR-V2:K14]`. A production deployment cannot reproduce these without an eye tracker; the gaze-clean numbers are the deployable ceiling.
 
 ### Class prior caveat
 
@@ -141,19 +142,19 @@ The repo's central organizational axis (per `CLAUDE.md`) is which findings trans
 
 The rank-position absorption result — M4 drops explicit rank position and loses no predictive power (M3 ≈ M4) — is a *layout-resilience* claim only if the corpus it holds across is itself layout-diverse. It is.
 
-Across all 2,776 AdSERP trials, the typed-gapfill AOI maps show **every SERP (100 %) carries at least one non-organic element** — not one trial is a plain ten-blue-links list. A typical page runs **≈16 AOIs spanning a median of 6 distinct element types** (range 2–12), only about half of them organic results.
+Across all 2,764 AdSERP trials (12 alignment-excluded; re-derived 2026-08-30 on the collision-fixed typed maps), the typed-gapfill AOI maps show **every SERP (100 %) carries at least one non-organic element** — not one trial is a plain ten-blue-links list. A typical page runs **≈16 AOIs spanning a median of 7 distinct element types** (range 2–11), only about half of them organic results.
 
 | Element type | Present in |
 |---|---|
 | organic results | 100 % of trials |
-| native ad | 95.4 % |
+| native ad | 95.3 % |
 | `dd_top` — top ad block, typically a product carousel | 57.0 % |
-| image pack | 56.9 % |
+| image pack | 56.8 % |
 | `dd_right` — right-rail ads | 31.0 % |
 | people-also-ask | 27.7 % |
-| knowledge panel | 27.6 % |
+| knowledge panel | 27.7 % |
 
-(Plus page furniture present on most trials: pagination 97 %, related-searches 65 %, chrome 51 %.)
+(Plus page furniture present on most trials: pagination 97 %, related-searches 65 %, chrome 48 %.)
 
 These are exactly the elements that break classical position-bias click models — multi-column carousels, image packs, and knowledge panels all disrupt the single-column top-to-bottom scan the position-bias assumption rests on. That M3 ≈ M4 holds across a corpus where *every* page mixes these verticals is the empirical substrate for the layout-resilience claim: the absorption is not an artifact of a uniform ranked list.
 

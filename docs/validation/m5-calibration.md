@@ -34,7 +34,9 @@ The M5 calibration methodology produces a cursor-only classifier whose predicted
 | F1 on deferred class | **0.789** | 0.802 |
 | Supervision-signal advantage over click-trained baseline | 1.49 × (legacy; bbox re-derivation pending — the supervision-target argument survives structurally even if the per-class numbers shift) | 1.49 × |
 
-These are **reference numbers for AdSERP's class prior and task design**. Production deployments will see different numbers depending on their own prior; the calibration methodology itself is what transfers. Source for the post-cascade values: `attentional-foraging/scripts/output/m5_cursor_only_taxonomy_organic/{summary.json, m5_final_model.json}`.
+These are **reference numbers for AdSERP's class prior and task design**. Production deployments will see different numbers depending on their own prior; the calibration methodology itself is what transfers.
+
+**Feature-set provenance (2026-08-30 audit).** The post-cascade column above is the 2026-05-02 retrain on the **legacy nine-feature set, including `final_dist` and `retreat_dist`** — the two distance terms since screened as structurally leakage-prone under the click-buffer protocol. A canonical **seven-feature leakage-screened** re-run (2026-05-09, n = 2,067) gives LOSO AUC **0.752**, threshold *p* = 0.449, precision 86.7 %, recall 77.1 %, F1 0.816 `[AR-V2:K-bbox-6–10]`; that run is the current on-disk `attentional-foraging/scripts/output/m5_cursor_only_taxonomy_organic/summary.json` (the 0.769 producer output survives in AF git at `06542d62`, and its model file is the one deployed in this repo). Use the canonical numbers wherever the leakage caveat must not apply; the −0.017 AUC gap is the measured contribution of the two screened features.
 
 ---
 

@@ -37,6 +37,8 @@ Rank-type (LAB-side only; WILD has no AOI-rank structure beyond the single nativ
 
 A K-ID without a rank-type tag (where one applies) is a citation bug. K-IDs are never renumbered; cascade-superseded rows get a new `K-bbox-#` row alongside the legacy and the legacy gets marked `(absolute legacy)`.
 
+> **2026-08-30 substrate note.** AF's typed-flavor substrate was re-derived twice in late August (2026-08-28 y-DP realignment; 2026-08-30 AOI card-collision fix, corpus 2,776 → 2,764 with 12 alignment exclusions). **V1, V2, and V3 below are unmoved by both passes — by design, not by omission**: V1 is `[WILD, attcur]` (no AdSERP input at all), and V2/V3 are computed on the `organic` flavor, whose AOI maps were untouched by the typed-map realignment and collision fix. Rows citing typed-flavor AF artifacts (regression labels, replay surface) were re-derived 2026-08-30 and say so inline.
+
 ---
 
 ## V1: Brückner-ACD click-prediction replication
@@ -105,13 +107,25 @@ Population: 2,351 approached-non-click episodes on AdSERP
 
 | K-ID | Claim | Value | Regime |
 |---|---|---:|---|
-| **AR-V2:K-bbox-1** | M5 LOSO AUC | **0.769** | `[LAB, AdSERP, organic]` |
+| **AR-V2:K-bbox-1** | M5 LOSO AUC (legacy 9-feature set) | **0.769** | `[LAB, AdSERP, organic]` |
 | AR-V2:K-bbox-2 | Youden-*J* operating threshold | *p* = 0.489 | `[LAB, AdSERP, organic]` |
 | AR-V2:K-bbox-3 | Precision on predicted-deferred pool | 87.8 % | `[LAB, AdSERP, organic]` |
 | AR-V2:K-bbox-4 | Recall on predicted-deferred pool | 71.6 % | `[LAB, AdSERP, organic]` |
 | AR-V2:K-bbox-5 | F1 on deferred class | 0.789 | `[LAB, AdSERP, organic]` |
 
-Source: `attentional-foraging/scripts/output/m5_cursor_only_taxonomy_organic/{summary.json, m5_final_model.json}`. The cascade-trained model file is the one currently deployed at `scripts/models/m5_final_model.json` in this repo.
+**Feature-set provenance (audited 2026-08-30).** K-bbox-1–5 come from the 2026-05-02 organic retrain (n = 2,070 episodes) on the **legacy nine-feature M4 set, which includes `final_dist` and `retreat_dist`** — the two distance terms later screened as structurally leakage-prone under the click-buffer protocol (the CIKM R1-W2 caveat). That run's model file is the one deployed at `scripts/models/m5_final_model.json` in this repo (`loso_auc` 0.7686, threshold 0.489 — matches these rows). AF's on-disk `m5_cursor_only_taxonomy_organic/summary.json` was **overwritten on 2026-05-09** by the canonical leakage-screened re-run below, so it no longer matches K-bbox-1–5; recover the 0.769 producer output from AF git (`06542d62`).
+
+**Canonical leakage-screened variant** `[LAB, AdSERP, organic]` (2026-05-09 producer refresh; seven-feature M4 canonical set, `final_dist`/`retreat_dist` dropped; n = 2,067; this is the current on-disk `m5_cursor_only_taxonomy_organic/summary.json`) — **use these rows for head-to-head baseline tables where the leakage caveat must not apply:**
+
+| K-ID | Claim | Value | Regime |
+|---|---|---:|---|
+| **AR-V2:K-bbox-6** | M5 LOSO AUC (canonical 7-feature set) | **0.752** | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-7 | Youden-*J* operating threshold | *p* = 0.449 | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-8 | Precision on predicted-deferred pool | 86.7 % | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-9 | Recall on predicted-deferred pool | 77.1 % | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-10 | F1 on deferred class | 0.816 | `[LAB, AdSERP, organic]` |
+
+The 0.769 → 0.752 delta (−0.017 AUC) is the measured cost of removing the two leakage-prone distance terms; it bounds how much work `final_dist`/`retreat_dist` were doing in the deployed model. The deployed model file has **not** been swapped to the canonical variant — that is a deploy decision, not a docs decision.
 
 **Pre-cascade reference (legacy)** `[LAB, AdSERP, absolute legacy]` — retired 2026-05-01; preserved for historical comparison:
 
@@ -135,12 +149,14 @@ Source: `attentional-foraging/scripts/output/m5_cursor_only_taxonomy_organic/{su
 
 | K-ID | Claim | Value | Regime |
 |---|---|---:|---|
-| AR-V2:K9 | LOSO AUC | 0.794 | `[LAB, AdSERP]` |
-| AR-V2:K10 | Precision (deferred) | 90.2 % | `[LAB, AdSERP]` |
-| AR-V2:K11 | Recall (deferred) | 83.4 % | `[LAB, AdSERP]` |
-| AR-V2:K12 | F1 (deferred) | 0.867 | `[LAB, AdSERP]` |
-| AR-V2:K13 | Supervision-signal ratio | 2.18 × | `[LAB, AdSERP]` |
-| AR-V2:K14 | Fidelity cost of going gaze-clean (K1 vs K9) | −0.040 AUC, −10.4 pt recall, −0.065 F1, ×0.69 supervision-signal ratio | `[LAB, AdSERP]` |
+| AR-V2:K9 | LOSO AUC | 0.794 | `[LAB, AdSERP, absolute legacy]` |
+| AR-V2:K10 | Precision (deferred) | 90.2 % | `[LAB, AdSERP, absolute legacy]` |
+| AR-V2:K11 | Recall (deferred) | 83.4 % | `[LAB, AdSERP, absolute legacy]` |
+| AR-V2:K12 | F1 (deferred) | 0.867 | `[LAB, AdSERP, absolute legacy]` |
+| AR-V2:K13 | Supervision-signal ratio | 2.18 × | `[LAB, AdSERP, absolute legacy]` |
+| AR-V2:K14 | Fidelity cost of going gaze-clean (K1 vs K9) | −0.085 AUC *(corrected 2026-08-30: prior value −0.040 did not match the stated K1-vs-K9 pairing, 0.794 − 0.709 = 0.085)*, −10.4 pt recall, −0.065 F1, ×0.69 supervision-signal ratio | `[LAB, AdSERP, absolute legacy]` |
+
+*(Rank-type added 2026-08-30 provenance audit: K9–K14 were produced 2026-04-14 on the pre-cascade `absolute` substrate with the fixation-timed (gaze-gated) extractor — source `m5_cursor_only_taxonomy/summary.json`, n = 2,355. Doubly non-current: retired attribution **and** non-deployable extractor. Cite only as the diagnostic ceiling, never as an M5 headline; an `organic` gaze-gated re-derivation has not been run.)*
 
 ### Class prior on AdSERP (calibration reference, not universal base rate)
 

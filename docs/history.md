@@ -147,7 +147,7 @@ The per-AOI grain stabilized into a public extractor. Work proceeded in parallel
 | 2026-04-14 | `8e5d5203` canonical four-class episode distributions [LAB]; `14e0d5ff` **M5 — cursor-only bootstrap of NB22 gaze-regression taxonomy** | `39fb0e2` adopt [LAB]/[WILD] regime convention |
 | 2026-04-15 | — | `5074d34` **ship canonical M4 nine-feature extractor for v0.1.0** |
 
-`Episode` becomes a class in AR and a split column in AF on the same day. **M5 on 2026-04-14** is the load-bearing piece: a cursor-only bootstrap of the gaze-defined NB22 taxonomy, LOSO AUC 0.794. This is the moment the four-class labels can be recovered without a gaze stream at inference time. M4 ships the next day as v0.1.0.
+`Episode` becomes a class in AR and a split column in AF on the same day. **M5 on 2026-04-14** is the load-bearing piece: a cursor-only bootstrap of the gaze-defined NB22 taxonomy, LOSO AUC 0.794 *(that day's number; later reclassified as the `[absolute legacy]` gaze-gated diagnostic ceiling `[AR-V2:K9]` — the deployable gaze-clean figure is 0.769 `organic` / `[AR-V2:K-bbox-1]`)*. This is the moment the four-class labels can be recovered without a gaze stream at inference time. M4 ships the next day as v0.1.0.
 
 ## Phase 6 — AOI cascade and bbox attribution. 2026-04-28 to 2026-05-17
 
