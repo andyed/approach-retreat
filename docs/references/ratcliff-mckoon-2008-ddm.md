@@ -232,10 +232,10 @@ The methods paper cites this lineage as follows:
   deliberately compressed to avoid pulling the paper into a
   cognitive-modeling defence.
 
-- **Supplemental § (or the CHI 2027 task-model paper) — full
+- **Supplemental § (or a downstream cognitive-modeling write-up) — full
   derivation** — K3's parameter-to-feature mapping table belongs in
-  a supplemental section or in the broader CHI 2027 task-model
-  paper, where the cognitive-modeling lineage is the main
+  a supplemental section or in a broader cognitive-modeling
+  write-up, where the cognitive-modeling lineage is the main
   contribution rather than an anchoring citation.
 
 - **AR library README** — the K3 mapping (three dimensions × DDM

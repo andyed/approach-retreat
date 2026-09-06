@@ -1,0 +1,265 @@
+{
+  "checked_date": "2026-09-04",
+  "kind": "selected aggregate results; no new model fitting",
+  "source_repository": "andyed/attentional-foraging",
+  "source_checkout_commit": "b5d669593290d91331fad9d12692b3fbd118f717",
+  "note": "Original source files are identified by SHA256. Per-participant and per-trial predictions are omitted. Some ablation outputs are locally retained and not tracked in the upstream repository.",
+  "sources": {
+    "click_buffer": {
+      "source_path": "scripts/output/paper-output/click_buffer_ablation.json",
+      "sha256": "7415778645de9637e79829420c20a66ac18a2fb9f71b0742c2d4f8099498d6a9",
+      "source_generated": "2026-08-31T14:39:40+00:00",
+      "values": {
+        "organic_hybrid|buf500|M1": {
+          "ap": 0.19782886239793665,
+          "attribution": "organic_hybrid",
+          "auc": 0.6642465265492743,
+          "brier": 0.23078838825324519,
+          "buffer_ms": 500,
+          "mrr_at_10": 0.45545287692234254,
+          "n_ranked_trials": 2751,
+          "n_records": 19848,
+          "ndcg_at_1": 0.20465285350781534,
+          "per_part_auc_median": 0.6462719298245614,
+          "variant": "M1"
+        },
+        "organic_hybrid|buf500|M4-7": {
+          "ap": 0.5662772522741746,
+          "attribution": "organic_hybrid",
+          "auc": 0.9039935432030468,
+          "brier": 0.13463437360553704,
+          "buffer_ms": 500,
+          "mrr_at_10": 0.8087150127226462,
+          "n_ranked_trials": 2751,
+          "n_records": 19848,
+          "ndcg_at_1": 0.6673936750272628,
+          "per_part_auc_median": 0.9273348519362187,
+          "variant": "M4-7"
+        }
+      }
+    },
+    "approach_excision": {
+      "source_path": "scripts/output/ablations/approach_truncation_ablation.json",
+      "sha256": "779cc1fe2bfe056f3844b31167b22b3acd24b805f44da3add34469bbb5be7968",
+      "source_generated": "2026-08-31T14:14:01.208759+00:00",
+      "operational_definition": "t_onset = latest pre-click local maximum of Euclidean cursor distance to the final click coordinate, with prominence >= 50 px and distance >= 100 px; fallback: latest sample with distance >= pre-click median. All fixations and cursor samples at t >= t_onset excluded from every AOI's features (per-trial click_buffer_ms = t_click - t_onset through the canonical extractor).",
+      "truncation_stats": {
+        "n_trials_with_onset": 2775,
+        "onset_rule_counts": {
+          "local_max": 2770,
+          "median_fallback": 5,
+          "no_click": 1
+        },
+        "delta_ms": {
+          "median": 2880.0,
+          "iqr": [
+            2098.0,
+            4454.5
+          ],
+          "mean": 3746.5005405405404
+        },
+        "removed_path_px": {
+          "median": 149.02194096075905,
+          "iqr": [
+            121.45475166852944,
+            211.71987884542415
+          ],
+          "mean": 202.47417471619687
+        },
+        "frac_time_removed": {
+          "median": 0.18822938517446156,
+          "iqr": [
+            0.11445455490341921,
+            0.3497377364943302
+          ],
+          "mean": 0.2723446344063366
+        }
+      },
+      "values": {
+        "M1": {
+          "auc": 0.6654402930679544,
+          "ap": 0.19703512732052078,
+          "brier": 0.23029151486510507,
+          "mrr_at_10": 0.46513519893801586,
+          "ndcg_at_1": 0.21431290445374954,
+          "n_ranked_trials": 2627,
+          "per_part_auc_median": 0.6503549695740364,
+          "n_records": 18919
+        },
+        "M4-7": {
+          "auc": 0.7633290936787338,
+          "ap": 0.31900985859857073,
+          "brier": 0.20034121636611962,
+          "mrr_at_10": 0.647638414539823,
+          "ndcg_at_1": 0.4453749524172059,
+          "n_ranked_trials": 2627,
+          "per_part_auc_median": 0.7940097391768395,
+          "n_records": 18919
+        }
+      },
+      "within_excision_paired_stats": {
+        "comparison": "M4-7 (approach-truncated) vs M1 (approach-truncated)",
+        "n_folds": 47,
+        "mean_auc_a": 0.7657834720167624,
+        "mean_auc_b": 0.6362767876519163,
+        "mean_delta_auc": 0.12950668436484597,
+        "median_delta_auc": 0.12625218635713165,
+        "delta_ci_95_lo": 0.10550847859289349,
+        "delta_ci_95_hi": 0.15342537818229196,
+        "wilcoxon_stat": 20.0,
+        "wilcoxon_p": 5.272227099339943e-12,
+        "paired_t_stat": 10.551716431224666,
+        "paired_t_p": 7.175338753667887e-14,
+        "cohens_d_z": 1.5391260275287801
+      },
+      "version_caveat": "Embedded published-buffer comparison rows predate the Aug31 refreshed click-buffer grid and are intentionally omitted. Cross-window paired differences must be regenerated before citation."
+    },
+    "hover_ladder": {
+      "source_path": "scripts/output/ablations/viewport_exposure_ablation.json",
+      "sha256": "e6da4591205cdbbd2dfa3a9c121220c3659ddd74df79a2c5a25b2e517667a96f",
+      "source_generated": "2026-08-31T14:39:55.933365+00:00",
+      "values": {
+        "buf500": {
+          "M1": {
+            "auc": 0.6642465265492743,
+            "ap": 0.19782886239793665,
+            "brier": 0.23078838825324519,
+            "mrr_at_10": 0.45545287692234254,
+            "ndcg_at_1": 0.20465285350781534,
+            "n_ranked_trials": 2751,
+            "per_part_auc_median": 0.6462719298245614,
+            "n_records": 19848
+          },
+          "H": {
+            "auc": 0.8456629116474356,
+            "ap": 0.4619240578982835,
+            "brier": 0.160831763712776,
+            "mrr_at_10": 0.7382903961420866,
+            "ndcg_at_1": 0.5550708833151581,
+            "n_ranked_trials": 2751,
+            "per_part_auc_median": 0.8788524590163935,
+            "n_records": 19848
+          },
+          "M4-7": {
+            "auc": 0.9039935432030468,
+            "ap": 0.5662772522741746,
+            "brier": 0.13463437360553704,
+            "mrr_at_10": 0.8087150127226462,
+            "ndcg_at_1": 0.6673936750272628,
+            "n_ranked_trials": 2751,
+            "per_part_auc_median": 0.9273348519362187,
+            "n_records": 19848
+          }
+        },
+        "excision": {
+          "M1": {
+            "auc": 0.6654402930679544,
+            "ap": 0.19703512732052078,
+            "brier": 0.23029151486510507,
+            "mrr_at_10": 0.46513519893801586,
+            "ndcg_at_1": 0.21431290445374954,
+            "n_ranked_trials": 2627,
+            "per_part_auc_median": 0.6503549695740364,
+            "n_records": 18919
+          },
+          "H": {
+            "auc": 0.63673807831962,
+            "ap": 0.26752553202924634,
+            "brier": 0.22491040948203914,
+            "mrr_at_10": 0.5739137052517335,
+            "ndcg_at_1": 0.35439665017129807,
+            "n_ranked_trials": 2627,
+            "per_part_auc_median": 0.6708011467707254,
+            "n_records": 18919
+          },
+          "M4-7": {
+            "auc": 0.7633290936787338,
+            "ap": 0.31900985859857073,
+            "brier": 0.20034121636611962,
+            "mrr_at_10": 0.647638414539823,
+            "ndcg_at_1": 0.4453749524172059,
+            "n_ranked_trials": 2627,
+            "per_part_auc_median": 0.7940097391768395,
+            "n_records": 18919
+          }
+        }
+      }
+    },
+    "ranking_grades": {
+      "source_path": "scripts/output/ltr_typed_four_distinct_grades/summary_gaze_buf500.json",
+      "sha256": "f68b3c22ee8de0f1012cdc5c95ed60b66df3e7bb7a2d4887803d22b17ae121d6",
+      "source_generated": "2026-08-31T13:18:56+00:00",
+      "features": [
+        "total_dwell_ms",
+        "min_dist",
+        "mean_dist",
+        "dwell_in_proximity_ms",
+        "mean_approach_velocity",
+        "max_approach_velocity",
+        "direction_changes",
+        "frac_decreasing"
+      ],
+      "dataset": {
+        "class_distribution": {
+          "CLICKED": 2739,
+          "DEFERRED": 3297,
+          "EVAL_REJECTED": 578,
+          "NotApprAbove": 3913,
+          "NotApprBelow_EXCLUDED": 8805
+        },
+        "participants": 47,
+        "records_dropped_NotApprBelow": 8805,
+        "records_kept": 10527,
+        "records_total": 19332,
+        "trials": 2762
+      },
+      "headlines": {
+        "delta_mrr10_3grade_minus_binary": 0.009671159587360756,
+        "delta_mrr10_4grade_minus_3grade": -0.0018175637728710115,
+        "delta_mrr10_4grade_minus_binary": 0.007853595814489744,
+        "delta_ndcg10_4grade_minus_3grade": -0.0013337598999495492
+      },
+      "values": {
+        "LR pointwise (binary click)": {
+          "mrr10": 0.8020417664272413,
+          "n_trials": 2685,
+          "ndcg10": 0.8521978792446773
+        },
+        "LambdaMART (3-grade collapse, 2/1/0/0)": {
+          "mrr10": 0.824381927817682,
+          "n_trials": 2685,
+          "ndcg10": 0.8687939019461517
+        },
+        "LambdaMART (4 distinct grades, 3/2/1/0)": {
+          "mrr10": 0.822564364044811,
+          "n_trials": 2685,
+          "ndcg10": 0.8674601420462021
+        },
+        "LambdaMART (binary click)": {
+          "mrr10": 0.8147107682303213,
+          "n_trials": 2685,
+          "ndcg10": 0.8613552826809664
+        },
+        "Original SERP position (no ML)": {
+          "mrr10": 0.44682125860896815,
+          "n_trials": 2685,
+          "ndcg10": 0.5773646492509681
+        }
+      }
+    },
+    "m5_seven_feature": {
+      "source_path": "scripts/output/m5_cursor_only_taxonomy_organic/summary.json",
+      "sha256": "c374241b8c3caa9cea3e86b1c9da7985e17120678f1ef74378bcbc126977436f",
+      "source_generated": "2026-05-09T14:54:29.424184+00:00",
+      "values": {
+        "loso_auc": 0.7524638885740551,
+        "youden_j_threshold": 0.4491674378084887,
+        "precision_deferred": 0.8670520231213873,
+        "recall_deferred": 0.7707129094412332,
+        "f1_deferred": 0.8160489629377763
+      },
+      "status": "Historical May calibration; not a post-August recalibration."
+    }
+  },
+  "sensor_protocol_caveat": "The active LAB feature producer samples at gaze fixations, uses gaze-cursor distances, and weights proximity dwell by fixation duration. The browser extractor uses mousemove-based vertical cursor-to-AOI distances. The newest LAB diagnostics are not direct evidence of browser cursor-only performance. Producer lineage reconciliation and matched cursor-only controls remain open."
+}

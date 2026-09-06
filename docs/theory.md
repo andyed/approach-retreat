@@ -1,127 +1,114 @@
-# Theory of Approach/Retreat
+# Theory of approach/retreat
 
-## What this library measures
+**Updated September 4, 2026.** For numerical results and source versions, use
+[Current evidence](current-evidence.md); for the development of the ideas, use
+[History](history.md).
 
-A user evaluates a SERP result through a sequence of cursor episodes — entering an area of interest (AOI), dwelling, and either committing (click) or leaving. The leaving is the *retreat*, and its geometry carries signal about whether the user is finished with that result or might come back.
+## What the instrument observes
 
-This library captures three things per result, episode by episode:
+Approach-retreat records cursor entry, dwell, exit, return, and click relative
+to a result's area of interest (AOI). It records viewport exposure separately.
+These observations can be related to examination, but an event does not carry
+its psychological interpretation with it: a cursor may rest while someone
+reads elsewhere, and a result may be examined without any cursor contact.
 
-- **Approach.** The cursor enters the AOI; how fast and at what angle.
-- **Dwell.** Time spent inside the AOI; the cognitive evaluation phase.
-- **Retreat.** What happens after the cursor leaves: arc length, max distance from the AOI, lateral displacement, and the Fitts' law index of difficulty for returning.
+The distinction between the **visit** and the **feature window** matters.
+`Episode` represents an enter/exit visit. The seven-feature M4 vector summarizes
+a result's distance trace over a longer observation window, potentially across
+visits. Most reported offline analyses operate at per-(trial, result) grain.
+The [research index](research.md) explains the implementation and works through
+a trace numerically.
 
-These episodes resolve into a four-class outcome per result: **clicked**, **deferred** (the user came back), **evaluated-rejected** (entered but didn't return), or **not-approached**.
+## The task-model proposal
 
-## The signal we're after
+Orient–Survey–Evaluate–Commit (OSEC) is a proposed account of search activity:
+orient to the page, inspect a candidate set, examine a result, and commit to an
+action or continue searching. It helps formulate questions about where to
+aggregate observations and how to interpret non-clicks. Those stages are not
+automatically observed just because the library has recorded an episode.
 
-The cursor doesn't just navigate; it narrates the evaluation. Three patterns:
+The concrete supervision proposal distinguishes four operational categories:
 
-1. **Approach velocity tracks information scent.** Fast scanning approaches mean the user is looking; slow deliberate approaches mean the user is reading.
-2. **Dwell tracks evaluation effort.** Long dwells with no click are evaluation followed by rejection. Long dwells with clicks are deliberation followed by commitment. ClickSense [1] captures the deliberation signal at the moment of commitment; this library captures it during evaluation.
-3. **Retreat geometry tracks the deliberation/commitment boundary.** This is the signal that motivated this library. When the user leaves a result without clicking, what happens after that exit predicts whether they will come back. The single strongest separator at this boundary is **post-closest-approach drift** — how far the cursor has drifted from its closest-approach point by the time the episode ends.
-
-The relationship is the *opposite* of the geometric intuition you might expect from "deliberation = stays close, commitment = moves far":
-
-| Class | Post-closest drift | Gaze dwell | Proximity dwell |
-|---|---|---|---|
-| **Deferred** (will re-approach) | **234 px** (cursor parked) | **4,137 ms** | **1,213 ms** |
-| **Evaluated-rejected** (won't return) | **91 px** (cursor moving on) | **1,612 ms** | **690 ms** |
-| Mann-Whitney *p* | **1.76 × 10⁻³⁸** | **9.76 × 10⁻⁷⁰** | **1.36 × 10⁻¹⁶** |
-
-`[LAB, AdSERP, NB22:K5–K7]`. N = 1,916 deferred + 439 eval-rejected, post 2026-04-12 fixation-side coordinate audit. **Gaze dwell** and **proximity dwell** are LAB-only by construction — there is no gaze stream in `[WILD, ACD]`. The post-closest-drift column has a WILD counterpart at [`analysis/attcur-validation/`](../analysis/attcur-validation/README.md) that uses the 1-Hz-compatible `retreat_dist` definition (max post-min excursion, not the 150 Hz endpoint-drift formula used here) and reaches AUC 0.821 on `ad_clicked` with the 11-feature LR.
-
-**Corrected interpretation: deferred = cursor parked, eyes wandering; evaluated-rejected = cursor moving on with the eyes.** Deferred users let the cursor sit wherever it landed (high post-closest drift) while they fixate alternative candidates before regressing back. Evaluated-rejected users actively move the cursor toward the next target as their gaze moves on, so post-closest drift stays small.
-
-The 2.6× drift gap, 2.6× gaze gap, and 1.8× proximity gap are all in the same direction — deferred users invest more visual and motor effort across the episode than eval-rejected users. They are still considering. The motor signature is real and strong (*p* values from 10⁻¹⁶ to 10⁻⁷⁰); the *geometric metaphor* in earlier versions of this section ("curved-close vs straight-far") had the direction inverted, and has been retracted.
-
-The 2026-04-12 audit also surfaced a complementary finding from the geometric arc-ratio metric in `attentional-foraging/notebooks-v2/24_retreat_arc_geometry.ipynb` — that metric measures something different from K5 (arc length / direct distance ratio at the moment of max retreat, *not* post-closest drift). NB24 was re-executed 2026-04-12 22:54 with the post-fix data; the per-retreat re-approach comparison (N = 793 retreats, 63 re-approached + 730 not, 7.9 % re-approach rate) gives:
-
-| Feature | Re-approached (median) | Not re-approached (median) | Mann-Whitney *p* |
-|---|---|---|---|
-| Arc ratio (path / direct distance) | 1.800 | 1.337 | 1.71 × 10⁻³ |
-| Fitts' law ID at max retreat (bits) | 1.33 | 1.76 | 7.94 × 10⁻⁴ |
-| Max retreat distance (px) | 380 | 425 | 0.062 (ns) |
-
-(Pre-fix values were 2.35 / 1.35, 1.32 / 1.72, 369 / 415 with N = 731. The arc-ratio gap shrank, max retreat dropped to ns under the post-fix data, but Fitts ID is essentially unchanged.) These are pooled-retreat statistics; participant-clustered inference is still pending. The K5 post-closest-drift signal in NB22 (sample size N = 2,355, *p* = 10⁻³⁸) remains the canonical motor-signature anchor for the four-class dissociation; NB24's arc-ratio finding is corroborating evidence on a different geometric quantity, but the post-fix max-retreat-distance result is now a null at the pooled level.
-
-## What we're not claiming
-
-We initially proposed an "epistemic action" interpretation (Kirsh & Maglio, 1994) — that retreat distance was a self-imposed motor cost the user was using to encode rejection confidence into physical space, like short-order cooks turning plates to encode dish state. **The data did not support this**, and we rejected it. Specifically:
-
-- Top-of-page sponsored ads do *not* produce dramatically curvier retreats than organic results once participant-level variance is accounted for (Mann-Whitney p = 0.26 participant-clustered, vs the artifactual p = 1.4 × 10⁻⁹ from a coordinate-system bug in our first analysis).
-- Dwell time is *not* correlated with retreat curvature (rho = -0.06, ns).
-- Top ads have *lower* Fitts ID than organic at max retreat — but only because they are taller targets, which is a geometric property of the page, not a behavioral signal.
-
-What survives: retreat geometry as a *correlate* of the deliberation/commitment state, not as a *mechanism* of it. The cursor narrates the decision; it does not implement it.
-
-## Why this matters: better negatives for ML ranking
-
-The practical payoff is training-data quality for learning-to-rank models. Click logs treat every non-clicked result as an undifferentiated negative — both the result the user looked at and rejected, and the result the user never even saw. A binary `clicked / not_clicked` label sends both to 0, and the ranker learns from the noise.
-
-Episode segmentation gives a four-class label that distinguishes them:
-
-| Class | Cursor signature | Use as label |
+| Category | Observation or estimation | Interpretation limit |
 |---|---|---|
-| **clicked** | enter → dwell → click | positive |
-| **evaluated-rejected** | enter → dwell → cursor moves on with the eyes; no return | strong negative (the user looked and said no) |
-| **deferred** | enter → dwell → cursor parked while eyes wander; eventually regresses back | weak negative or hold-out (the user is still considering) |
-| **not-approached** | cursor never entered the AOI | unknown (not a negative — the user never looked) |
+| Clicked | A recorded click is attributed to the result | Click does not by itself establish satisfaction or relevance |
+| Deferred | In the LAB target, an approached non-clicked result has a gaze-return label; cursor models estimate it | A return is not a direct report of an intention to defer |
+| Evaluated-rejected | The complementary LAB approached/non-clicked class without that gaze-return label | Absence of a return does not prove a deliberate rejection |
+| Not-approached | No qualifying cursor approach under the specified rule | The person may still have looked at or read it |
 
-A learning-to-rank model trained on this taxonomy gets cleaner gradients than one trained on binary clicks. The post-closest-drift, total gaze dwell, and proximity dwell metrics in the table above (`[NB22:K5–K7]`) are continuous within-class signals at the deferred / evaluated-rejected boundary.
+Browser heuristics, M5 predictions, and gaze-defined research labels must be
+identified separately, even when their class names agree. Thresholds,
+coordinate systems, and window boundaries are part of each definition.
 
-This is not about adaptive reranking on the deployed page. The library does not ship a ranker. The contribution is the labels — what the upstream training pipeline gets to consume.
+## Why the motor control matters
 
-Discrimination cost is also invisible to position-only models. Top-of-page sponsored results have a distinctive cursor signature — 2× approach rate, 2.3× longer dwell, highest pupil dilation — driven by the user spending cognitive effort on type identification ("is this an ad?"), not on reading. The economic SERP utility framework C/W/L (Azzopardi, Thomas & Craswell, SIGIR '18) [2] predicts ads cost less than organic results; the data show top ads cost more, by every cursor and pupil metric. A discrimination cost term is needed for elements requiring category resolution before evaluation.
+Clicking requires bringing the pointer to a target. A feature that predicts
+clicks can therefore succeed partly by measuring that movement. Removing the
+last 500 ms is useful, but it does not necessarily remove the longer approach.
+Reviewer feedback led to a control that excludes the entire operationally
+defined final approach from every AOI's features.
 
-## How this differs from ClickSense
+The revised LAB experiment retains useful click discrimination under
+truncation, while fixation-weighted cursor proximity loses much of its
+strength. Its gaze-dependent feature construction differs from the browser
+extractor and still needs a corresponding cursor-only control. That supports studying
+which observations survive removal of final-approach information. It does not
+identify a pure deliberation signal: the removed interval can include real
+reading, and the retained interval can include motor planning. Its onset is
+defined retrospectively from the click, so the control is not an online phase
+detector. [Current evidence](current-evidence.md) gives the results and limits.
 
-ClickSense [1] is the companion library for click commitment. The two are deliberately complementary, but the architectural difference is the unit of analysis, not the timing:
+## What changed in our interpretation
 
-- **ClickSense is element-agnostic.** It instruments any clickable target on any page. Its approach features (`approach_linearity`, `approach_max_deviation`, `approach_trajectory_type`) are geometric invariants of the cursor trajectory itself, computed against the implicit point target of the eventual mousedown. It works in a vacuum: no markup, no AOIs, no list structure required.
-- **approach-retreat is list-aware.** It requires the host page to mark vertical SERP-list items with `data-result` and `data-position` attributes. The library uses those AOIs as the unit of analysis: enter/dwell/exit episodes per result, four-class outcome per result, retreat geometry against a known result rectangle.
+The early “epistemic action” account proposed that retreat geometry encoded
+rejection confidence through motor cost. The analyses did not establish that
+mechanism. The later “curved and close means I will return” metaphor was also
+retracted. We retain measurable trajectory properties without assigning those
+stories to them.
 
-Without the marked cells you cannot do episode segmentation, you cannot identify the deferred class, and you cannot compute retreat geometry against a meaningful AOI. The list structure is what gives this library its leverage. ClickSense answers "how was this click made?" approach-retreat answers "what was the user doing across this list?"
+Differences between ads and organic results likewise do not by themselves
+identify a discrimination-cost mechanism. Element size, layout, task, and
+exposure can contribute. They do not establish a violation of an economic
+search model. Information-foraging and economic accounts remain useful ways
+to pose hypotheses about cost and choice; causal interpretation requires tests
+that separate those explanations.
 
-The two libraries can run on the same page. ClickSense captures the moment of commitment; approach-retreat captures the episode structure that led there.
+The AllSERP investigations added a prior requirement: verify the page's units
+before comparing behavior around them. Missing blocks, shifted labels, shared
+DOM-node assignments, and incompatible coordinate systems can manufacture or
+obscure apparent behavioral differences. [Attribution lineage](bbox-attribution-lineage.md)
+records these failures and the remaining carousel-cell gap.
 
-## Theoretical lineage
+## Candidate supervision for ranking
 
-This library is the deployable form of a research program that combines three traditions:
+The four classes can be encoded as graded training targets. Whether that
+encoding improves a ranker is an empirical question, not a consequence of the
+class names. A non-click should not automatically be called a strong negative,
+and predicted deferral is not a relevance judgment.
 
-1. **Cursor as implicit signal for relevance** — Guo & Agichtein (WWW '12) [3], Huang, White & Buscher (CHI '12) [4], Arapakis & Leiva (SIGIR '16) [5], Brückner et al. (SIGIR '21) [6], Villaizán-Vallelado et al. AdSight (SIGIR '25) [7]. The progression: hand-crafted features → cursor as gaze proxy → 638 features → mouse length → Seq2Seq Transformer. Each iteration adds modeling power but stays within the bag-of-features paradigm.
-2. **Information foraging on SERPs** — Pirolli & Card (1999) on information foraging theory, Azzopardi & colleagues' economic SERP utility framework (SIGIR '14, '18, ECIR '18) [2,8], Liu et al. CIKM '14 two-stage examination model [9]. The foraging tradition models *when* users stop and *whether* they switch patches; it does not model the within-result micro-behavior.
-3. **Cognitive process models for SERP evaluation** — what the OSEC framework (orientation → survey → evaluate → commit) tries to add. This is the contribution: a process model that predicts which cursor features will be informative, and at what segmentation level (per-trial, per-result, per-episode).
+The August ranking re-analysis found a much smaller gain over binary clicks
+than earlier runs. The checked comparison holds features fixed, includes LAB
+gaze dwell, and evaluates against clicked results. Independent relevance
+judgments or prospective retrieval outcomes are still needed to assess the
+broader training-data-quality claim.
 
-The relationship between bag-of-features and task-model approaches is complementary, not competitive. A neural net trained on the four-class taxonomy as labels would likely outperform either alone. The four classes are a target the bag-of-features approach has not been computing because nobody framed the problem that way.
+Earlier searcher-model work already incorporated cursor and scroll observations;
+[Huang, White, Buscher & Wang (SIGIR 2012)][huang] is an important precedent.
+Approach-retreat contributes an explicit per-result representation and tests of
+behavioral supervision. The representation could also be used by a sequence
+model; nothing in the task-model proposal rules out learning these distinctions.
 
-## What the library does and does not do
+## Relation to ClickSense
 
-It captures cursor-AOI episodes and computes their geometry. It does *not* require an eye tracker, server-side processing, or a trained model at inference time. The classification is rule-based (using the geometry features above) and runs in the browser.
+[ClickSense](https://github.com/andyed/clicksense) instruments the way a click is
+made on a target. Approach-retreat requires marked result AOIs and records visits
+across them. The two instruments can run together. Their difference is the unit
+and context of measurement, not proof that one captures commitment while the
+other captures cognition.
 
-A `computeRelevance()` method is exposed for host applications that want to use the collected episode data — for example, to feed a downstream ranker. No ranker ships with the library.
+The library needs no eye tracker to record its cursor and viewport channels.
+Its rule-based classifications and `computeRelevance()` heuristic are available
+in the browser. Training or validating an M5 estimate of a gaze-derived label
+is a separate step; the library does not supply a validated relevance ranker.
 
----
-
-## References
-
-[1] Edmonds, A. (2026). ClickSense: click confidence measurement from motor behavior. https://github.com/andyed/clicksense
-
-[2] Azzopardi, L., Thomas, P., & Craswell, N. (2018). Measuring the Utility of Search Engine Result Pages. *SIGIR '18*, 605–614. https://doi.org/10.1145/3209978.3210027
-
-[3] Guo, Q. & Agichtein, E. (2012). Beyond dwell time. *WWW '12*, 569–578. https://dl.acm.org/doi/10.1145/2187836.2187914
-
-[4] Huang, J., White, R. W., & Buscher, G. (2012). User see, user point. *CHI '12*. https://dl.acm.org/doi/10.1145/2207676.2208591
-
-[5] Arapakis, I. & Leiva, L. A. (2016). Predicting User Engagement with Direct Displays Using Mouse Cursor Information. *SIGIR '16*, 599–608. https://dl.acm.org/doi/10.1145/2911451.2911505
-
-[6] Brückner, L., Arapakis, I., & Leiva, L. A. (2021). When Choice Happens. *SIGIR '21*, 1510–1514. https://dl.acm.org/doi/10.1145/3404835.3463088
-
-[7] Villaizán-Vallelado, M., Salvatori, M., Latifzadeh, K., Penta, A., Leiva, L. A., & Arapakis, I. (2025). AdSight. *SIGIR '25*. https://doi.org/10.1145/3726302.3729891
-
-[8] Maxwell, D. & Azzopardi, L. (2018). Information Scent, Searching and Stopping. *ECIR '18*, LNCS 10772, 210–222.
-
-[9] Liu, Y. et al. (2014). From Skimming to Reading: A Two-stage Examination Model for Web Search. *CIKM '14*.
-
-[10] Latifzadeh, K., Gwizdka, J., & Leiva, L. A. (2025). The AdSERP Dataset. *SIGIR '25*.
-
-[11] Pirolli, P. & Card, S. (1999). Information foraging. *Psychological Review*, 106(4), 643–675.
+[huang]: https://www.microsoft.com/en-us/research/wp-content/uploads/2012/01/Final_CursorModel_SIGIR12.pdf

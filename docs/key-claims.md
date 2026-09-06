@@ -1,10 +1,17 @@
 # Key Claims — approach-retreat
 
+> **Measurement-version notice (2026-09-04).** These stable IDs preserve the
+> validation runs and model configurations that produced them. LAB rows are
+> not all re-derived after the August parsing and coordinate corrections.
+> Use [Current evidence](current-evidence.md) for the checked August 31
+> outputs; do not treat a newer prose date as a model recalibration. WILD
+> remains a separate binary-click validation, not four-class validation.
+
 *Aggregated load-bearing numbers from this repo's validation suites, with stable IDs for citation.*
 
 ## What this document is for
 
-Every quantitative claim that ships from this repo to a paper, a README, a slide deck, or another lab gets a stable K-ID here. Prose elsewhere cites the K-ID; this document is the authoritative source for the value.
+Every quantitative claim that ships from this repo to a paper, a README, a slide deck, or another lab gets a stable K-ID here. Prose elsewhere cites the K-ID; this document transcribes the value for that run. A superseding producer output takes precedence until its row is updated.
 
 ### The contract
 

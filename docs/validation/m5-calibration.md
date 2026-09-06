@@ -1,5 +1,12 @@
 # M5 Calibration: Training a Cursor-Only Deferred-Class Detector from Behavioral Labels
 
+> **Historical calibration record (2026-09-04).** The 0.794 gaze-gated,
+> 0.709 legacy gaze-clean, 0.769 nine-feature organic, and 0.752 seven-feature
+> organic results describe distinct runs. They have not all been recalibrated
+> after the August measurement corrections. Keep the recipe, feature set,
+> population, and training artifact together; use
+> [Current evidence](../current-evidence.md) for the current status.
+
 **Status:** methodology doc for deployers. Reference numbers are from AdSERP (Latifzadeh, Gwizdka & Leiva, SIGIR 2025); production deployments should calibrate against their own data.
 
 ---
@@ -21,7 +28,7 @@ This document is about task (2). M5 is a **calibration methodology** for trainin
 
 If you are mining hard negatives for dense-retrieval training from user behavior, the dominant sources (BM25 top-*k*, ANCE model-mined candidates, RocketQA cross-encoder-denoised candidates) all face a contamination failure mode: candidates that look like hard negatives to the retriever are sometimes latent positives the training set mislabels as irrelevant, and training on these pushes the embedding in the wrong direction. Skip-above rules from click logs [Joachims et al. CIKM '05] produce behavioral negatives without model contamination but cannot distinguish "the user carefully considered this result and declined" from "the user never attended to this result at all."
 
-The M5 calibration methodology produces a cursor-only classifier whose predicted-deferred pool contains episodes in which **the user approached a candidate, their gaze-return behavior indicated a second examination, and they still chose to decline**. These are behaviorally-grounded hard negatives of the same kind human relevance annotators produce, generated in-session at production scale, with no gaze data required at inference time.
+The M5 calibration methodology produces a cursor-only classifier whose predicted-deferred pool contains episodes in which **the user approached a candidate, their gaze-return behavior indicated a second examination, and they still chose to decline**. These are candidates for behavioral supervision. A gaze return is not a human relevance judgment, and the predicted pool has not been validated as an equivalent replacement for annotation or at production scale.
 
 **On AdSERP, the calibration reference point** is `[LAB, AdSERP, organic]` (post-2026-05-01 cascade; M5 retrained against bbox-derived NB22 labels):
 
@@ -90,12 +97,12 @@ y_proba = cross_val_predict(
 )[:, 1]
 ```
 
-**Where does the supervision label come from?** This is the only step that requires either LAB instrumentation or a behavioral proxy, and it is done once at calibration time — not at deployment time. Four viable sources:
+**Where does the supervision label come from?** This is the only step that requires either LAB instrumentation or a behavioral proxy, and it is done once at calibration time — not at deployment time. Four possible routes, with different validation requirements:
 
 1. **Eye-tracker ground truth (highest fidelity, lowest scalability).** Collect a single-session dataset with gaze tracking on your production SERP surface. Compute a gaze-regression label per episode by detecting whether the user's fixation sequence revisits the result band (scroll-high-water-mark rule on page-space fixation Y coordinates). This is what AdSERP's NB22 labels are; see `attentional-foraging/notebooks-v2/22_four_class_taxonomy.ipynb` for the detector.
 2. **Human relevance annotations (highest scalability, cheapest, speculative — not yet validated).** Every production search ranker-training pipeline already produces graded relevance judgments on (query, result) pairs. In principle, one could transfer-label M5's training target by aligning the predicted-deferred pool with the "relevant-but-not-ideal" middle of the relevance scale. **We have no empirical evidence that graded relevance labels transfer to the gaze-regression behavioral target**; the two measure different things (annotator's assessment of document quality vs. user's in-session decision to re-examine). This is a research lead, not a tested calibration recipe, and a deployment that chooses this path should validate the transfer against at least one of the other three options before committing to it.
-3. **Downstream-task A/B calibration.** Mine hard negatives from M5's output at several candidate thresholds, train the downstream retriever on each, pick the threshold that wins on held-out retrieval metrics. The retriever is the ground truth; M5 itself is never explicitly evaluated. This is how ANCE and RocketQA calibrate their hard-negative miners in practice.
-4. **Webcam-based gaze estimation.** Consumer webcam gaze estimators (WebGazer.js and similar) are sufficient to detect coarse fixation-sequence revisits on a consenting subsample. Recruit a small sample (50–200 sessions), label via webcam gaze, train M5. Fidelity is lower than a dedicated eye tracker but higher than transfer labeling, and the hardware cost is zero beyond user consent.
+3. **Downstream-task A/B calibration.** Mine hard negatives from M5's output at several candidate thresholds, train the downstream retriever on each, pick the threshold that wins on held-out retrieval metrics. Held-out retrieval performance is the downstream criterion; M5 itself is never explicitly evaluated. This is how ANCE and RocketQA calibrate their hard-negative miners in practice.
+4. **Webcam-based gaze estimation.** Consumer webcam gaze estimators (WebGazer.js and similar) are a possible source of coarse revisit labels, but their adequacy must be measured on the target layout and devices. Recruit a small sample (50–200 sessions), label via webcam gaze, train M5. Fidelity is lower than a dedicated eye tracker but higher than transfer labeling, and the hardware cost is zero beyond user consent.
 
 **Class imbalance.** In AdSERP's approached non-click population, 81 % of episodes are deferred and 19 % are evaluated-rejected. Your prior will differ — production traffic with banner-blindness and query abandonment is likely to include a higher evaluated-rejected fraction than forced-choice crowdworker tasks, though this has not been directly measured. Use `class_weight="balanced"` during training, and recalibrate the Youden-*J* operating threshold on your own class prior at deployment time.
 

@@ -1,4 +1,12 @@
-// PostHog initialization — shared across the approach-retreat site.
+// PostHog initialization — DEMO/REPLAY VIEWER ONLY, not part of the library.
+//
+// ⚠️ DO NOT COPY THIS INTO A DEPLOYMENT. The key below is *our* research
+// project (approach-retreat 374762); it is wired here so the public demo
+// pages on GitHub Pages report into our own analytics. The distributed
+// library ships NO project key — integrators pass their own PostHog
+// instance (or use the callback adapter to their own sink). See the
+// "Wiring it to your own sink" section in README.md.
+//
 // Standalone approach-retreat project (separate from attentional-foraging)
 // so the cursor-episode telemetry stays isolable as research material.
 // Include BEFORE any module script that touches window.posthog.
