@@ -20,7 +20,9 @@
   "scripts": {
     "build": "node build.js",
     "dev": "node build.js --watch",
-    "site": "cd site && python3 -m http.server 8080"
+    "site": "cd site && python3 -m http.server 8080",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "serp",
@@ -36,6 +38,8 @@
   "author": "Andy Edmonds <andyed@alum.cmu.edu>",
   "license": "MIT",
   "devDependencies": {
-    "esbuild": "^0.24.0"
+    "esbuild": "^0.24.0",
+    "happy-dom": "^20.10.6",
+    "vitest": "^4.1.9"
   }
 }

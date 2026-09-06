@@ -351,6 +351,26 @@ const DEFAULTS = {
   maxSampleHz: 15,
 };
 
+// Velocity sanitization bounds. The per-sample velocity is dist/Δt, so a
+// tiny Δt (1-2 ms, common at high mousemove sample rates) divides a few px of
+// motion into physically impossible speeds (>9000 px/s observed in the wild:
+// mbp.sqlite ar_session_aoi, n=450, max 11,249.99 — the dt→0 division
+// signature, clustering at round magnitudes 9375/9954/10000/11250).
+//
+// DIVERGENCE FROM PYTHON REFERENCE (intentional, flagged): the canonical
+// extractor (attentional-foraging/scripts/m4_nb21_hybrid_rerun.py:187) only
+// guards the exact-zero case — `dts[dts == 0] = 1.0` — and leaves small
+// positive Δt untouched. Because its timestamps are integer ms, a 1 ms Δt
+// yields the same blow-up, so the reference carries the identical defect. We
+// floor Δt and clamp the result here to emit a physically plausible value.
+// Per the §5.1 LOFO ablation, velocity terms contribute ~nothing to M4
+// click-prediction AUC, so this is a data-quality fix, not an accuracy fix —
+// headline numbers are unaffected, and the JS↔Python parity golden (uniform
+// 60 Hz, vels well under the bound) is untouched. See tests/unit for the
+// physical-bound assertion.
+const MIN_VEL_DT_MS = 8; // ~125 Hz ceiling; floors Δt for the velocity divide only
+const MAX_PLAUSIBLE_VEL = 5000; // px/s; symmetric clamp (preserves directed sign)
+
 /**
  * Per-result running aggregates of the nine M4 approach features
  * (methods paper, submitted). One tracker per SERP result element, updated on
@@ -423,9 +443,16 @@ export class ResultFeatureTracker {
       return;
     }
 
-    // Directed velocity: positive = approaching result (dist decreasing)
-    // Matches the paper's `vels = -np.diff(dist) / dts * 1000` (px/s).
-    const vel = (-(dist - this.finalDist) / dt) * 1000;
+    // Directed velocity: positive = approaching result (dist decreasing).
+    // Mirrors the paper's `vels = -np.diff(dist) / dts * 1000` (px/s) but
+    // floors Δt and clamps the magnitude so a tiny Δt cannot manufacture a
+    // physically impossible speed (see MIN_VEL_DT_MS / MAX_PLAUSIBLE_VEL).
+    // The clamp is symmetric, so the directed sign — and thus
+    // direction_changes, frac_decreasing, and the by-design negative mean —
+    // is preserved.
+    const dtVel = Math.max(dt, MIN_VEL_DT_MS);
+    const rawVel = (-(dist - this.finalDist) / dtVel) * 1000;
+    const vel = Math.max(-MAX_PLAUSIBLE_VEL, Math.min(MAX_PLAUSIBLE_VEL, rawVel));
 
     this.nTransitions += 1;
     this.sumVel += vel;

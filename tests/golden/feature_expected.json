@@ -1,0 +1,12 @@
+{
+  "min_dist": 2.0,
+  "mean_dist": 143.15625,
+  "final_dist": 200.0,
+  "retreat_dist": 198.0,
+  "dwell_in_proximity_ms": 466.76000000000204,
+  "mean_approach_velocity": 238.0476285695232,
+  "max_approach_velocity": 966.4733719922659,
+  "direction_changes": 11,
+  "frac_decreasing": 0.6190476190476191,
+  "sample_count": 64
+}

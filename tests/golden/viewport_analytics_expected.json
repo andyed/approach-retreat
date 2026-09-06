@@ -1,0 +1,57 @@
+[
+  {
+    "position": 0,
+    "vt_any_ms": 1000.0,
+    "vt_center_ms": 0.0,
+    "avg_viewport_y_px": 175.0,
+    "max_overlap_frac": 1.0,
+    "min_abs_velocity_px_per_s": 300.0,
+    "n_reversals": 0,
+    "ms_at_50pct_or_more": 1000.0,
+    "iab_viewable": true
+  },
+  {
+    "position": 1,
+    "vt_any_ms": 3500.0,
+    "vt_center_ms": 1000.0,
+    "avg_viewport_y_px": 146.42857142857142,
+    "max_overlap_frac": 1.0,
+    "min_abs_velocity_px_per_s": 0.0,
+    "n_reversals": 0,
+    "ms_at_50pct_or_more": 1500.0,
+    "iab_viewable": true
+  },
+  {
+    "position": 2,
+    "vt_any_ms": 4000.0,
+    "vt_center_ms": 0.0,
+    "avg_viewport_y_px": 450.0,
+    "max_overlap_frac": 1.0,
+    "min_abs_velocity_px_per_s": 0.0,
+    "n_reversals": 2,
+    "ms_at_50pct_or_more": 4000.0,
+    "iab_viewable": true
+  },
+  {
+    "position": 3,
+    "vt_any_ms": 0.0,
+    "vt_center_ms": 0.0,
+    "avg_viewport_y_px": 0.0,
+    "max_overlap_frac": 0.0,
+    "min_abs_velocity_px_per_s": 0.0,
+    "n_reversals": 0,
+    "ms_at_50pct_or_more": 0.0,
+    "iab_viewable": false
+  },
+  {
+    "position": 4,
+    "vt_any_ms": 3500.0,
+    "vt_center_ms": 0.0,
+    "avg_viewport_y_px": 1128.5714285714287,
+    "max_overlap_frac": 0.5,
+    "min_abs_velocity_px_per_s": 0.0,
+    "n_reversals": 1,
+    "ms_at_50pct_or_more": 1500.0,
+    "iab_viewable": true
+  }
+]

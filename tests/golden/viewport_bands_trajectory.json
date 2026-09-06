@@ -1,0 +1,58 @@
+{
+  "doc_h": 3000,
+  "scr_h": 900,
+  "scroll_events": [
+    {
+      "t": 0,
+      "scrollY": 0
+    },
+    {
+      "t": 1000,
+      "scrollY": 300
+    },
+    {
+      "t": 2500,
+      "scrollY": 900
+    },
+    {
+      "t": 2500,
+      "scrollY": 900
+    },
+    {
+      "t": 4000,
+      "scrollY": 900
+    }
+  ],
+  "aois": [
+    {
+      "position": 0,
+      "page_top": 200,
+      "page_bot": 350
+    },
+    {
+      "position": 1,
+      "page_top": 400,
+      "page_bot": 550
+    },
+    {
+      "position": 2,
+      "page_top": 1200,
+      "page_bot": 1350
+    },
+    {
+      "position": 3,
+      "page_top": 2800,
+      "page_bot": 2950
+    },
+    {
+      "position": 4,
+      "page_top": 500,
+      "page_bot": 1700
+    },
+    {
+      "position": 5,
+      "page_top": -500,
+      "page_bot": -100
+    }
+  ]
+}
