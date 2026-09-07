@@ -249,7 +249,8 @@ def build_index(trials: list[dict]) -> Path:
 <style>{INDEX_CSS}</style></head><body>
 <h1>AdSERP Signal Testbed</h1>
 <p class="lede">Replay of the <a href="https://github.com/kayhan-latifzadeh/AdSERP">AdSERP dataset</a> with per-AOI <strong>four-class taxonomy labels</strong> overlaid: <span class="pill clk">CLICKED</span> <span class="pill def">DEFERRED</span> <span class="pill rej">EVALUATED-REJECTED</span> <span class="pill not">NOT-APPROACHED</span>. Labels derived from cursor enter/dwell/exit episodes against AOI bboxes — the inference task the AR library performs in production.</p>
-<p class="lede" style="font-size:12px;color:#888;">Curation rubric: <a href="https://github.com/andyed/approach-retreat/blob/main/docs/CURATION.md">docs/CURATION.md</a> · Sibling: <a href="../index.html">live testbed</a> · Pool: {summary}</p>
+<p class="lede" style="font-size:12px;color:#aaa;">Typed AOIs are the <a href="https://arxiv.org/abs/2605.04949">AllSERP</a> enrichment (<a href="https://github.com/andyed/attentional-foraging">attentional-foraging</a>, v1.1 substrate, flavour <code>typed_gapfill</code>); each trial page's bundle carries the substrate hash in <code>_meta</code>. Timeline tracks: AOI under cursor, cursor, speed, pupil (Gazepoint px), LF/HF (log), gaze x/y, each with its range.</p>
+<p class="lede" style="font-size:12px;color:#aaa;">Curation rubric: <a href="https://github.com/andyed/approach-retreat/blob/main/docs/CURATION.md">docs/CURATION.md</a> · Sibling: <a href="../index.html">live testbed</a> · Pool: {summary}</p>
 {"".join(sections)}
 <div class="crumbs">Built from raw AdSERP signals — no NB15 derivatives. Organic AOIs from CV row-projection (see <code>attentional-foraging/scripts/extract_organic_bboxes.py</code>). AOI labels from <code>derive_aoi_labels()</code> in <code>scripts/build_replay_trial.py</code>.</div>
 </body></html>
