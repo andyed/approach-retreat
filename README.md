@@ -34,16 +34,18 @@ library's output.
 
 <table>
 <tr>
-<td align="center" valign="middle"><a href="https://andyed.github.io/approach-retreat/replay/trials/p006-b4-t7.html"><img src="site/assets/hero/p006-b4-t7_tilt.png" alt="Canonical rejected — DEF 9 / REJ 4" width="300"/></a><br/><sub><b>Canonical rejected</b><br/>DEF 9 · REJ 4</sub></td>
-<td align="center" valign="middle"><a href="https://andyed.github.io/approach-retreat/replay/trials/p047-b6-t1.html"><img src="site/assets/hero/p047-b6-t1_tilt.png" alt="Multi-AOI drama — CLK 1 / DEF 9 / REJ 1 / NA 4" width="440"/></a><br/><sub><b>Multi-AOI drama</b><br/>CLK 1 · DEF 9 · REJ 1 · NA 4</sub></td>
-<td align="center" valign="middle"><a href="https://andyed.github.io/approach-retreat/replay/trials/p019-b1-t8.html"><img src="site/assets/hero/p019-b1-t8_tilt.png" alt="Canonical deferred — DEF 11" width="300"/></a><br/><sub><b>Canonical deferred</b><br/>DEF 11 · REJ 1</sub></td>
+<td align="center" valign="middle"><a href="https://andyed.github.io/approach-retreat/replay/trials/p006-b4-t7.html"><img src="site/assets/hero/p006-b4-t7_tilt.png" alt="Canonical rejected — CLK 2 / DEF 10 / REJ 4 / NA 5" width="300"/></a><br/><sub><b>Canonical rejected</b><br/>CLK 2 · DEF 10 · REJ 4 · NA 5</sub></td>
+<td align="center" valign="middle"><a href="https://andyed.github.io/approach-retreat/replay/trials/p047-b6-t1.html"><img src="site/assets/hero/p047-b6-t1_tilt.png" alt="Multi-AOI drama — CLK 1 / DEF 8 / REJ 3 / NA 10" width="440"/></a><br/><sub><b>Multi-AOI drama</b><br/>CLK 1 · DEF 8 · REJ 3 · NA 10</sub></td>
+<td align="center" valign="middle"><a href="https://andyed.github.io/approach-retreat/replay/trials/p019-b1-t8.html"><img src="site/assets/hero/p019-b1-t8_tilt.png" alt="Canonical deferred — CLK 1 / DEF 12 / REJ 1 / NA 6" width="300"/></a><br/><sub><b>Canonical deferred</b><br/>CLK 1 · DEF 12 · REJ 1 · NA 6</sub></td>
 </tr>
 </table>
 
 Backgrounds are raw AdSERP screenshots — what the participant saw, pixel
 for pixel. Full replay index:
 [andyed.github.io/approach-retreat/replay/](https://andyed.github.io/approach-retreat/replay/) —
-86 curated trials.
+148 curated trials (31 grouped + 117 extended). Each trial page carries
+labelled timeline tracks (AOI under cursor, cursor, speed, pupil, log LF/HF,
+gaze x/y) under the screenshot.
 
 The companion viewer at
 [andyed.github.io/attentional-foraging/](https://andyed.github.io/attentional-foraging/)
@@ -77,12 +79,14 @@ different surfaces — clone the repo, fork the demos, or just open a URL
 and press `d` to watch the debug overlay light up as you move your cursor.
 
 **[andyed.github.io/approach-retreat/](https://andyed.github.io/approach-retreat/)**
-— 5 SERP layouts × 4 Q&A queries, 20 bookmarkable combinations. Pick a
+— 6 SERP layouts × 10 questions, 60 bookmarkable combinations. Pick a
 layout, pick a question, browse the answers like a search engine. Press
 `d` on any SERP for the in-page debug overlay showing live episode
 classification per result. Same `ar_episode` / `ar_click` /
-`ar_session_summary` schema across all 20 — the layout is the variable,
-the instrumentation is the constant.
+`ar_session_summary` schema across all 60 — the layout is the variable,
+the instrumentation is the constant. The same deployment hosts the
+[PAI demo](https://andyed.github.io/approach-retreat/pai/): live per-AOI
+proximity alpha over replay-trial screenshots, cursor standing in for gaze.
 
 **[movies.mindbendingpixels.com](https://movies.mindbendingpixels.com)** —
 the same library running in a different domain (a film-recommendation
@@ -190,7 +194,8 @@ latter null when `trackViewportBands: false`).
 #### Raw trajectory (opt-in)
 
 Set `includeSamplesInEpisodeJson: true` to add a `samples` array (one
-`{x,y,t,vx,vy}` per native mousemove sample, ~60 Hz). Research-grade
+`{x,y,t,vx,vy}` per *kept* mousemove sample — 15 Hz under the default
+`maxSampleHz`, native ~60 Hz with the throttle disabled). Research-grade
 material — keep it local unless you're shipping it through the PostHog
 adapter.
 
@@ -360,12 +365,13 @@ Three event types, all `ar_`-prefixed:
 
 | Event | Fires on | Key fields |
 |---|---|---|
-| `ar_episode` | every finalized episode | the 19 cursor fields + optional `ar_trajectory` (10% sample rate by default) |
+| `ar_episode` | every finalized episode | the 19 cursor fields + optional `ar_trajectory` (every 10th kept sample, `trajectoryStride: 10`; needs `includeSamplesInEpisodeJson: true`) |
 | `ar_click` | every click on a result | pre-click velocity, angle, direction, retreat distance, dwell |
 | `ar_session_summary` | `visibilitychange` / `pagehide` | four-class counts, positions per class, time-to-first-click |
 
 Every event is merged with session context: `ar_session_id`, `ar_layout`,
-`ar_query_id`, viewport (`w`, `h`, `dpr`), UA, referrer, page path.
+`ar_query_id`, viewport (`w`, `h`, `dpr`), UA, referrer, page path, and the
+library's `approach_retreat_version` / `approach_retreat_build` stamps.
 
 **Kill switch.** Append `?ph=0` to any URL to skip PostHog entirely.
 
@@ -516,6 +522,24 @@ Ancillary docs:
 > (2026) · [source and artifacts](https://github.com/andyed/allserp-paper).
 > Documents the typed AOI extraction used here for AOI labels in the replay
 > viewer. Local PDF: [`allserp-paper.pdf`](./allserp-paper.pdf).
+
+## Development
+
+```bash
+npm ci
+npm test          # vitest: JS<->Python parity goldens, velocity bounds, viewport, AOI classify, demo emission
+npm run build     # esbuild -> dist/ (IIFE, ESM, CJS)
+```
+
+The feature glossary above is generated; rerun
+`python3 scripts/gen_feature_glossary.py` (needs the sibling
+`attentional-foraging` checkout) rather than hand-editing it.
+
+## Citing
+
+See [`CITATION.cff`](CITATION.cff). Cite the AllSERP paper
+([arXiv:2605.04949](https://arxiv.org/abs/2605.04949)) for the library or the
+replay viewer.
 
 ## License
 
