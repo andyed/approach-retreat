@@ -1,6 +1,6 @@
 // src/adapters/posthog.js
 var AR_VERSION = true ? "0.3.0" : "0.3.0";
-var AR_BUILD = true ? "2026-05-30" : "dev";
+var AR_BUILD = true ? "2026-09-07" : "dev";
 var versionProps = () => ({
   approach_retreat_version: AR_VERSION,
   approach_retreat_build: AR_BUILD
