@@ -60,7 +60,7 @@ One useful control removed the whole final approach to the click, rather than on
 
 ### The AllSERP parsing gaps were a turning point
 
-In late August, **Sara Al-Lawati's review of the typed AOIs exposed missing and misassigned page elements**. These were substantial measurement failures, not merely untidy labels. A model trained on the wrong result identity can give a convincing answer to the wrong question.
+In late August, **Sara Allawati's review of the typed AOIs exposed missing and misassigned page elements**. These were substantial measurement failures, not merely untidy labels. A model trained on the wrong result identity can give a convincing answer to the wrong question.
 
 - **Whole local-result blocks were missing from the HTML parser's search scope.** Some Google Maps/local packs were outside `#rso`. The screenshot extractor saw a block, while the HTML parser emitted no corresponding card. Joining the two lists by index then moved labels below it by a slot. The pre-fix audit found this in **268 of 2,776 trials**, affecting the ranks of **1,930 organic AOIs**. Other HTML/CV count mismatches could produce the same cascade.
 - **Parsing a saved page was not equivalent to rendering it.** Python's HTML parser and Chromium sometimes constructed different trees, especially around right-rail panels. A positional CSS path could land on a neighboring card. Identity checks and geometric alignment helped, but the repair search introduced another failure: two cards could both claim one DOM node. The collision fix removed **508 duplicate-card assignments across 454 trials**. Trials with orphaned main-column results fell from **480 to 167**; the remaining unresolved cards were not silently assigned a neighbor's geometry.
