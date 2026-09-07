@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use the approach-retreat library or the AdSERP replay viewer, please cite the AllSERP paper below."
+type: software
+title: "approach-retreat: cursor approach/retreat episodes and the AdSERP replay viewer"
+authors:
+  - family-names: Edmonds
+    given-names: Andy
+repository-code: "https://github.com/andyed/approach-retreat"
+url: "https://andyed.github.io/approach-retreat/replay/"
+license: MIT
+abstract: >-
+  Browser library that segments cursor trajectories into per-AOI approach and
+  retreat episodes, plus a replay viewer that renders the AllSERP typed AOIs,
+  gaze fixations, cursor trajectory and pupil / LF/HF timelines on AdSERP
+  screenshots for 148 curated trials.
+preferred-citation:
+  type: article
+  title: "AllSERP: Exhaustive Per-Element Enrichment of the Versatile AdSERP Dataset"
+  authors:
+    - family-names: Edmonds
+      given-names: Andy
+  year: 2026
+  identifiers:
+    - type: other
+      value: "arXiv:2605.04949"
+      description: "arXiv preprint"
+  url: "https://arxiv.org/abs/2605.04949"
