@@ -87,7 +87,7 @@ __SUSPECT_BANNER__
     <div class="timeline-row"><div class="timeline-label lbl-cursor">Cursor</div><div class="timeline-track" id="track-cursor"><canvas class="timeline-canvas" id="cv-cursor"></canvas></div></div>
     <div class="timeline-row"><div class="timeline-label lbl-xy-delta">|Δ| / ms</div><div class="timeline-track" id="track-xy"><canvas class="timeline-canvas" id="cv-xy"></canvas></div></div>
     <div class="timeline-row"><div class="timeline-label lbl-pupil">Pupil</div><div class="timeline-track" id="track-pupil"><canvas class="timeline-canvas" id="cv-pupil"></canvas></div></div>
-    <div class="timeline-row"><div class="timeline-label lbl-lfhf">Pupil LF/HF</div><div class="timeline-track" id="track-lfhf"><canvas class="timeline-canvas" id="cv-lfhf"></canvas></div></div>
+    <div class="timeline-row"><div class="timeline-label lbl-lfhf">LF/HF (log)</div><div class="timeline-track" id="track-lfhf"><canvas class="timeline-canvas" id="cv-lfhf"></canvas></div></div>
     <div class="timeline-row"><div class="timeline-label lbl-gaze-x">Gaze X</div><div class="timeline-track" id="track-gaze-x"><canvas class="timeline-canvas" id="cv-gaze-x"></canvas></div></div>
     <div class="timeline-row"><div class="timeline-label lbl-gaze-y">Gaze Y</div><div class="timeline-track" id="track-gaze-y"><canvas class="timeline-canvas" id="cv-gaze-y"></canvas></div></div>
     <div class="timeline-playhead" id="playhead"></div>
@@ -101,7 +101,9 @@ __SUSPECT_BANNER__
   <span>Doc: <span class="val" id="info-doc">—</span></span>
   <span>Cursor: <span class="val" id="info-cursor">—</span></span>
   <span>Fixations: <span class="val" id="info-fix">—</span></span>
-  <span>Pupil: <span class="val" id="info-pupil">—</span></span>
+  <span>Pupil samples: <span class="val" id="info-pupil">—</span></span>
+  <span>Pupil now: <span class="val" id="info-pupil-now">—</span></span>
+  <span>LF/HF now: <span class="val" id="info-lfhf-now">—</span></span>
   <span>Cursor pos: <span class="val" id="info-pos">—</span></span>
   <span style="border-left:1px solid #333;padding-left:14px;">
     Labels:
@@ -302,32 +304,99 @@ function drawGazeFixations() {
 }
 
 // ── Timeline canvases ─────────────────────────────────────────────────
-function paintLineSeries(canvasId, samples, valFn, color) {
+function paintLineSeries(canvasId, samples, valFn, color, opts = {}) {
+  // opts.log      — plot log10(v); v <= 0 is treated as a gap
+  // opts.fmt      — value formatter for the min/max range labels
+  // opts.emptyText — drawn when the series carries no finite values
+  // Null / non-finite samples break the line (a gap), they are not bridged:
+  // a blink on the pupil trace must read as absence, not as a spike.
   const cv = document.getElementById(canvasId);
-  if (!cv || !samples.length) return;
+  if (!cv) return;
   const rect = cv.getBoundingClientRect();
   cv.width = Math.max(1, Math.floor(rect.width * devicePixelRatio));
   cv.height = Math.max(1, Math.floor(rect.height * devicePixelRatio));
   const ctx = cv.getContext('2d');
   ctx.scale(devicePixelRatio, devicePixelRatio);
   ctx.clearRect(0, 0, rect.width, rect.height);
-  const vals = samples.map(valFn).filter(v => v != null && isFinite(v));
-  if (!vals.length) return;
+  paintTimeGrid(ctx, rect);
+  const fmt = opts.fmt || (v => (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1)));
+  const xf = v => (v == null || !isFinite(v)) ? null : (opts.log ? (v > 0 ? Math.log10(v) : null) : v);
+  const pts = samples.map(s => ({ t: s.t, v: xf(valFn(s)) }));
+  const vals = pts.map(p => p.v).filter(v => v != null);
+  if (!vals.length) {
+    if (opts.emptyText) paintTrackText(ctx, rect, opts.emptyText, 'left');
+    return;
+  }
   const vmin = Math.min(...vals), vmax = Math.max(...vals);
   const span = vmax - vmin || 1;
   ctx.strokeStyle = color;
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  let started = false;
-  for (const s of samples) {
-    const v = valFn(s);
-    if (v == null || !isFinite(v)) continue;
-    const x = s.t / DUR * rect.width;
-    const y = rect.height - ((v - vmin) / span) * (rect.height - 2) - 1;
-    if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+  let pen = false;
+  for (const p of pts) {
+    if (p.v == null) { pen = false; continue; }
+    const x = p.t / DUR * rect.width;
+    const y = rect.height - ((p.v - vmin) / span) * (rect.height - 2) - 1;
+    if (!pen) { ctx.moveTo(x, y); pen = true; } else { ctx.lineTo(x, y); }
   }
   ctx.stroke();
+  // Range labels: the track is min–max normalised per trial, so say what the
+  // top and bottom of the box mean. Back-transform for log tracks.
+  const inv = v => opts.log ? Math.pow(10, v) : v;
+  const unit = opts.unit ? ' ' + opts.unit : '';
+  paintTrackText(ctx, rect, fmt(inv(vmax)) + unit, 'top-right');
+  paintTrackText(ctx, rect, fmt(inv(vmin)) + unit, 'bottom-right');
 }
+
+// 5 s gridlines so the tracks carry a time scale (the scrub bar has none).
+function paintTimeGrid(ctx, rect) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+  ctx.lineWidth = 1;
+  for (let t = 5000; t < DUR; t += 5000) {
+    const x = Math.round(t / DUR * rect.width) + 0.5;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, rect.height); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// Small stroked label inside a track. #eee on a black stroke stays above the
+// 8:1 contrast floor wherever it lands on the #222 track or the coloured line.
+function paintTrackText(ctx, rect, text, where) {
+  ctx.save();
+  ctx.font = '8px ui-monospace, Menlo, monospace';
+  ctx.fillStyle = '#eeeeee';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  let x = 3, y = 9;
+  ctx.textAlign = 'left';
+  if (where === 'top-right') { ctx.textAlign = 'right'; x = rect.width - 3; y = 8; }
+  if (where === 'bottom-right') { ctx.textAlign = 'right'; x = rect.width - 3; y = rect.height - 2; }
+  if (where === 'left') { y = rect.height / 2 + 3; }
+  ctx.strokeText(text, x, y);
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+// Pupil diameter at a sample: mean of both eyes, one eye if the other is
+// missing, null (a gap) if neither. Units are Gazepoint camera pixels (LPD/RPD),
+// not millimetres; the bundle builder already nulls samples whose validity flag is 0.
+function pupilDiam(s) {
+  const l = (s.lpd != null && s.lpd > 0) ? s.lpd : null;
+  const r = (s.rpd != null && s.rpd > 0) ? s.rpd : null;
+  if (l != null && r != null) return (l + r) / 2;
+  return l != null ? l : r;
+}
+
+// Value of a (t, ...) series at or before time t, or null.
+function seriesAt(samples, t, valFn) {
+  let v = null;
+  for (const s of samples) { if (s.t > t) break; v = valFn(s); }
+  return v;
+}
+
+const LFHF_EMPTY = 'n/a: trial shorter than the 5 s LF/HF window';
 
 function paintAOIBands(canvasId) {
   const cv = document.getElementById(canvasId);
@@ -440,6 +509,10 @@ function updateInfo() {
     const aoi = aoiAt(s.x, s.y);
     document.getElementById('aoi-label').textContent = aoi ? aoi.label : 'no AOI';
   }
+  const pd = seriesAt(TRIAL.pupil, currentT, pupilDiam);
+  document.getElementById('info-pupil-now').textContent = pd != null ? pd.toFixed(2) + ' px' : 'blink / lost';
+  const lf = seriesAt(TRIAL.lfhf || [], currentT, x => x.lfhf);
+  document.getElementById('info-lfhf-now').textContent = lf != null ? lf.toFixed(1) : ((TRIAL.lfhf || []).length ? '—' : 'n/a');
 }
 
 // Playback animation
@@ -525,12 +598,12 @@ document.addEventListener('keydown', (e) => {
 // ── Initial paint ─────────────────────────────────────────────────────
 function paintAllTracks() {
   paintAOIBands('cv-aoi');
-  paintLineSeries('cv-cursor', TRIAL.cursor.filter(c => c.event === 'mousemove'), s => Math.hypot(s.x, s.y), '#ff9933');
-  paintLineSeries('cv-xy', TRIAL.xy_delta, s => s.speed, '#ffd040');
-  paintLineSeries('cv-pupil', TRIAL.pupil, s => (s.lpd != null && s.rpd != null) ? (s.lpd + s.rpd) / 2 : (s.lpd || s.rpd), '#40e0ff');
-  paintLineSeries('cv-lfhf', TRIAL.lfhf || [], s => s.lfhf, '#f59e0b');
-  paintLineSeries('cv-gaze-x', TRIAL.fixations, s => s.x, '#e0e050');
-  paintLineSeries('cv-gaze-y', TRIAL.fixations, s => s.y, '#50c0e0');
+  paintLineSeries('cv-cursor', TRIAL.cursor.filter(c => c.event === 'mousemove'), s => Math.hypot(s.x, s.y), '#ff9933', { unit: 'px', fmt: v => v.toFixed(0) });
+  paintLineSeries('cv-xy', TRIAL.xy_delta, s => s.speed, '#ffd040', { unit: 'px/ms', fmt: v => v.toFixed(2) });
+  paintLineSeries('cv-pupil', TRIAL.pupil, pupilDiam, '#40e0ff', { unit: 'px', fmt: v => v.toFixed(1) });
+  paintLineSeries('cv-lfhf', TRIAL.lfhf || [], s => s.lfhf, '#f59e0b', { log: true, emptyText: LFHF_EMPTY, fmt: v => v.toFixed(1) });
+  paintLineSeries('cv-gaze-x', TRIAL.fixations, s => s.x, '#e0e050', { unit: 'px', fmt: v => v.toFixed(0) });
+  paintLineSeries('cv-gaze-y', TRIAL.fixations, s => s.y, '#50c0e0', { unit: 'px', fmt: v => v.toFixed(0) });
 }
 
 // Info panel populates immediately
