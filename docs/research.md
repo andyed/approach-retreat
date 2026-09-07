@@ -1,14 +1,14 @@
 # Approach/Retreat — research index
 
-**Updated September 4, 2026.**
+**Updated September 7, 2026.**
 
 Approach-retreat records how a cursor moves around individual results on a
 search engine results page (SERP). It also records which results were in the
 viewport. The research asks whether these observations help describe
 examination and improve the behavioral labels used to train a ranker.
 
-Start with [Current evidence](current-evidence.md) for the August re-analysis,
-source-pinned numbers, and unresolved questions. [History](history.md) explains
+Start with [Current evidence](current-evidence.md) for the September press-anchored
+re-analysis, matched-cohort checks, source-pinned numbers, and unresolved questions. [History](history.md) explains
 how the instrumentation, collaboration, reviewer feedback, and page-parsing
 audits brought us here. The companion methods manuscript is under revision.
 

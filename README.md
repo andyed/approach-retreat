@@ -57,12 +57,15 @@ The companion methods manuscript is under revision. Reviewer feedback prompted
 clearer feature definitions and stronger controls for the final approach to a
 click. AllSERP collaborator audits also found substantial page-parsing gaps:
 missing local packs, shifted card identities, and an unresolved carousel-cell
-layer. Those corrections changed the model results. The latest LAB feature
-producer is also distinct from the browser's cursor-only extractor, so its
-newer scores do not certify browser performance.
+layer. Those corrections changed the model results. The current native-cursor
+replay calls the actual browser feature tracker against repaired typed AOIs,
+with an observation cutoff anchored at the press. It separates cursor-only
+predictors from gaze-derived research labels. These offline all-AOI results
+do not certify the browser's visibility or sampling lifecycle.
 
-Start with **[Current evidence](docs/current-evidence.md)** for the verified
-August 31 outputs and remaining questions, or **[History](docs/history.md)**
+Start with **[Current evidence](docs/current-evidence.md)** for the September 6
+press-anchored results, September 7 matched-cohort checks, and dated earlier
+outputs, or **[History](docs/history.md)**
 for the journey from the early cursor tools through review and the parsing
 audits. The historical calibration reports retain their original measurement
 versions; they are not all recalibrated against the repaired pipeline.
@@ -345,8 +348,9 @@ The earlier cursor sampling-rate ablation was nearly flat around 0.847 AUC
 from native rate to 1 Hz, on the pre-conversion AdSERP features. It motivated
 the 15 Hz default, but is not a current-substrate accuracy guarantee or proof
 that every feature is rate-invariant. The [evidence record](docs/current-evidence.md)
-tracks the required re-analysis. `click` is a separate listener and is never
-throttled.
+now includes press-anchored, matched-cohort rate comparisons. Those test offline
+greedy thinning; browser visibility and sampling-lifecycle parity remain open.
+`click` is a separate listener and is never throttled.
 
 ## Sending events to your analytics
 

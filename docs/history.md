@@ -1,6 +1,6 @@
 # How We Got Here: A Personal History of Cursor Instrumentation
 
-**Andy Edmonds · updated September 4, 2026**
+**Andy Edmonds · updated September 7, 2026**
 
 This library is the current iteration of a line of work I have been running in one form or another since 2001. The short version is: every time the web has reorganized itself (static pages → dynamic DOMs → recommendation feeds → AI-assisted interfaces), the cursor has needed new instrumentation, and each time the instrumentation itself has turned out to be the more durable contribution than whatever I thought I was measuring with it.
 
@@ -83,6 +83,110 @@ are reported with that limitation and their own population. Strong click
 prediction remains a reason to test the terminal approach more carefully,
 not a shortcut to interpreting deliberation.
 
+### September 6 — the event clock and the feature stream become explicit
+
+The next author audit explained why the September 4 buffer did nothing. In
+these recordings, the final logged `click` follows `mousedown` by a median
+1.421 seconds. Ending the cursor-feature window 500 ms before the **press**
+now removes 21,223 mousemove samples across 1,705 trials. On the shared
+2,608-trial buffer grid, seven cursor features give a click AUC of **0.9348**,
+compared with **0.7918** for position alone; extending the buffer to one second
+reduces M4-7 to **0.8852**. Position plus the seven features is nearly tied with
+the seven features alone. The [press-anchored evidence record](current-evidence.md#september-6-a-press-anchored-cursor-only-headline)
+keeps the sample removals, coordinate contract, and source hashes alongside the
+scores. The time buffer is now a meaningful control, while full terminal-approach
+excision remains to be tested on this cursor-only stream.
+
+This diagnosis is a later author finding, developed while pursuing the broader
+measurement questions raised during review. It also connects back to the
+ClickSense thread: the distinction between press, release, and a downstream
+logged click matters before any interpretation of their timing. It does not
+turn this recording delay into a measure of click-hold duration or confidence.
+
+The downstream analyses were then rebuilt around the same native cursor
+features. The deferred/rejected classifier yields **0.6911 AUC** on approached
+non-clicked results, with gaze still supplying the research target. On shared
+rows the native-cursor score is **0.6922**, versus **0.7151** for a comparator
+sampled at fixation onsets. Gaze-return counts and the subset with no detected
+cursor revisit now have their own reruns. These are LAB results; the new
+feature stream does not carry the gaze-defined taxonomy into WILD by itself.
+
+The September 6 ranking comparison initially reported approximately
+**+0.0046 MRR@10 using cursor-predicted labels** and **+0.0114 using gaze
+labels** for four distinct grades relative to binary-click LambdaMART on the
+same seven cursor input features. The cursor-label result is now retained as a
+**non-nested historical diagnostic**, following the September 7 dependency
+audit below. The unaffected pointwise binary-click logistic-regression score
+is **0.7837**, below the gaze four-grade result (**0.7856**). Window, rate, and
+AOI-flavor sweeps had executed too; their differing trial populations motivated
+a further matched-cohort check.
+
+The September work has a committed trail: upstream `6edb75d6` introduces the
+press anchor and model/feature sweeps, `9f6ee96c` rebuilds the downstream
+analyses, `f2051189` records the sampling-rate sweep, and `c55da325` adds
+AOI-flavor and return/subset results. In this repository, `c061699` stamps all
+148 replay bundles with substrate provenance; it does not retrain their M5
+model. The carousel candidate has likewise moved into committed, reproducible
+code, but its 99.68% eligible top-parent count agreement and five rejected cases
+still precede versioned-source adoption and coordinated notebook re-derivation.
+The [retained aggregates](evidence/2026-09-06-press-anchored-cursor.json) identify
+what supports the September 6 numbers; older results remain dated above.
+
+### September 7 — comparison on the same trials
+
+The window comparison was then refit on **1,382 shared trials from 46
+participants**, with identical AOI rows and click labels. The seven-feature
+click AUC is **0.9318** for the native whole window, **0.7830** before the end
+of fixation five, and **0.9370** after it; position alone gives **0.7943** on
+this cohort. The large pre/post difference survives matching, and the post5
+window has a small paired advantage over the whole window. The [matched
+comparison](current-evidence.md#september-7-the-window-comparison-on-shared-trials)
+retains participant uncertainty and the limits: gaze sets the boundary, the
+windows differ in duration and sample count, and post5 can still include the
+terminal approach. The comparison strengthens the measurement account without
+assigning that difference a psychological cause.
+
+The rate check shares **2,544 trials / 47 participants** across all tested
+rates. Native M4-7 gives **0.9338 pooled AUC**, 5 Hz **0.9332**, and 1 Hz
+**0.9012**. The mean participant-paired difference at 5 Hz is **−0.0012**
+(95% bootstrap CI **[−0.0033, 0.0011]**); the 1 Hz difference is **−0.0329**
+(**[−0.0393, −0.0268]**). Small observed differences down to 5 Hz are useful
+sensitivity evidence on this shared cohort, without establishing equivalence
+or browser lifecycle parity. All six window/rate replays reproduced their
+original feature hashes before matching; the [September 7 aggregate](evidence/2026-09-07-matched-sensitivity.json)
+retains that chain and the comparison populations.
+
+### September 7 — the label generator belongs inside the validation split
+
+A further author audit found that the cursor-label ranking pipeline created
+one global LOSO label vector before splitting the ranker. An outer held-out
+participant's gaze labels could therefore contribute to the classifier that
+supplied another participant's training grades. The original cursor-label
+ranking gain cannot be treated as a clean end-to-end held-out result. The
+completed nested rerun generates grades within each outer fold's training
+partition: 47 outer participant folds, each with 46 inner participant folds.
+Its cursor-label MRR@10 is **0.7797 for three collapsed grades** and **0.7792
+for four distinct grades**, compared with **0.7742** for binary LambdaMART.
+The modest numerical lifts (**+0.0055** and **+0.0050**) remain after the split
+correction; four cursor grades do not outperform the three-grade collapse.
+Both remain below pointwise binary-click logistic regression (**0.7837**).
+These differences have no reported uncertainty test.
+
+All five non-cursor benchmark rows reproduce the earlier outputs exactly.
+The [current evidence record](current-evidence.md#september-7-ranking-with-nested-cursor-label-generation)
+and [retained nested aggregate](evidence/2026-09-07-nested-cursor-ranking.json)
+keep the original diagnostic and the corrected estimate separate. This fixes
+the learned-label validation boundary while retaining the click-model and
+matched sensitivity protocols; the target is still observed clicking rather
+than independently judged relevance.
+
+The grade comparison also needs careful wording: four-grade cursor ranking
+improved slightly after nesting, while three grades improved more. What
+became unestablished was the extra ranking grade's advantage, not the four
+behavioral classes. The [follow-up exploration](../../attentional-foraging/docs/null-findings/2026-09-07-cursor-fourth-grade-nested.md)
+records participant-paired uncertainty and training-label diagnostics as open
+work; no causal explanation for the ordering change has yet been established.
+
 The lesson I take from this stage is the same one that runs through the early instrumentation work: identifying the thing being measured comes before interpreting the behavior around it. Reviewer questions made the tests more demanding; collaborator scrutiny exposed errors in the pages those tests depended on. The current project includes those corrections and open questions, rather than ending its story at the first successful classifier.
 
 [parsing]: https://github.com/andyed/attentional-foraging/blob/b5d66959/docs/local-pack-aoi-shift.md
@@ -102,6 +206,7 @@ The lesson I take from this stage is the same one that runs through the early in
 | 2026 | ClickSense | Element-agnostic approach geometry + hold duration |
 | 2026 | **approach-retreat** (this library) | **Per-result cursor instrumentation and candidate behavioral supervision** |
 | August 2026 | Review, AllSERP parsing audits, re-analysis | Stronger approach controls; repaired card attribution; unresolved cell layer; revised claim boundaries |
+| September 2026 | Native cursor replay and press-anchored re-analysis | Meaningful time buffer; rebuilt click, gaze-target, and ranking analyses; carousel candidate validated but source adoption pending |
 
 ## Citations for the prior work in this history
 
