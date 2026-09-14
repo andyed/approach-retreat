@@ -7,6 +7,62 @@ changed in the 2026-08-30 collision-fix rebuild. Regeneration needs
 Duchowski's `glias2poly`; external dependency, cannot be closed locally.
 `p047-b6-t1` is current. Re-check after the next glias2poly hand-off.
 
+## Deploy collector — what the 2026-09-13 AdSERP results say (six items)
+
+Evidence: `attentional-foraging/docs/methodology/deferred-dwell-carve.md`
+(carve, reduction baselines, rate curve, page-grain faithfulness) and
+`attentional-foraging/notebooks-v2/36_scroll_vs_cursor_deferred.ipynb`
+(NB36, same-rows sensor comparison). Three rules bind all of it: one pool
+per table, the carve on the label's own assignment, the stamp describes what
+the run did. What that means for the library, in priority order:
+
+- [ ] **Cursor-defined DEFERRED has the gaze-dwell circularity trap.**
+      `Outcome.DEFERRED` is a re-approach, so `ar_dwell_ms` on episodes with
+      `visit_number >= 2` is time the re-approach created. Any model of that
+      outcome must use `visit_number == 1` episode features only. On AdSERP the
+      gaze version of this mistake scored 0.807 and fell to 0.514 once carved
+      (`[NB36]` context; carve numbers in the methodology page). Add the
+      sentence to `docs/feature-glossary.md` and to the `ar_episode` schema
+      comment in `src/adapters/posthog.js`.
+- [ ] **Stamp the sampling regime.** `buildSessionContext` emits viewport size
+      and band schema but not the applied `maxSampleHz` or whether the throttle
+      was disabled. Add `ar_max_sample_hz` and `ar_throttle_mode`. The AdSERP
+      rate-curve caches were mislabelled "native" for exactly this omission.
+- [ ] **Position is a covariate, validation is within-page.** On any
+      revisit-style target the rank prior wins within-page (0.744 vs 0.706 for
+      the seven cursor features) and a pooled-AUC gap can be pure between-trial
+      base rate (NB36: viewport "beat" cursor pooled, lost within-trial, paired
+      test null). `ar_position` is already emitted; write into
+      `docs/current-evidence.md` that deploy models on such targets are scored
+      by within-page concordance, never pooled AUC alone.
+- [ ] **Close scroll-triggered feature sampling, and ship a sparse scroll
+      timeline.** The viewport channel is complementary to the cursor on the
+      deferred target (combined +0.05 pooled over either alone) and its
+      trial-level features carry between-trial information the per-AOI
+      aggregates lose. Emit a ~1 Hz `(t, scrollY)` timeline in
+      `ar_session_summary`. Re-validate M4 at 0.847 with scroll samples
+      included, as the throttle section below already requires.
+- [ ] **Viewport episodes for touch.** The mobile analog holds at a ~0.63
+      floor only after a first-visit carve, and a touch device has no cursor
+      episode to supply the cutoff. Give `computeViewportBandsPure` a per-AOI
+      first-entry→first-exit episode with a visit number, mirroring cursor
+      episodes, so the carve exists without a cursor. The per-episode
+      `vp_*_ms` fields scoped to `[entered_at, exited_at]` are already the
+      non-circular viewport features; the whole-session per-AOI viewport
+      analytics are the circular ones — document that split.
+- [ ] **Live features on the clicked episode contain the endpoint.** There is
+      no click buffer in deploy; features at `clicked_at` include the final
+      approach. Consumers validating click prediction must snapshot before the
+      click or they reproduce the 0.99 same-target number. Either emit a
+      pre-click feature snapshot (features as of `clicked_at - 500 ms`) on the
+      clicked episode, or state the constraint in `docs/current-evidence.md`.
+
+Confirmed, no change: episode grain is correct (page-grain features score
+0.500 within-trial by construction and must never be broadcast to candidates);
+the 15 Hz throttle has headroom (deferred task flat to 1 Hz under uniform
+decimation, 0.691 → 0.701); the deferred label stays gaze-defined and
+LAB-only, no cursor-only or scroll-only detector validated against it today.
+
 ## Throttle the `mousemove` feature path — user-CPU cost
 
 `ApproachRetreatTracker` binds `mousemove` and runs `_onMouseMove` on
