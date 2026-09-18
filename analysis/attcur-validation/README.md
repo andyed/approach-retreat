@@ -179,7 +179,14 @@ git clone https://gitlab.com/iarapakis/the-attentive-cursor-dataset \
     /tmp/attcur/the-attentive-cursor-dataset-master
 ```
 
-The script expects the dataset at `/tmp/attcur/the-attentive-cursor-dataset-master`. Edit the `DATA` constant in `run_analysis.py` to point elsewhere.
+The script reads `$ATTCUR_DATA`, falling back to
+`/tmp/attcur/the-attentive-cursor-dataset-master`. Keep the dataset somewhere
+durable and export the path -- `/tmp` is cleared by the OS, which silently
+breaks reruns (it did, 2026-09-13):
+
+```bash
+export ATTCUR_DATA=/Volumes/andyed/Downloads/attcur/the-attentive-cursor-dataset
+```
 
 **Run:**
 

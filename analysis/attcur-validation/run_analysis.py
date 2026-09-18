@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import sys
+import os
 from pathlib import Path
 
 import numpy as np
@@ -27,7 +28,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-DATA = Path("/tmp/attcur/the-attentive-cursor-dataset-master")
+# /tmp is cleared by the OS, which silently breaks reruns. Honour an
+# override so the dataset can live somewhere durable.
+DATA = Path(os.environ.get("ATTCUR_DATA",
+                           "/tmp/attcur/the-attentive-cursor-dataset-master"))
 MOUSE_EVENTS = {"mousemove", "mouseover", "mouseout", "mousedown", "mouseup", "click"}
 
 
