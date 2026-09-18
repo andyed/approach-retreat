@@ -149,7 +149,7 @@ def trial_features(b: dict) -> dict:
     Uses HEURISTIC counts (bbox re-entry) — not the final M5-driven labels —
     because the heuristic still cleanly distinguishes DEFERRED (≥2 episodes)
     from EVALUATED_REJECTED (1 episode), where M5 collapses both toward
-    DEFERRED at threshold 0.395.
+    DEFERRED at threshold 0.477 (the v2 model's operating_threshold).
 
     The viewer still shows M5 as the primary per-AOI label; this function
     is only for finding canonical exemplars to surface in pedagogical groups.
@@ -313,12 +313,12 @@ def write_curation_md(curation: dict, n_pool: int, composition: dict | None = No
         "",
         "### M5 (primary for organic AOIs)",
         "",
-        "Logistic regression on the M4 nine-feature approach set, **trained against NB22 gaze-derived labels** (1,557 deferred / 513 eval-rejected non-click episodes across 47 AdSERP participants, `organic` attribution). Trained in `attentional-foraging/scripts/m5_cursor_only_taxonomy.py`; coefficients shipped at `scripts/models/m5_final_model.json`.",
+        "Logistic regression on the M4 seven-feature approach set, **trained against NB22 gaze-derived labels** (6,800 deferred / 3,132 eval-rejected approached non-click rows across 47 AdSERP participants, `typed` attribution, cursor-only stream, press-anchored 500 ms buffer). Trained in `attentional-foraging/scripts/export_m5_cursor_only.py`; coefficients shipped at `scripts/models/m5_cursor_only_v2.json`.",
         "",
-        "- **LOSO AUC:** 0.769 `[LAB, AdSERP, organic; AR-V2:K-bbox-1]` (deployed 2026-05-02 model; corrected 2026-08-30 — 0.794 is the retired absolute-legacy gaze-gated diagnostic, AR-V2:K9)",
-        "- **Operating threshold:** p* = 0.489 (Youden-J on out-of-fold predictions)",
-        "- **Predicted-deferred precision:** 87.8%",
-        "- **Features (cursor-only, no gaze, no scroll):** `min_dist`, `mean_dist`, `final_dist`, `retreat_dist`, `dwell_in_proximity_ms`, `mean_approach_velocity`, `max_approach_velocity`, `direction_changes`, `frac_decreasing` — all geometric on cursor `pageY` relative to AOI y-center.",
+        "- **LOSO AUC:** 0.691 pooled (fold mean 0.694 ± 0.070) `[LAB, AdSERP, typed, cursor-only]` (2026-09-18 retrain; previously 0.769 / p* = 0.489 / precision 87.8 % on the nine-feature 2026-05-02 model, now `m5_final_model.legacy-2026-05-02.json` — see `attentional-foraging/docs/ablations/deferred_drop_decomposition.md`)",
+        "- **Operating threshold:** p* = 0.477 (Youden-J on out-of-fold predictions)",
+        "- **Predicted-deferred precision:** 78.1 % (recall 72.8 %, F1 0.753)",
+        "- **Features (cursor-only, no gaze, no scroll):** `min_dist`, `mean_dist`, `dwell_in_proximity_ms`, `mean_approach_velocity`, `max_approach_velocity`, `direction_changes`, `frac_decreasing` — all geometric on cursor `pageY` relative to AOI y-center. `final_dist` and `retreat_dist` are computed but excluded from the model (click-buffer screen).",
         "- **Domain:** organic results only (M5's training population). Ad AOIs fall back to the heuristic.",
         "- **Approached-by-M5 definition:** `min_dist < 100px` (cursor came within 100px of the AOI's y-center). More permissive than the heuristic's bbox-containment definition.",
         "",
@@ -334,7 +334,7 @@ def write_curation_md(curation: dict, n_pool: int, composition: dict | None = No
         "### Final canonical label (per AOI)",
         "",
         "1. `CLICKED` if any bbox episode contains a click event (both classifiers agree on this case).",
-        "2. For organic AOIs: M5 prediction (DEFERRED if proba ≥ 0.395, else EVALUATED_REJECTED). NOT_APPROACHED if min_dist ≥ 100px.",
+        "2. For organic AOIs: M5 prediction (DEFERRED if proba ≥ 0.477, the v2 model's `operating_threshold`, else EVALUATED_REJECTED; previously 0.395). NOT_APPROACHED if min_dist ≥ 100px.",
         "3. For ad AOIs: bbox-episode heuristic.",
         "",
         "### Why surface both",
