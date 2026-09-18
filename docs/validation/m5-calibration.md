@@ -7,6 +7,32 @@
 > population, and training artifact together; use
 > [Current evidence](../current-evidence.md) for the current status.
 
+## Current calibration (2026-09-18)
+
+`[LAB, AdSERP, typed, cursor-only, press-anchored 500 ms]`. Producer: `attentional-foraging/scripts/m4_cursor_only_downstream.py` → `scripts/output/m4_cursor_only_downstream/summary.json` (2026-09-06), `section_4_3.deployable_M4_7` and `section_4_2`; transcribed 2026-09-18 as `[AR-V2:K-cursor-1–14]` in [`key-claims.md`](../key-claims.md). The features are the seven-feature M4 vector as this library's `ResultFeatureTracker` computes it (one-dimensional cursor-to-AOI-centre distance on native `mousemove` events, samples within 500 ms of the `mousedown` anchor excluded; no `final_dist`, no `retreat_dist`). Rows are every approached (`min_dist` < 100 px) non-click AOI in an included trial; the target is the NB22 gaze-regression label; LOSO by participant, 47 folds, `StandardScaler` → balanced `LogisticRegression(C=1)`.
+
+| Metric | Value | Sidecar key |
+|---|---:|---|
+| LOSO pooled AUC | **0.691** | `deployable_M4_7.pooled_auc` |
+| Per-fold AUC, mean ± sd | 0.694 ± 0.070 | `deployable_M4_7.fold_auc_mean` / `fold_auc_sd` |
+| Youden-*J* operating threshold | *p* = 0.477 | `deployable_M4_7.youden_j.threshold` |
+| Precision on predicted-deferred pool | **78.1 %** | `…youden_j.precision` |
+| Recall on predicted-deferred pool | **72.8 %** | `…youden_j.recall` |
+| F1 on deferred class | **0.753** | `…youden_j.f1` |
+| Pool, deferred / evaluated-rejected | 9,932; 6,800 / 3,132 = 68.5 % / 31.5 % | `population.approached_nonclick_pool`, `population.four_class` |
+| Click-thresholded partition disagreement vs NB22 | 42.5 % | `section_4_2.disagreement_pct` |
+| M5 disagreement vs NB22 | 32.6 % | `section_4_2.deployable_disagreement_pct` |
+| Supervision-signal ratio | 1.30 × | 42.5 / 32.6 |
+| Matched-row ceiling (cursor sampled at fixation onsets, same 9,911 rows) | 0.715 vs 0.692 native; paired +0.007 [−0.005, +0.020] | `section_4_3.matched_row_ceiling` |
+
+**Class prior.** 68.5 / 31.5 deferred / evaluated-rejected on the cursor-only pool. The 81 / 19 quoted in the historical sections below is the pre-cascade fixation-selected pool, and the typed fixation-selected pool is 85 / 15 (`deferred_drop_decomposition/summary.json`, `rungs.L_full_lab_pool`); rows the eyes never selected are disproportionately evaluated-rejected, so the prior moves with the row-selection rule. Recalibrate the threshold on your own prior either way.
+
+**The historical rows are not cursor-only calibrations.** Every number in the sections below (0.794 gaze-gated, 0.709 legacy, 0.769 nine-feature organic, 0.752 seven-feature organic) was trained on features from `compute_cursor_approach_features.py`, which selects rows by fixation, samples the cursor at fixation times, measures the distance from the *fixation position* to the cursor, and weights proximity dwell by fixation duration. The label is whether the fixation sequence returns to the result, so those features carried part of the label. `deferred_drop_decomposition.py` (2026-09-17; `attentional-foraging/docs/ablations/deferred_drop_decomposition.md`) measures the cost on identical rows and labels: replacing the fixation-selected features with the tracker's costs **−0.068 [−0.116, −0.017]** paired (0.771 → 0.665 pooled on the 3,706 shared rows), while native sampling (−0.002), the 500 ms press buffer (−0.005) and the move to the full cursor pool (+0.012) each stay inside their intervals. The advice below, "do not sample the cursor at fixation timestamps", is correct and incomplete: the distances were fixation-to-cursor too. The historical rows describe the ceiling a gaze-informed feature set reaches, not what this library's extractor produces.
+
+**Deployed model.** `scripts/models/m5_final_model.json` (nine features including `final_dist` and `retreat_dist`, 2,070 fixation-selected episodes, `loso_auc` 0.769, threshold 0.489) was trained on that historical stream, so its scaler statistics and coefficients apply to a feature distribution the runtime tracker does not produce. It is being replaced by `m5_cursor_only_v2.json`: seven features, trained on `cursor-only-typed-features-mousedown.json` (buf500) against the NB22 typed labels, full-data refit after the LOSO gate reproduces 0.691 (another session is producing it; see the 2026-09-18 claims inventory §0). The old file is kept as `m5_final_model.legacy-2026-05-02.json`. Expect the reported AUC to move 0.769 → 0.691 on the swap; the ladder above is the reason, not a regression.
+
+---
+
 **Status:** methodology doc for deployers. Reference numbers are from AdSERP (Latifzadeh, Gwizdka & Leiva, SIGIR 2025); production deployments should calibrate against their own data.
 
 ---

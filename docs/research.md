@@ -108,11 +108,17 @@ window on the replay itself.
 
 A 500 ms pre-click buffer removes the terminal lock-on window. Reviewer
 questions prompted a stronger test: remove the whole final approach to the
-click from every result's feature inputs. On the August 31 converted-coordinate
-**gaze-gated LAB diagnostic**, M4-7 has pooled AUC 0.9040 with the buffer and 0.7633 after full
-approach excision; position alone under excision is 0.6654. These are not verified browser cursor-only scores. The retained
-information is useful, but neither the removed nor retained portion can be
-assigned a purely cognitive or purely motor interpretation from this test.
+click from every result's feature inputs. The current headline is the
+**cursor-only typed replay** of the browser tracker, press-anchored with a
+500 ms buffer (`attentional-foraging/scripts/output/m4_cursor_aoi_mousedown/summary.json`):
+M4-7 pooled AUC 0.935, position alone 0.792. The full-approach excision
+control has not yet been run on this stream. The August 31 excision numbers
+(M4-7 0.9040 with the buffer, 0.7633 after excision, position 0.6654) were a
+gaze-gated LAB diagnostic on the fixation-selected stream and are retained
+as lineage in the [evidence record](current-evidence.md). When the excision
+runs on the cursor-only stream, neither the removed nor the retained portion
+can be assigned a purely cognitive or purely motor interpretation from that
+test alone.
 
 The [current evidence record](current-evidence.md) explains the changing
 population, the retrospective definition of onset, and the distinction between

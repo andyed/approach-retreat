@@ -20,7 +20,7 @@ The library's nine cursor approach features were derived against AdSERP's 150 Hz
 
 **Headline (`[AR-V1:K1]`, `[AR-V1:K6]`):** an 11-feature logistic regression on the same feature family reaches AUC 0.821 ± 0.022 for `ad_clicked` on the public Attentive Cursor Dataset (Leiva & Arapakis 2020) — a 954-session native-ad cohort with cursor + click only, no eye tracker, no pupil. That is +0.125 AUC points (+18 % relative) over the standard `total_mouse_length` scalar baseline `[AR-V1:K3]` reported by Brückner et al. (SIGIR '21).
 
-**Cross-dataset transfer `[AR-V1:K8]`.** The pre-cascade AdSERP LAB click-prediction LOSO with the gaze-clean nine-feature M4 extractor was 0.821 `[LAB, AdSERP, absolute legacy, NB21:K3]` — exactly matching the WILD ACD AUC, which produced an evocative "0.821 = 0.821 across two completely different datasets" framing. The 2026-05-01 cascade retired that LAB anchor: M4 LOSO AUC under bbox-organic attribution is now 0.864 `[LAB, AdSERP, organic, NB21:K-bbox-4]` and 0.870 under hybrid attribution. The post-cascade LAB number is +0.043 above WILD; the headline shifts from "same number" to "the cursor-only feature family transfers from LAB to WILD with a modest LAB-favoring gap, consistent with cleaner attribution sharpening the LAB signal." The within-CI agreement is intact (LAB per-fold SD ≈ 0.044; WILD ± 0.022 — overlap is wide); the rhetorical "exact equality" hook does not survive cleaner attribution. WILD AUC `[WILD, attcur]` is rank-type-N/A (single-AOI native ad cohort, no AdSERP-style rank structure).
+**Cross-dataset transfer `[AR-V1:K8]`.** The pre-cascade AdSERP LAB click-prediction LOSO with the gaze-clean nine-feature M4 extractor was 0.821 `[LAB, AdSERP, absolute legacy, NB21:K3]` — exactly matching the WILD ACD AUC, which produced an evocative "0.821 = 0.821 across two completely different datasets" framing. The 2026-05-01 cascade retired that LAB anchor: M4 LOSO AUC under bbox-organic attribution is now 0.864 `[LAB, AdSERP, organic, NB21:K-bbox-4]` and 0.870 under hybrid attribution. The post-cascade LAB number is +0.043 above WILD; the headline shifts from "same number" to "the cursor-only feature family transfers from LAB to WILD with a modest LAB-favoring gap, consistent with cleaner attribution sharpening the LAB signal." The within-CI agreement is intact (LAB per-fold SD ≈ 0.044; WILD ± 0.022 — overlap is wide); the rhetorical "exact equality" hook does not survive cleaner attribution. WILD AUC `[WILD, attcur]` is rank-type-N/A (single-AOI native ad cohort, no AdSERP-style rank structure). Both LAB anchors above are the fixation-selected stream; the current cursor-only LAB anchor is M4-7 0.935 `[AR-V1:K-cursor-8]` (0.928 under the `organic` flavour), which widens the LAB-favoring gap to +0.114. K-bbox-8 is superseded.
 
 ### The dwell-cheat objection is defused
 
@@ -30,9 +30,9 @@ The answer is the 3-feature no-dwell ablation `[AR-V1:K2]`: `min_dist + retreat_
 
 ### Hover alone carries most of the load — a deployment frontier
 
-A single feature — `dwell_in_proximity_ms` (time the cursor spent within 100 px of the AOI center) — reaches **AUC 0.821** on the AdSERP LOSO click-prediction task, within 0.026 of the full seven-feature M4 (0.847). Adding `min_dist` as a second feature lifts that to **AUC 0.837**, within 0.010 of M4. Producer: the methods-paper replicate repo, `replicate/click_prediction_v0_1.py` (configs `hover_only`, `hover_plus_dist`); results in `results.json`.
+On the cursor-only stream `[LAB, AdSERP, typed, cursor-only, press-anchored 500 ms]` (producer `attentional-foraging/scripts/output/m4_cursor_aoi_mousedown/summary.json`, 2026-09-06, single-feature sweep at `feature_ablation.buf500.alone`), a single feature — `dwell_in_proximity_ms` (time the cursor spent within 100 px of the AOI centre) — reaches LOSO **AUC 0.853** on the AdSERP click-prediction task. `min_dist` alone reaches 0.872. The full seven-feature M4-7 is **0.935** (`conditions.buf500.M4-7.pooled_auc`; position-only M1 is 0.792), so one feature carries about 0.08 short of the full vector. The earlier 0.821 / 0.837 hover figures (methods-paper replicate repo, `replicate/click_prediction_v0_1.py`) were computed on the fixation-selected stream and are superseded.
 
-Among the 2,589 clicked AOIs in the buf500 cascade, **93.2 % receive any cursor proximity-dwell** (`dwell_in_proximity_ms > 0`); 82.7 % receive ≥ 500 ms, median 2.5 s on dwelled clicks. The hover signature is direct empirical evidence of motor-cognitive coupling at the per-result-AOI grain — not a derived statistic from a multi-feature combination.
+Among the 2,608 clicked AOIs in the cursor-only buf500 cache (`AdSERP/data/cursor-only-typed-features-mousedown.json`, `conditions.buf500`, `was_clicked` rows; recomputed 2026-09-18), **94.2 % receive any cursor proximity-dwell** (`dwell_in_proximity_ms > 0`; 2,457 of 2,608); 76.3 % receive ≥ 500 ms (1,990); median 1.78 s on dwelled clicks. These are lower than the earlier 93.2 % / 82.7 % / 2.5 s figures because the earlier buffer was click-anchored, and with the `click` stamp landing about 1.4 s after the press it removed no pre-press samples (`deferred_drop_decomposition.md`); the current buffer is press-anchored and drops the terminal 500 ms of every approach. The hover signature is direct empirical evidence of motor-cognitive coupling at the per-result-AOI grain — not a derived statistic from a multi-feature combination.
 
 **Deployment implication.** A hover-counter readout per AOI is the cheapest possible runtime feature: point-in-100px-ball per cursor sample, no sqrt per AOI, no velocity tracking. The full M4 vector remains the accuracy reference; the hover subset is the minimum-cost deployment shape.
 
@@ -56,32 +56,39 @@ Full discussion at [`docs/validation/attcur-bruckner.md`](validation/attcur-bruc
 
 The four-class taxonomy (clicked / deferred / evaluated-rejected / not-approached) is `[LAB]`-only by construction: the deferred / evaluated-rejected split requires the gaze-fixation sequence revisiting an earlier result band, which no cursor-only stream provides. M5 closes that gap as a calibration methodology, not as a pre-trained artifact: train a logistic regression once against gaze-derived labels, then deploy at inference time on standard `mousemove` + click telemetry without any eye-tracker dependency.
 
-**On AdSERP — the gaze-clean reference point** `[LAB, AdSERP, organic]` (post-2026-05-01 cascade; trained against bbox-organic NB22 labels via `compute_regression_labels.py --attribution organic`):
-- LOSO AUC 0.769 `[AR-V2:K-bbox-1]` at the Youden-*J* threshold *p* = 0.489 `[AR-V2:K-bbox-2]` — legacy nine-feature set, includes the leakage-caveated `final_dist`/`retreat_dist` pair; this is the deployed model
-- Precision on predicted-deferred pool 87.8 % `[AR-V2:K-bbox-3]`, recall 71.6 % `[AR-V2:K-bbox-4]`, F1 0.789 `[AR-V2:K-bbox-5]`
-- Canonical leakage-screened variant (seven features, `final_dist`/`retreat_dist` dropped): LOSO AUC 0.752 `[AR-V2:K-bbox-6]`, precision 86.7 %, recall 77.1 %, F1 0.816 `[AR-V2:K-bbox-7–10]` — use these for head-to-head baseline tables where the click-buffer leakage caveat must not apply
+**On AdSERP — the cursor-only reference point** `[LAB, AdSERP, typed, cursor-only, press-anchored 500 ms]` (producer `attentional-foraging/scripts/m4_cursor_only_downstream.py` → `output/m4_cursor_only_downstream/summary.json`, 2026-09-06; transcribed 2026-09-18). The features are the seven-feature M4 vector as the library's `ResultFeatureTracker` computes it: one-dimensional cursor-to-centre distance on native `mousemove` events, samples within 500 ms of the press excluded, no gaze input at any stage. Rows are every approached (`min_dist` < 100 px) non-click AOI in an included trial, 9,932 of them; the target is the NB22 gaze-regression label.
+- LOSO pooled AUC **0.691** `[AR-V2:K-cursor-1]`; per-fold mean 0.694 ± 0.070 `[AR-V2:K-cursor-2]`
+- Youden-*J* threshold *p* = 0.477 `[AR-V2:K-cursor-3]`; precision on the predicted-deferred pool 78.1 % `[AR-V2:K-cursor-4]`, recall 72.8 % `[AR-V2:K-cursor-5]`, F1 0.753 `[AR-V2:K-cursor-6]`
+- Leave-one-feature-out: `mean_dist` −0.055, `dwell_in_proximity_ms` −0.009, every other feature within ±0.002 `[AR-V2:K-cursor-9]`. The minimal four (`mean_dist`, `dwell_in_proximity_ms`, `min_dist`, `direction_changes`) reproduce the full model at 0.691, paired Δ +0.001 `[AR-V2:K-cursor-10]`.
+- Matched-row ceiling: sampling the cursor at fixation onsets on the same 9,911 rows gives 0.715 against 0.692 native, paired +0.007 [−0.005, +0.020] `[AR-V2:K-cursor-8]`. Gaze-timed sampling does not buy a measurable amount on this stream.
 
-> Pre-cascade reference (legacy absolute attribution, retired 2026-05-01): LOSO AUC 0.709 / threshold 0.500 / precision 88.9 % / recall 73.0 % / F1 0.802 — preserved as `[AR-V2:K1–K5, absolute legacy]`. The cascade retrained the M5 model on `cursor-approach-features-organic.json` with bbox-derived AOIs; the +0.060 AUC gain reflects cleaner training data, not a different model architecture.
+### Why the earlier rows were higher: the ladder
+
+The historical M5 rows (0.769 nine-feature, 0.752 seven-feature, 0.709 pre-cascade) were computed on features from `compute_cursor_approach_features.py`, which selects rows by fixation, samples the cursor at fixation times, measures fixation-to-cursor distance, and weights proximity dwell by fixation duration. `deferred_drop_decomposition.py` (2026-09-17) changes one thing per rung on identical rows and labels `[AR-V2:K-ladder-1–12]`: L (LAB typed features, shared rows) **0.771** → G0 (tracker features, cursor at fixation onsets, buf0) 0.665 → N0 (native sampling) 0.663 → N5 (press-anchored 500 ms buffer) 0.659 → C (full cursor pool, 9,932 rows) **0.691**. The paired steps are −0.068 [−0.116, −0.017] for the feature definition, −0.002 for sampling, −0.005 for the buffer, and +0.012 (CI spanning zero, per-participant sd halving from 0.156 to 0.070) for the population. The label is whether the fixation sequence returns to the result; a feature built from fixation positions and durations carried part of that label. The ~0.75–0.77 figures were cursor geometry plus a gaze term; 0.691 is cursor geometry.
 
 ### The supervision-signal finding
 
-The training-target choice (gaze-regression label (NB22 ground truth) vs click label (NB21 thresholded as a non-click splitter)) produces a 1.49 × label-disagreement reduction `[AR-V2:K8]` against NB22 ground truth on the same nine features, same LOSO protocol, same model family. M5 disagrees with NB22 at 29.4 % `[AR-V2:K7]`; the click-trained NB21 baseline disagrees at 43.8 % `[AR-V2:K6]`.
+The training-target choice (gaze-regression label (NB22 ground truth) vs click label (the LOSO M4-7 click classifier thresholded at Youden-*J* as a non-click splitter)) produces a 1.30 × label-disagreement reduction `[AR-V2:K-cursor-13]` against NB22 ground truth on the same seven features, same LOSO protocol, same model family. M5 disagrees with NB22 at 32.6 % `[AR-V2:K-cursor-12]`; the click-thresholded partition disagrees at 42.5 % `[AR-V2:K-cursor-11]` and puts only 48.7 % of the pool in the deferred class against the gaze split's 68.5 % `[AR-V2:K-cursor-14]`.
 
-**Reading.** The improvement isn't the classifier — it's the supervision target. A click-trained classifier thresholded post-hoc as a non-click splitter is trained on the wrong target for the deferred-class question. M5 swaps the target without changing the features. This is the key piece of M5.
+**Reading.** The improvement isn't the classifier — it's the supervision target. A click-trained classifier thresholded post-hoc as a non-click splitter is trained on the wrong target for the deferred-class question. M5 swaps the target without changing the features. The ratio came down from 1.49 × on the fixation-selected stream because the gaze term in those features helped M5 more than it helped the click baseline.
 
 ### LAB diagnostic upper bound — not deployable
 
-A LAB gaze-gated feature extractor (sampling cursor at fixation timestamps) reaches AUC 0.794, F1 0.867, precision 90.2 % / recall 83.4 % `[AR-V2:K9–K12]`, supervision-signal ratio 2.18 × `[AR-V2:K13]` — all `[absolute legacy]`, computed 2026-04-14 on the pre-cascade substrate. These are an upper bound, not a target. The fidelity cost of going gaze-clean is −0.085 AUC *(corrected 2026-08-30; both sides of the K1-vs-K9 comparison are `absolute legacy`)*, −10.4 pt recall, −0.065 F1, ×0.69 supervision-signal ratio `[AR-V2:K14]`. A production deployment cannot reproduce these without an eye tracker; the gaze-clean numbers are the deployable ceiling.
+The historical gaze-gated ceiling (AUC 0.794, F1 0.867, precision 90.2 % / recall 83.4 %, supervision ratio 2.18 × `[AR-V2:K9–K14]`, `absolute legacy`, 2026-04-14) was computed on the fixation-selected stream and is superseded as a comparator. The current ceiling is `[AR-V2:K-cursor-8]` above: 0.715 gaze-gated vs 0.692 native on the same rows, a paired +0.007 whose interval includes zero. A production deployment gives up about 0.02 pooled AUC, and possibly nothing, by not having fixation timing.
 
 ### Class prior caveat
 
-AdSERP's deferred / evaluated-rejected split in the approached-non-click population is 81 % / 19 % `[AR-V2:K15]`. This is not a universal base rate — it's a property of forced-choice 10-result SERP with motivated crowdworker participants. Production traffic with banner-blindness and query abandonment will almost certainly skew differently. Recalibrate the operating threshold against your own class prior.
+AdSERP's deferred / evaluated-rejected split in the cursor-only approached-non-click population is 68.5 % / 31.5 % (6,800 / 3,132 of 9,932) `[AR-V2:K-cursor-7]`. The fixation-selected pools were 81 / 19 (pre-cascade, `[AR-V2:K15]`, superseded) and 85 / 15 (typed LAB rung, `[AR-V2:K-ladder-11]`): rows the eyes never selected are disproportionately evaluated-rejected, so the prior moves with the row-selection rule. This is not a universal base rate — it's a property of forced-choice 10-result SERP with motivated crowdworker participants. Production traffic with banner-blindness and query abandonment will almost certainly skew differently. Recalibrate the operating threshold against your own class prior.
+
+> Legacy rows `[AR-V2:K-bbox-1–10, K1–K8, K15]` (0.769 / 0.752 / 0.709; 1.49 ×; 81 / 19) are the fixation-selected feature lineage, superseded 2026-09-18; the rows stay in [`key-claims.md`](key-claims.md) with their notes.
 
 Full methodology at [`docs/validation/m5-calibration.md`](validation/m5-calibration.md).
 
 ---
 
 ## 3. Viewport bands carry as much signal as cursor retreat — and combine separably
+
+> **2026-09-18:** fixation-selected pool; re-derivation pending; see NB36.
 
 The library's per-AOI viewport-band features (`vp_any_ms`, `vp_top_ms`, `vp_mid_ms`, `vp_bot_ms`) measure how long an AOI lived in each third of the viewport during a session. The calibration question: do these add anything to the cursor retreat features, or are they redundant?
 
@@ -125,12 +132,12 @@ The repo's central organizational axis (per `CLAUDE.md`) is which findings trans
 
 | Finding | LAB regime | WILD regime | Status |
 |---|---|---|---|
-| Click prediction with M4 features | LOSO AUC 0.821 (gaze-clean, AF NB21:K3) | AUC 0.821 ± 0.022 `[AR-V1:K1]` | **`[BOTH]`** |
-| Hover-only click prediction (1 feat) | LOSO AUC 0.821 (post-cascade buf500 M4-canonical) | (not yet run on ACD) | `[LAB]` headline; mobile generalization open |
-| Hover + min_dist (2 feats) | LOSO AUC 0.837 (post-cascade buf500 M4-canonical) | (not yet run on ACD) | `[LAB]` headline |
+| Click prediction with M4 features | LOSO AUC 0.935 (cursor-only M4-7, `[AR-V1:K-cursor-8]`) | AUC 0.821 ± 0.022 `[AR-V1:K1]` | **`[BOTH]`** |
+| Hover-only click prediction (1 feat) | LOSO AUC 0.853 (cursor-only, `m4_cursor_aoi_mousedown` single-feature sweep) | (not yet run on ACD) | `[LAB]` headline; mobile generalization open |
+| `min_dist` alone (1 feat) | LOSO AUC 0.872 (same sweep) | (not run alone on ACD; K4 is the WILD univariate at 0.564) | `[LAB]` headline |
 | 3-feature no-dwell click prediction | (not run as primary on AdSERP) | AUC 0.798 ± 0.036 `[AR-V1:K2]` | `[WILD]` headline |
 | Retreat + viewport bands combined | AUC 0.842 `[AR-V3:K5]` | (TODO: port to ACD) | `[LAB]` for now |
-| M5 deferred-class detection | AUC 0.709 `[AR-V2:K1]` | structurally uncomputable (single AOI / session) | `[LAB]` only |
+| M5 deferred-class detection | AUC 0.691 `[AR-V2:K-cursor-1]` | structurally uncomputable (single AOI / session) | `[LAB]` only |
 | Four-class taxonomy discrimination | possible (gaze-grounded) | structurally uncomputable | `[LAB]` only |
 | `vt_top` coefficient rank-dependence | +2.02 → +0.21 across P0–P5 `[AR-V3:K9–K14]` | (no AOI rank structure on ACD) | `[LAB]` only |
 

@@ -1,5 +1,27 @@
 # Viewport-band calibration
 
+> **Lineage banner (2026-09-18).** Every number on this page was computed
+> on the fixation-selected LAB pool (n = 2,351) with the nine-feature LAB
+> retreat vector from `compute_cursor_approach_features.py`, whose
+> "cursor" features sample the cursor at fixation times and weight dwell
+> by fixation duration. Re-derivation of the three `vt_*` bands on the
+> cursor-only pool is pending; nothing below is on the current stream.
+> The current viewport-vs-cursor comparison is NB36
+> (`attentional-foraging/notebooks-v2/36_scroll_vs_cursor_deferred.ipynb`,
+> Key Claims in `docs/notebook-key-claims.md`), which compares the
+> viewport *vector*, not the three bands: on the full scroll-eligible pool
+> (8,653 rows, 46 participants, 2,075 trials; K1) viewport scores 0.713 vs
+> cursor 0.692 pooled, within-trial cursor 0.710 vs viewport 0.684 (K2);
+> paired by participant the viewport wins 20/46 with Wilcoxon p = 0.72
+> (K4); position plus both sensors reaches 0.758 pooled (K6), about
+> +0.05 over either sensor alone (0.692 cursor, 0.713 viewport; K2); and
+> the viewport vector falls from 0.714 to 0.633 after the first-visit
+> split on the full pool (K7); the single residence feature on the
+> 5,255-row scroll subset falls 0.702 → 0.479
+> (`attentional-foraging/docs/methodology/deferred-dwell-carve.md`). Cite NB36 for the sensor comparison until the bands variant of
+> `scroll_only_carve.py` runs on the cursor-only pool.
+
+
 **What this library emits:** per-AOI cumulative ms in each of four bands —
 `vp_any_ms`, `vp_top_ms`, `vp_mid_ms`, `vp_bot_ms`. Bands are defined by
 the AOI center's viewport-y position, bucketed into thirds of the current

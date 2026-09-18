@@ -29,12 +29,17 @@ reports of intent. A person can read a result without moving the cursor to it.
 Reviewer feedback called for clearer definitions, a worked episode, more
 self-contained AOI construction, and stronger separation of examination from
 movement toward a click. The final-approach excision control now makes that
-last question testable. On the August 31 LAB diagnostic, seven-feature click AUC is
-0.9040 with a 500 ms buffer and 0.7633 after full approach excision; position
-alone under excision is 0.6654. These are pooled LAB AUCs under different
-observation windows, not a causal decomposition of deliberation. The LAB
-producer uses fixation timing and gaze–cursor distances; these scores do not
-validate the browser's different cursor-only feature construction.
+last question testable. The current headline is the cursor-only typed replay
+of the browser tracker, press-anchored with a 500 ms buffer
+(`attentional-foraging/scripts/output/m4_cursor_aoi_mousedown/summary.json`):
+seven-feature click AUC 0.935, position alone 0.792. The full-approach
+excision control on the cursor-only stream is still owed. The August 31
+excision numbers (0.9040 with the buffer, 0.7633 after excision, position
+0.6654) were computed on the fixation-selected LAB stream, whose features
+carried a gaze term, and are retained as lineage in the
+[evidence record](current-evidence.md). Pooled AUCs under an observation
+window are not a causal decomposition of deliberation, and an offline
+all-AOI replay is not a browser deployment evaluation.
 
 Collaborator review of AllSERP also uncovered substantial page-parsing gaps:
 missing local packs shifted subsequent labels; browser and parser trees

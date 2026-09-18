@@ -1,11 +1,18 @@
 # Key Claims — approach-retreat
 
-> **Measurement-version notice (2026-09-04).** These stable IDs preserve the
-> validation runs and model configurations that produced them. LAB rows are
-> not all re-derived after the August parsing and coordinate corrections.
-> Use [Current evidence](current-evidence.md) for the checked August 31
-> outputs; do not treat a newer prose date as a model recalibration. WILD
-> remains a separate binary-click validation, not four-class validation.
+> **Measurement-version notice (2026-09-18).** These stable IDs preserve the
+> validation runs and model configurations that produced them; superseded
+> rows keep their IDs and carry a dated note. The 2026-09-18 claims
+> inventory ([validation/2026-09-18-claims-inventory.md](validation/2026-09-18-claims-inventory.md))
+> checked every row against the producer now standing behind it: the LAB
+> M5 / V2 / V3 rows dated before September were computed on a
+> fixation-selected feature stream (rows chosen by fixation, cursor sampled
+> at fixation times, fixation-to-cursor distance), not on the tracker's
+> cursor-only features. The current cursor-only rows are the `K-cursor-*`
+> and `K-ladder-*` blocks below; [Current evidence](current-evidence.md)
+> carries the checked outputs. V3 has not been re-derived on the cursor-only
+> pool. WILD remains a separate binary-click validation, not four-class
+> validation.
 
 *Aggregated load-bearing numbers from this repo's validation suites, with stable IDs for citation.*
 
@@ -68,7 +75,8 @@ Protocol: 60/10/30 stratified split, 5 random seeds, weighted F1 + AUC-ROC repor
 | AR-V1:K6 | Lift of K1 over K3 (full LR vs scalar baseline) | +0.125 AUC (+18 % relative) | `[WILD, attcur]` |
 | AR-V1:K7 | Lift of K2 over K3 (3-feature no-dwell vs scalar baseline) | +0.102 AUC (+15 % relative) | `[WILD, attcur]` |
 | AR-V1:K8 | Cross-dataset alignment: K1 (WILD) vs AdSERP M4 click-prediction LOSO AUC | (retired 2026-05-01: cascade replaced LAB anchor — see K-bbox-8) | `[BOTH, absolute legacy]` |
-| AR-V1:K-bbox-8 | Cross-dataset transfer: K1 (WILD, AUC 0.821) vs AdSERP M4 LOSO AUC under bbox-organic attribution | 0.821 (WILD) vs 0.864 (LAB, AF NB21:K-bbox-4); +0.043 LAB-favoring gap, within per-fold-SD overlap | `[BOTH]` LAB rank-type `organic` |
+| AR-V1:K-bbox-8 | Cross-dataset transfer: K1 (WILD, AUC 0.821) vs AdSERP M4 LOSO AUC under bbox-organic attribution | 0.821 (WILD) vs 0.864 (LAB, AF NB21:K-bbox-4); +0.043 LAB-favoring gap (superseded 2026-09-18: the LAB anchor is the fixation-selected organic stream; see K-cursor-8) | `[BOTH]` LAB rank-type `organic` |
+| **AR-V1:K-cursor-8** | Cross-dataset transfer: K1 (WILD, AUC 0.821) vs AdSERP M4-7 LOSO AUC on the cursor-only stream | 0.821 (WILD) vs **0.935** (LAB typed, `m4_cursor_aoi_mousedown/summary.json` `conditions.buf500.M4-7.pooled_auc`, fold 0.937 ± 0.023, 2,608 clicked trials); 0.928 under the `organic` flavour on the same protocol (`m4_cursor_aoi_flavor_organic/summary.json`, 2,227 clicked trials). +0.114 LAB-favoring gap; the two tasks differ (multi-AOI SERP vs single native ad), so this is a transfer statement, not an equality | `[BOTH]` LAB `[typed, cursor-only, press-anchored 500 ms]` |
 
 ### Attention/noticeability headlines (target = `noticed`, 69.5 % positive)
 
@@ -103,36 +111,83 @@ Source: [`analysis/attcur-validation/run_bands_analysis.py`](../analysis/attcur-
 
 ## V2: M5 calibration (deferred-class detector)
 
-Source: [`scripts/m5_inference.py`](../scripts/m5_inference.py) for inference; calibration runs in upstream `attentional-foraging/scripts/m4_nb21_hybrid_rerun.py`.
+Source: [`scripts/m5_inference.py`](../scripts/m5_inference.py) for inference. Current calibration producer: upstream `attentional-foraging/scripts/m4_cursor_only_downstream.py` → `scripts/output/m4_cursor_only_downstream/summary.json` (2026-09-06); ladder producer `scripts/deferred_drop_decomposition.py` → `scripts/output/deferred_drop_decomposition/summary.json` (2026-09-17). Historical rows: `m4_nb21_hybrid_rerun.py`.
 Doc: [`docs/validation/m5-calibration.md`](validation/m5-calibration.md)
 Target: NB22 `gaze_regression_label` (deferred = gaze returned for second examination)
-Population: 2,351 approached-non-click episodes on AdSERP
+Population: 9,932 approached (`min_dist` < 100 px) non-click rows on the cursor-only stream (current); the historical rows used 2,351 / 2,070 / 2,067 fixation-selected episodes
+
+### Cursor-only stream (current, 2026-09-06 producer, transcribed 2026-09-18) `[LAB, AdSERP, typed, cursor-only, press-anchored 500 ms]`
+
+Features are the seven-feature M4 vector as the library's `ResultFeatureTracker` computes it: one-dimensional cursor-to-AOI-centre distance on native `mousemove` events, samples within 500 ms of the `mousedown` anchor excluded, typed AOI maps (AllSERP v1.1.0). Every row is an approached non-click AOI in an included trial; no gaze input at any stage. LOSO by participant (47 folds), `StandardScaler` → balanced `LogisticRegression(C=1)`. Values are transcribed from the sidecar keys named in each row; prose rounds to three decimals.
+
+| K-ID | Claim | Value | Sidecar key |
+|---|---|---:|---|
+| **AR-V2:K-cursor-1** | M5 LOSO pooled AUC, deployable M4-7 | **0.691** | `section_4_3.deployable_M4_7.pooled_auc` (0.69107) |
+| AR-V2:K-cursor-2 | Per-fold AUC, mean ± sd (median) | 0.694 ± 0.070 (0.705) | `…deployable_M4_7.fold_auc_mean` / `fold_auc_sd` / `fold_auc_median` |
+| AR-V2:K-cursor-3 | Youden-*J* operating threshold | *p* = 0.477 | `…deployable_M4_7.youden_j.threshold` (0.47672) |
+| AR-V2:K-cursor-4 | Precision on predicted-deferred pool | 78.1 % | `…youden_j.precision` (0.78118) |
+| AR-V2:K-cursor-5 | Recall on predicted-deferred pool | 72.8 % | `…youden_j.recall` (0.72765) |
+| AR-V2:K-cursor-6 | F1 on deferred class | 0.753 | `…youden_j.f1` (0.75346) |
+| AR-V2:K-cursor-7 | Pool size and class prior (deferred / evaluated-rejected) | 9,932 rows; 6,800 / 3,132 = **68.5 % / 31.5 %** | `population.approached_nonclick_pool`, `population.four_class.deferred` / `eval_rejected` |
+| AR-V2:K-cursor-8 | Matched-row ceiling: gaze-gated cursor sampling (cursor at fixation onsets) vs native, same 9,911 rows, same labels, anchor and buffer | gaze-gated **0.715** vs native 0.692; paired participant Δ +0.007 [−0.005, +0.020], Wilcoxon *p* = 0.24 | `section_4_3.matched_row_ceiling.gaze_gated_ceiling.pooled_auc` (0.71511), `…deployable_native_on_shared_rows.pooled_auc` (0.69216), `…paired_ceiling_minus_deployable` |
+| AR-V2:K-cursor-9 | Leave-one-feature-out, Δ pooled AUC vs the full seven | `mean_dist` **−0.055**; `dwell_in_proximity_ms` −0.009; `min_dist` −0.001; `max_approach_velocity` −0.001; `mean_approach_velocity` +0.001; `direction_changes` +0.002; `frac_decreasing` 0.000 | `section_4_3.leave_one_feature_out.<feature>.delta_pooled_auc_vs_full` |
+| AR-V2:K-cursor-10 | Minimal four (`mean_dist`, `dwell_in_proximity_ms`, `min_dist`, `direction_changes`) vs the full seven | 0.691 vs 0.691; paired Δ +0.001 [−0.003, +0.005], *p* = 0.58 | `section_4_3.minimal_four.pooled_auc` (0.69061), `…paired_vs_M4_7` |
+| AR-V2:K-cursor-11 | Click-thresholded partition (LOSO M4-7 click classifier, Youden-*J* on OOF probabilities) disagreement vs NB22 ground truth | 42.5 % | `section_4_2.disagreement_pct` (42.489) |
+| AR-V2:K-cursor-12 | Deployable M5 (K-cursor-1 at K-cursor-3) disagreement vs NB22 ground truth | 32.6 % (34.6 % at *p* = 0.5) | `section_4_2.deployable_disagreement_pct` (32.602), `…deployable_disagreement_pct_at_0_5` |
+| **AR-V2:K-cursor-13** | Supervision-signal advantage of K-cursor-12 over K-cursor-11 | **1.30 ×** label-disagreement reduction | 42.489 / 32.602 |
+| AR-V2:K-cursor-14 | Click-thresholded split of the same pool vs the gaze-regression split | 4,840 / 5,092 (48.7 % deferred) vs 6,800 / 3,132 (68.5 %); Jaccard on evaluated-rejected 0.322 | `section_4_2.click_thresholded_split`, `…gaze_regression_split`, `…jaccard_eval_rejected` |
+
+### The ladder: why the fixation-selected rows scored 0.75–0.77 `[LAB, AdSERP, typed]`
+
+Producer `deferred_drop_decomposition.py` (2026-09-17), read with `attentional-foraging/docs/ablations/deferred_drop_decomposition.md`. Each rung changes one thing; the first three cursor-only rungs use the same 3,706 rows as the LAB rung. The final rung reproduces K-cursor-1 to 1e-6 (`gate.abs_diff` = 0.0).
+
+| K-ID | Rung | Rows | Pooled AUC | Fold mean ± sd | Sidecar key |
+|---|---|---:|---:|---:|---|
+| AR-V2:K-ladder-1 | L · LAB typed: fixation-selected rows, fixation-to-cursor distance at fixation times, click-anchored buf500 (full LAB pool, 3,297 / 578) | 3,875 | 0.764 | 0.751 ± 0.119 | `rungs.L_full_lab_pool.pooled_auc` (0.76431) |
+| **AR-V2:K-ladder-2** | L · same, restricted to the shared rows (3,148 / 558) | 3,706 | **0.771** | 0.757 ± 0.121 | `rungs.L_shared_rows.pooled_auc` (0.77091) |
+| AR-V2:K-ladder-3 | G0 · cursor-only tracker features, cursor sampled at fixation onsets, buf0 | 3,706 | 0.665 | 0.689 ± 0.142 | `rungs.G0.pooled_auc` (0.66489) |
+| AR-V2:K-ladder-4 | N0 · cursor-only, native sampling, buf0 | 3,706 | 0.663 | 0.687 ± 0.154 | `rungs.N0.pooled_auc` (0.66312) |
+| AR-V2:K-ladder-5 | N5 · cursor-only, native sampling, press-anchored buf500 | 3,706 | 0.659 | 0.682 ± 0.156 | `rungs.N5.pooled_auc` (0.65886) |
+| **AR-V2:K-ladder-6** | C · cursor-only, native, buf500, full approached non-click pool (= K-cursor-1) | 9,932 | **0.691** | 0.694 ± 0.070 | `rungs.C.pooled_auc` (0.69107) |
+
+| K-ID | Step | What changes | Paired participant Δ, 95 % CI, Wilcoxon *p* | Sidecar key |
+|---|---|---|---:|---|
+| **AR-V2:K-ladder-7** | L → G0 | feature definition (fixation-to-cursor at fixation times → tracker's cursor-to-centre) | **−0.068 [−0.116, −0.017]**, *p* = 0.014 | `steps_paired_participant."L → G0 …"` (−0.06751) |
+| AR-V2:K-ladder-8 | G0 → N0 | sampling, fixation onsets → native | −0.002 [−0.021, +0.016], *p* = 0.85 | `…"G0 → N0 …"` |
+| AR-V2:K-ladder-9 | N0 → N5 | press buffer, 0 → 500 ms | −0.005 [−0.012, +0.002], *p* = 0.28 | `…"N0 → N5 …"` |
+| AR-V2:K-ladder-10 | N5 → C | rows, fixation-selected → full cursor pool | +0.012 [−0.026, +0.052], *p* = 0.67 | `…"N5 → C …"` |
+| AR-V2:K-ladder-11 | Class prior by pool | LAB fixation-selected pool 85 / 15 (3,297 / 578); full cursor pool 68.5 / 31.5 (6,800 / 3,132) | — | `rungs.L_full_lab_pool.n_deferred` / `n_rejected`; `rungs.C` |
+| AR-V2:K-ladder-12 | Standoff threshold on C (approached = `min_dist` < px) | 50 px 0.690 (7,849 rows); 100 px 0.691 (9,932); 200 px 0.701 (12,710) | — | `standoff_threshold_on_C` |
+
+Reading: the drop from ~0.77 to 0.69 is the feature definition (K-ladder-7); sampling, buffer and population each move under 0.01 and inside their intervals. The LAB stream's `mean_dist` and `min_dist` were distances from the fixation position to the cursor, sampled at fixation times, and its `dwell_in_proximity_ms` was weighted by fixation duration; the label is whether the fixation sequence returns to the result, so those features carried part of the label. The organic-flavour LAB rung on the current cache is 0.724 on 2,464 rows (`organic_rung.summary.pooled_auc`), which is where the May 0.752 / 0.769 figures sit in this lineage.
 
 ### Gaze-clean reference numbers (deployable — no eye tracker at inference)
 
-**Post-2026-05-01 cascade — current** `[LAB, AdSERP, organic]` (M5 retrained against bbox-derived NB22 labels via `compute_regression_labels.py --attribution organic`):
+### Historical rows (fixation-selected feature lineage; superseded 2026-09-18)
+
+**Post-2026-05-01 cascade** `[LAB, AdSERP, organic]` (M5 retrained against bbox-derived NB22 labels via `compute_regression_labels.py --attribution organic`). The features behind every row in this subsection were computed by `compute_cursor_approach_features.py`: rows selected by fixation, cursor sampled at fixation times, fixation-to-cursor distance, fixation-weighted dwell. The ladder (K-ladder-7) puts the cost of that definition at −0.068 on identical rows. These are not cursor-only calibrations; the IDs are kept for citation history.
 
 | K-ID | Claim | Value | Regime |
 |---|---|---:|---|
-| **AR-V2:K-bbox-1** | M5 LOSO AUC (legacy 9-feature set) | **0.769** | `[LAB, AdSERP, organic]` |
-| AR-V2:K-bbox-2 | Youden-*J* operating threshold | *p* = 0.489 | `[LAB, AdSERP, organic]` |
-| AR-V2:K-bbox-3 | Precision on predicted-deferred pool | 87.8 % | `[LAB, AdSERP, organic]` |
-| AR-V2:K-bbox-4 | Recall on predicted-deferred pool | 71.6 % | `[LAB, AdSERP, organic]` |
-| AR-V2:K-bbox-5 | F1 on deferred class | 0.789 | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-1 | M5 LOSO AUC (legacy 9-feature set) | 0.769 (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-1) | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-2 | Youden-*J* operating threshold | *p* = 0.489 (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-3) | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-3 | Precision on predicted-deferred pool | 87.8 % (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-4) | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-4 | Recall on predicted-deferred pool | 71.6 % (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-5) | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-5 | F1 on deferred class | 0.789 (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-6) | `[LAB, AdSERP, organic]` |
 
 **Feature-set provenance (audited 2026-08-30).** K-bbox-1–5 come from the 2026-05-02 organic retrain (n = 2,070 episodes) on the **legacy nine-feature M4 set, which includes `final_dist` and `retreat_dist`** — the two distance terms later screened as structurally leakage-prone under the click-buffer protocol (the CIKM R1-W2 caveat). That run's model file is the one deployed at `scripts/models/m5_final_model.json` in this repo (`loso_auc` 0.7686, threshold 0.489 — matches these rows). AF's on-disk `m5_cursor_only_taxonomy_organic/summary.json` was **overwritten on 2026-05-09** by the canonical leakage-screened re-run below, so it no longer matches K-bbox-1–5; recover the 0.769 producer output from AF git (`06542d62`).
 
-**Canonical leakage-screened variant** `[LAB, AdSERP, organic]` (2026-05-09 producer refresh; seven-feature M4 canonical set, `final_dist`/`retreat_dist` dropped; n = 2,067; this is the current on-disk `m5_cursor_only_taxonomy_organic/summary.json`) — **use these rows for head-to-head baseline tables where the leakage caveat must not apply:**
+**Leakage-screened variant** `[LAB, AdSERP, organic]` (2026-05-09 producer refresh; seven-feature M4 set, `final_dist`/`retreat_dist` dropped; n = 2,067; on-disk `m5_cursor_only_taxonomy_organic/summary.json`). Same fixation-selected feature lineage as K-bbox-1–5; for head-to-head baseline tables use K-cursor-1–6:
 
 | K-ID | Claim | Value | Regime |
 |---|---|---:|---|
-| **AR-V2:K-bbox-6** | M5 LOSO AUC (canonical 7-feature set) | **0.752** | `[LAB, AdSERP, organic]` |
-| AR-V2:K-bbox-7 | Youden-*J* operating threshold | *p* = 0.449 | `[LAB, AdSERP, organic]` |
-| AR-V2:K-bbox-8 | Precision on predicted-deferred pool | 86.7 % | `[LAB, AdSERP, organic]` |
-| AR-V2:K-bbox-9 | Recall on predicted-deferred pool | 77.1 % | `[LAB, AdSERP, organic]` |
-| AR-V2:K-bbox-10 | F1 on deferred class | 0.816 | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-6 | M5 LOSO AUC (canonical 7-feature set) | 0.752 (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-1) | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-7 | Youden-*J* operating threshold | *p* = 0.449 (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-3) | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-8 | Precision on predicted-deferred pool | 86.7 % (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-4) | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-9 | Recall on predicted-deferred pool | 77.1 % (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-5) | `[LAB, AdSERP, organic]` |
+| AR-V2:K-bbox-10 | F1 on deferred class | 0.816 (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-6) | `[LAB, AdSERP, organic]` |
 
-The 0.769 → 0.752 delta (−0.017 AUC) is the measured cost of removing the two leakage-prone distance terms; it bounds how much work `final_dist`/`retreat_dist` were doing in the deployed model. The deployed model file has **not** been swapped to the canonical variant — that is a deploy decision, not a docs decision.
+The 0.769 → 0.752 delta (−0.017 AUC) is the measured cost of removing the two leakage-prone distance terms on the fixation-selected stream. The deployed model file `scripts/models/m5_final_model.json` is the nine-feature 2026-05-02 fit (K-bbox-1–5) and is being replaced by `m5_cursor_only_v2.json`, a seven-feature fit on the cursor-only stream gated on reproducing K-cursor-1 (inventory §0).
 
 **Pre-cascade reference (legacy)** `[LAB, AdSERP, absolute legacy]` — retired 2026-05-01; preserved for historical comparison:
 
@@ -144,13 +199,13 @@ The 0.769 → 0.752 delta (−0.017 AUC) is the measured cost of removing the tw
 | AR-V2:K4 | Recall (legacy) | 73.0 % (retired) | `[LAB, AdSERP, absolute legacy]` |
 | AR-V2:K5 | F1 (legacy) | 0.802 (retired) | `[LAB, AdSERP, absolute legacy]` |
 
-**Disagreement-vs-ground-truth (rank-type-pending re-derivation under organic):**
+**Disagreement-vs-ground-truth (historical; current rows are K-cursor-11–14):**
 
 | K-ID | Claim | Value | Regime |
 |---|---|---:|---|
-| AR-V2:K6 | NB21-classifier-threshold disagreement vs NB22 ground truth | 43.8 % (legacy; bbox re-derivation pending) | `[LAB, AdSERP, absolute legacy]` |
-| AR-V2:K7 | M5 disagreement vs NB22 ground truth | 29.4 % (legacy; bbox re-derivation pending) | `[LAB, AdSERP, absolute legacy]` |
-| **AR-V2:K8** | Supervision-signal advantage of K7 over K6 | **1.49 ×** label-disagreement reduction (legacy; the supervision-target argument survives the cascade structurally even if the per-class numbers shift) | `[LAB, AdSERP, absolute legacy]` |
+| AR-V2:K6 | NB21-classifier-threshold disagreement vs NB22 ground truth | 43.8 % (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-11) | `[LAB, AdSERP, absolute legacy]` |
+| AR-V2:K7 | M5 disagreement vs NB22 ground truth | 29.4 % (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-12) | `[LAB, AdSERP, absolute legacy]` |
+| AR-V2:K8 | Supervision-signal advantage of K7 over K6 | 1.49 × label-disagreement reduction (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-13, 1.30 ×) | `[LAB, AdSERP, absolute legacy]` |
 
 ### LAB diagnostic upper bound (gaze-gated extractor — not deployable)
 
@@ -163,17 +218,19 @@ The 0.769 → 0.752 delta (−0.017 AUC) is the measured cost of removing the tw
 | AR-V2:K13 | Supervision-signal ratio | 2.18 × | `[LAB, AdSERP, absolute legacy]` |
 | AR-V2:K14 | Fidelity cost of going gaze-clean (K1 vs K9) | −0.085 AUC *(corrected 2026-08-30: prior value −0.040 did not match the stated K1-vs-K9 pairing, 0.794 − 0.709 = 0.085)*, −10.4 pt recall, −0.065 F1, ×0.69 supervision-signal ratio | `[LAB, AdSERP, absolute legacy]` |
 
-*(Rank-type added 2026-08-30 provenance audit: K9–K14 were produced 2026-04-14 on the pre-cascade `absolute` substrate with the fixation-timed (gaze-gated) extractor — source `m5_cursor_only_taxonomy/summary.json`, n = 2,355. Doubly non-current: retired attribution **and** non-deployable extractor. Cite only as the diagnostic ceiling, never as an M5 headline; an `organic` gaze-gated re-derivation has not been run.)*
+*(Rank-type added 2026-08-30 provenance audit: K9–K14 were produced 2026-04-14 on the pre-cascade `absolute` substrate with the fixation-timed (gaze-gated) extractor — source `m5_cursor_only_taxonomy/summary.json`, n = 2,355. Doubly non-current: retired attribution **and** non-deployable extractor. Cite only as the diagnostic ceiling, never as an M5 headline. The current comparator is K-cursor-8: on the cursor-only stream, gaze-gated sampling reaches 0.715 against 0.692 native on the same 9,911 rows, paired +0.007 with a CI spanning zero.)*
 
 ### Class prior on AdSERP (calibration reference, not universal base rate)
 
 | K-ID | Claim | Value | Regime |
 |---|---|---:|---|
-| AR-V2:K15 | Deferred / evaluated-rejected split in approached-non-click population | 81 % / 19 % | `[LAB, AdSERP]` |
+| AR-V2:K15 | Deferred / evaluated-rejected split in approached-non-click population | 81 % / 19 % (superseded 2026-09-18: fixation-selected pool; the cursor-only pool is 68.5 / 31.5, see K-cursor-7 and K-ladder-11) | `[LAB, AdSERP, absolute legacy]` |
 
 ---
 
 ## V3: Viewport-band calibration
+
+> **2026-09-18:** fixation-selected pool; re-derivation pending, see NB36.
 
 Source: [`attentional-foraging/scripts/viewport_bands_bootstrap.py`](../../attentional-foraging/scripts/viewport_bands_bootstrap.py) (post-cascade producer accepts `--attribution {absolute,organic}`)
 Doc: [`docs/validation/viewport-bands-calibration.md`](validation/viewport-bands-calibration.md)

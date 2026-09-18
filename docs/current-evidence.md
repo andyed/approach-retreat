@@ -1,6 +1,6 @@
 # Current evidence and open questions
 
-**Checked 2026-09-07: press-anchored cursor-only results, nested ranking, and matched window/rate comparisons retained; earlier measurement versions remain dated below.**
+**Checked 2026-09-18: press-anchored cursor-only results, nested ranking, matched window/rate comparisons, the lineage decomposition and the graded-label test retained; earlier measurement versions remain dated below.**
 
 Approach-retreat measures cursor behavior relative to individual results on a
 search engine results page (SERP). Its research question is whether that
@@ -234,6 +234,121 @@ pins both comparison families and their input hashes. All six sensitivity
 replays reproduced the original retained feature hashes before matching and
 refitting. AOI-flavor sweeps have different candidate populations and retain
 their separate protocol labels.
+
+## September 17–18: lineage decomposition, graded labels at gaze fidelity
+
+Two producer runs answer why the deferred-class classifier moved from about
+0.75 to 0.691, and whether a ranker on cursor-only features gains from
+training labels at the fidelity gaze provides. Both are
+**[LAB, AdSERP, typed, cursor-only predictors]** on the same 2,608-trial
+cache as the September 6 sections; the second uses gaze-derived training
+labels and says so in every row.
+
+**The ladder.** `scripts/deferred_drop_decomposition.py` →
+`scripts/output/deferred_drop_decomposition/summary.json` (generated
+2026-09-17) changes one thing per rung between the LAB-stream classifier
+and the current one. Its gate reproduces the September 6 deployable
+number to 1e-6 (`gate.abs_diff` 0.0). The first three cursor-only rungs
+use the same 3,706 rows as the LAB rung (`population.shared_rows`), so
+population is held fixed until the last step. Values are `rungs.<rung>.
+pooled_auc` and `fold_auc_mean ± fold_auc_sd`; paired deltas are
+`steps_paired_participant`.
+
+| Rung | Rows | Pooled AUC | Fold mean ± sd | Step Δ, paired by participant [95% CI] |
+|---|---:|---:|---:|---|
+| L · LAB typed: fixation-selected rows, gaze-to-cursor distance at fixation times, click-anchored 500 ms | 3,875 (3,297 / 578) | 0.764 | 0.751 ± 0.119 | |
+| L · same, restricted to the shared rows | 3,706 (3,148 / 558) | **0.771** | 0.757 ± 0.121 | |
+| G0 · tracker features, cursor sampled at fixation onsets, no buffer | 3,706 | **0.665** | 0.689 ± 0.142 | L → G0, feature definition: **−0.068 [−0.116, −0.017]** |
+| N0 · tracker features, native sampling, no buffer | 3,706 | 0.663 | 0.687 ± 0.154 | G0 → N0, sampling: −0.002 [−0.021, +0.016] |
+| N5 · tracker features, native, press-anchored 500 ms | 3,706 | 0.659 | 0.682 ± 0.156 | N0 → N5, buffer: −0.005 [−0.012, +0.002] |
+| C · tracker features, native, 500 ms, full approached non-click pool | 9,932 (6,800 / 3,132) | **0.691** | 0.694 ± 0.070 | N5 → C, rows: +0.012 [−0.026, +0.052] |
+
+The drop is the feature definition. The LAB stream's `min_dist` and
+`mean_dist` were distances from the fixation position to the cursor,
+sampled at fixation times, and its `dwell_in_proximity_ms` was weighted by
+fixation duration; the label is whether the fixation sequence returns to
+the result, so those features carried part of it. Sampling and the buffer
+together cost under 0.01, inside their intervals. The full cursor pool
+raises the pooled number by 0.03 and halves the per-participant spread
+(sd 0.156 → 0.070); its class prior is 68 / 32 deferred / rejected against
+85 / 15 on the fixation-selected rows. The 100 px standoff that defines
+"approached" is still a constant and is not doing the work: 50 px gives
+0.690 on 7,849 rows, 200 px gives 0.701 on 12,710
+(`standoff_threshold_on_C`). The organic-flavour LAB rung on the current
+cache is 0.724 on 2,464 rows (`organic_rung.summary.pooled_auc`), which
+places the May 0.753 as the organic flavour on the pre-conversion
+substrate.
+
+**Graded labels at gaze fidelity.** `scripts/ltr_gaze_graded_labels.py` →
+`scripts/output/ltr_gaze_graded_labels/summary_buf500.json` (generated
+2026-09-18; note `docs/ablations/ltr_gaze_graded_labels.md`) trains the
+same LGBMRanker on the seven cursor features under label schemes built
+from gaze plus click, on identical training rows (13,909; `NotApprBelow`
+excluded for every scheme). Its gate reproduces the September 7 binary
+and gaze four-grade MRR@10 (0.7742, 0.7856) to 1e-6. Two evaluations:
+click MRR@10 on the binary click vector (`metrics[...].mrr10`), and
+graded NDCG@10 against the paper's four-grade relevance, scored over
+on-screen AOIs on 2,564 trials (`metrics[...].graded_ndcg10_gaze4_onscreen`,
+`n_trials_graded`). Paired deltas are per-participant means of per-trial
+MRR@10 against the binary-click ranker (`comparisons[...].paired_vs_binary`).
+
+| Training labels (LambdaMART unless stated) | Click MRR@10 | Paired Δ vs binary [95% CI], participants > 0 | Graded NDCG@10 vs four-grade relevance |
+|---|---:|---|---:|
+| SERP position, no model | 0.447 | | 0.856 |
+| Binary click | 0.774 | — | 0.898 |
+| Four grades (clicked 3 / approached-and-returned 2 / approached-not-returned 1 / not approached 0) | **0.786** | **+0.012 [+0.004, +0.019], 33/47** | **0.945** |
+| Six grades within cursor reach (returns split at ≥ 3 visits; approached-unfixated as its own grade) | 0.780 | +0.006 [−0.003, +0.016], 27/47 | 0.944 |
+| Pointwise LGBM regression on the four-grade label | 0.765 | −0.008 [−0.022, +0.005], 24/47 | **0.954** |
+| Four grades from gaze alone, no cursor-approach filter (census) | 0.763 | −0.011 [−0.020, −0.001], 16/47 | 0.880 |
+| Position + seven cursor features, four grades | **0.798** | **+0.024 [+0.015, +0.033], 37/47** | 0.946 |
+
+Read against the September 7 table: the four-grade gaze label adds
+**+0.012** on the click (+0.024 once position is in the model) and
+**+0.046** on ordering examination (0.898 → 0.945; 0.954 pointwise).
+Resolution beyond four grades adds nothing on either metric; the six
+within-reach grades match the four on graded NDCG and are neutral on
+the click. Removing the cursor filter reverses both: the pure-gaze four
+grades score −0.011 on the click and 0.880 on the graded metric, below the
+binary-trained ranker. A result the eyes revisited but the cursor never
+approached has an empty cursor trace, and grading it high asks the ranker
+to separate identical inputs.
+
+**Two populations named "deferred."** The paper's deferred class is
+*approached and returned* (6,800 rows on this cache); it is the class that
+trains. The gaze census's deferred state is *fixated and returned* (9,797
+slots in the census); it describes examination and must not be used as a
+training label for a cursor ranker. Both are gaze-supervised; the
+difference is the cursor-approach filter.
+
+**What the corpus says about C(i).** The C/W/L terms this collector
+would feed are measured in
+`scripts/output/cwl_derived_vs_measured/gate_200px/summary.json`
+(note `docs/ablations/cwl_derived_vs_measured.md`; 2,151 trials with
+viewport opportunity known on every slot). The attention weight derived
+from first-pass reach differs from measured fixation-time share by a
+total-variation distance of 0.200 [0.173, 0.224]
+(`W.gaps_tvd.derived_fp_vs_measured_any`); 0.706 of fixation time on
+results falls after a result's first visit
+(`W.share_of_fixation_time_after_first_visit`); and the click lands above
+the deepest rank fixated in 0.845 [0.806, 0.881] of trials (1,818 of
+2,151; `L.click_above_deepest_fixated`), expected stop rank 6.51 derived
+against 2.71 clicked (`L.expected_stop_rank_derived`, `L.expected_stop_rank_click`).
+Every trial ends in a click, so the clicked rank is a harvest rank, not an
+abandonment rank.
+
+**Deploy consequence.** The M5 model the replay has shipped,
+`scripts/models/m5_final_model.json`, has nine features including
+`final_dist` and `retreat_dist`, `loso_auc` 0.769, and was trained on the
+fixation-selected LAB stream (dated 2026-05-02): the measurement in rung L,
+not the one `m5_inference.py` computes at runtime. The ladder is the
+reason its number will not be reproduced by the browser. Its replacement,
+`scripts/models/m5_cursor_only_v2.json`, is being produced by a separate
+session from the rung-C protocol: seven features, full-data refit after
+the LOSO gate reproduces 0.6911, Youden-J 0.477 (`section_4_3.deployable_M4_7.youden_j.threshold`
+in `m4_cursor_only_downstream/summary.json`; precision 78.1%, recall
+72.8%, F1 0.753). The expected change, 0.769 → 0.691, is the removal of a
+gaze term from the training features, not a regression. The old file is
+kept as `m5_final_model.legacy-2026-05-02.json`.
 
 ## Earlier producers measured different things
 
