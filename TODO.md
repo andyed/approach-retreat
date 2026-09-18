@@ -7,6 +7,34 @@ changed in the 2026-08-30 collision-fix rebuild. Regeneration needs
 Duchowski's `glias2poly`; external dependency, cannot be closed locally.
 `p047-b6-t1` is current. Re-check after the next glias2poly hand-off.
 
+The six untracked `full/*.jpg` alongside them can go: each
+`<trial>.stale-preCollisionFix-2026-08-30.jpg` is byte-identical to its
+current sibling (`cmp` clean on all three). A geometry fix cannot invalidate
+a screenshot, so the markers record a staleness that never happened.
+
+## README hero wall — regenerated 2026-09-15, one thing left (not P1)
+
+Closed the drift: [`scripts/build_hero_wall.mjs`](scripts/build_hero_wall.mjs)
+screenshots the three replay pages, so the wall now rebuilds from the same
+bundles it illustrates instead of being a hand-made one-off. Each panel's own
+status bar prints its label tally, which makes the render check the caption
+beside it. The April `_tilt*.png` files are gone; `_hero.png` replaces them,
+and "tilt" was always a misnomer — nothing was ever transformed in
+perspective, the wall effect is the README table's column widths.
+
+- [ ] Playwright is not a devDependency, so a fresh clone cannot run the
+      script until someone installs it (`npm i -D playwright`, or
+      `PLAYWRIGHT_PATH`). Keeping it out spares the Pages CI install a browser
+      download for a script that only runs by hand, and spares the lockfile a
+      churn right after the esbuild fix in `33f28e8`. Revisit if the wall ever
+      needs to rebuild in CI.
+- [ ] Composition has not had a `/muriel` pass. Two questions for it: the
+      panels are legible at 440 px and mush at 300 px, so the side panels may
+      be carrying no information at README size; and the `NOT-APP` pill is
+      muted grey on grey, which is deliberate de-emphasis but lands well under
+      the 8:1 floor. Both are replay-page decisions, so a fix touches all 148
+      pages, not just the wall.
+
 ## Deploy collector — what the 2026-09-13 AdSERP results say (six items)
 
 Evidence: `attentional-foraging/docs/methodology/deferred-dwell-carve.md`

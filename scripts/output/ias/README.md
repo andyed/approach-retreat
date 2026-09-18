@@ -19,14 +19,21 @@ Three AdSERP trials from the approach-retreat replay set
 - `pai_proof_<trial>.png` — sanity render: your parser + your PAI alpha
   (CGD/OGD, w_A = (A_max/area)^0.236) applied to these files, overlaid on the
   screenshot with a simulated gaze point.
+  **`p006-b4-t7` and `p019-b1-t8` are stale** — rendered 2026-08-12, before
+  their `.ias` were rebuilt on the post-collision-fix maps (`ad789c6`).
+  `p047-b6-t1` is current; its `.ias` has not changed since export.
 
 ## Trials
 
 | trial | story | full-page height |
 |---|---|---|
 | p047-b6-t1 | multi-AOI drama: 5-cell ad carousel + 10 organics + 3 text ads | 2749 px |
-| p006-b4-t7 | canonical evaluated-rejected trial | 2703 px |
-| p019-b1-t8 | canonical deferred trial | 3054 px |
+| p006-b4-t7 | side-rail SERP, two clicks: 11 organics + 3 text ads + 2 rail cells | 3031 px |
+| p019-b1-t8 | deferral-heavy: 11 organics + 3 text ads + 2 rail cells | 2555 px |
+
+Heights are the pixel heights of the shipped `full/<trial>.jpg`, measured
+from the files. The two rewritten rows were stale — they predated the
+2026-08-30 rebuild, and neither figure matched any shipped screenshot.
 
 ## Conventions
 
@@ -45,5 +52,5 @@ Three AdSERP trials from the approach-retreat replay set
 
 AOI geometry: AllSERP (arXiv:2605.04949) on AdSERP (Latifzadeh, Gwizdka &
 Leiva, SIGIR 2025; Zenodo 15236546). Exporter:
-`approach-retreat/scripts/export_ias.py` — can emit all 86 curated replay
+`approach-retreat/scripts/export_ias.py` — can emit all 148 replay
 trials with `--all` if you want more.
