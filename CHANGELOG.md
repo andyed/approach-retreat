@@ -1,5 +1,66 @@
 # Changelog
 
+## v0.4.0 — 2026-09-18 — `deferred_score` from an M5 model JSON, not a predicted label
+
+### Decision
+
+The library emits a **continuous deferred score, not a predicted label**.
+The observed four-class `Outcome` (`clicked` / `deferred` /
+`evaluated_rejected` / `not_approached`) is unchanged — it stays a cursor
+fact, resolved from re-approach behavior. `deferred_score` is a separate,
+optional, continuous instrument computed by applying a pre-trained M5-style
+logistic-regression model (standardized features, sigmoid link) to the
+seven approach features `ResultFeatureTracker` already accumulates, plus
+viewport-band ms and (for rank-aware models) the result's 0-based position.
+Thresholding a score into a label is a consumer choice; the library does
+not make it for you.
+
+### Why
+
+Cursor-only per-instance deferred-vs-rejected classification is 0.69 LOSO
+AUC, and a REJECTED label at the Youden-J operating point is right 48.5% of
+the time — so a hard predicted label is worse than a calibrated score;
+viewport bands lift the pool AUC to 0.789, and the library already emits
+them.
+
+### What changed
+
+- **New `src/deferred-score.js`, `createDeferredScorer(modelJson, {
+  featureAliases })`.** Pure, no DOM. Applies the model JSON's own
+  documented `apply` formula (`sigmoid(sum(coef_i * (feat_i - mean_i) /
+  scale_i) + intercept)`) and returns `{ score, features,
+  operatingThreshold, operatingPoints, calibration, semantics, modelId }`.
+  `score(features)` returns `null` — never `NaN`, never throws — when the
+  model is malformed or any named feature is missing/non-finite.
+  `featureAliases` maps a model-declared feature name (e.g. v3's `vt_top` /
+  `vt_mid` / `vt_bot`) onto the key actually present in the features object,
+  since the tracker's own band accumulator names those quantities `top_ms`
+  / `mid_ms` / `bot_ms`. Exported from `src/index.js`.
+- **New constructor option `deferredScoreModel`.** A parsed model JSON
+  object — the library never fetches. When set, `getApproachFeatures()`
+  rows and each finalized episode (`getEpisodes()` / the `onEpisode`
+  payload) gain `deferred_score` (a number in `[0, 1]`, or `null` when a
+  required feature is missing) and `deferred_score_model` (a short id
+  derived from the model's provenance, or `'unknown'`). When the option is
+  unset (default `null`), both keys are **absent entirely**, not
+  present-as-null — no schema change for existing consumers. The observed
+  `Outcome` / `classify()` logic is untouched.
+- **PostHog adapter:** `ar_episode` gains `ar_deferred_score` /
+  `ar_deferred_score_model`. `ar_session_summary` gains
+  `ar_deferred_score_mean` (mean over approached results with a non-null
+  score, `null` on empty input) and `ar_deferred_score_by_position`
+  (`{ position: score }` for scored results, `{}` on empty input).
+- **New `scripts/test_m5_score_parity.js`.** Five fixed feature vectors,
+  JS `createDeferredScorer` vs. Python applying the model JSON's `apply`
+  formula directly (stdlib `json` + `math` only) — 1e-9 tolerance, exits
+  non-zero on any mismatch or on zero comparisons performed.
+- Tests: `tests/unit/deferred-score.test.js` (hand-computed sigmoid
+  parity, missing/non-finite-feature nulls, malformed-model nulls, a v3
+  band-feature-and-rank stub) and
+  `tests/integration/deferred-score-emission.test.js` (constructor wiring,
+  PostHog aggregate guards, and confirmation that the observed four-class
+  counts are identical with and without the option).
+
 ## Unreleased — `maxSampleHz` fixed-rate throttle on the cursor feature path
 
 `ApproachRetreat._onMouseMove` ran on every native `mousemove` (~60 Hz,

@@ -1,6 +1,6 @@
 {
   "name": "approach-retreat",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Cursor approach-retreat dynamics on search result pages. SERP-specific companion to ClickSense.",
   "type": "module",
   "main": "dist/approach-retreat.js",

@@ -32,6 +32,21 @@
  * - Arapakis & Leiva (2016) — predicting search satisfaction from cursor
  */
 
+import { createDeferredScorer } from './deferred-score.js';
+
+// v3 deferred-score models declare viewport-band feature names `vt_top` /
+// `vt_mid` / `vt_bot` (and, for the rank variant, `position`). The tracker's
+// own band accumulator names those quantities `top_ms` / `mid_ms` / `bot_ms`
+// (see `_snapshotViewportBandsFor`); this maps the model's declared names
+// onto the keys this library actually puts in the features object passed to
+// the scorer. `position` and the seven base M4/M5 features match verbatim,
+// so they need no entry here.
+const DEFERRED_SCORE_FEATURE_ALIASES = {
+  vt_top: 'top_ms',
+  vt_mid: 'mid_ms',
+  vt_bot: 'bot_ms',
+};
+
 /**
  * Four-class outcome taxonomy.
  * The practical contribution: splitting non-clicks into actionable classes.
@@ -265,6 +280,17 @@ const DEFAULTS = {
 
   // Callback for reranking signals (batch of episodes → relevance scores)
   onSignal: null,
+
+  // Optional M5-style deferred-score model: a parsed model JSON object (see
+  // src/deferred-score.js schema doc). The library never fetches this —
+  // callers load/parse it themselves. When set, each approached result's
+  // summary (getApproachFeatures() rows and each finalized episode) gains
+  // `deferred_score` (number in [0,1], or null when a required feature is
+  // missing) and `deferred_score_model`. When null (default), those fields
+  // are omitted entirely rather than emitted as null. The observed
+  // four-class Outcome is unaffected — it stays a cursor fact; the score is
+  // an independent continuous instrument alongside it. See CHANGELOG 0.4.0.
+  deferredScoreModel: null,
 
   // Forward vs regressive classification tolerance. An episode is classified
   // at entry time: forward iff scrollY >= scrollHwm - directionTolPx. This
@@ -604,6 +630,14 @@ class Episode {
       vp_mid_ms: this.viewportBands ? this.viewportBands.mid_ms : null,
       vp_bot_ms: this.viewportBands ? this.viewportBands.bot_ms : null,
     };
+    // deferred_score / deferred_score_model are only set (in _finalizeEpisode)
+    // when the library was constructed with deferredScoreModel — omit the
+    // keys entirely otherwise, rather than emitting them as null, so
+    // consumers without the option see no schema change.
+    if (this.deferredScoreModel !== undefined) {
+      json.deferred_score = this.deferredScore;
+      json.deferred_score_model = this.deferredScoreModel;
+    }
     // Continuous viewport analytics + scroll-trajectory (NB30 minimal set)
     // are emitted at session-summary granularity, not per-episode — the
     // features are aggregates over the whole scroll timeline and some
@@ -619,6 +653,16 @@ class Episode {
 export class ApproachRetreat {
   constructor(options = {}) {
     this.config = { ...DEFAULTS, ...options };
+
+    // Optional deferred-score model (see DEFAULTS.deferredScoreModel doc).
+    // null when not configured — every call site below guards on this being
+    // truthy so the added fields are omitted entirely, not emitted as null.
+    this._deferredScorer = this.config.deferredScoreModel
+      ? createDeferredScorer(this.config.deferredScoreModel, {
+          featureAliases: DEFERRED_SCORE_FEATURE_ALIASES,
+        })
+      : null;
+
     this._episodes = [];       // all completed episodes
     this._active = new Map();  // resultEl → current Episode
     this._retreating = [];     // recently exited episodes still tracking retreat distance
@@ -1007,15 +1051,35 @@ export class ApproachRetreat {
     // from the current cumulative totals to get ms restricted to
     // [enteredAt, exitedAt]. Nullable — missing when bands are disabled or
     // the AOI was never observed by the band accumulator.
-    if (this.config.trackViewportBands && episode._viewportBandsAtEntry) {
-      const cur = this._snapshotViewportBandsFor(episode.resultEl);
-      const base = episode._viewportBandsAtEntry;
-      episode.viewportBands = {
-        any_ms: Math.round(cur.any_ms - base.any_ms),
-        top_ms: Math.round(cur.top_ms - base.top_ms),
-        mid_ms: Math.round(cur.mid_ms - base.mid_ms),
-        bot_ms: Math.round(cur.bot_ms - base.bot_ms),
-      };
+    //
+    // `cumulativeBands` (the un-subtracted snapshot) is kept alongside the
+    // episode-scoped delta because the deferred-score model is trained on
+    // the tracker's whole-trial-to-date quantities (same as
+    // getApproachFeatures()), not episode-scoped deltas.
+    let cumulativeBands = null;
+    if (this.config.trackViewportBands) {
+      cumulativeBands = this._snapshotViewportBandsFor(episode.resultEl);
+      if (episode._viewportBandsAtEntry) {
+        const base = episode._viewportBandsAtEntry;
+        episode.viewportBands = {
+          any_ms: Math.round(cumulativeBands.any_ms - base.any_ms),
+          top_ms: Math.round(cumulativeBands.top_ms - base.top_ms),
+          mid_ms: Math.round(cumulativeBands.mid_ms - base.mid_ms),
+          bot_ms: Math.round(cumulativeBands.bot_ms - base.bot_ms),
+        };
+      }
+    }
+
+    if (this._deferredScorer) {
+      const tracker = this._approachFeatures.get(episode.resultEl);
+      const approachFeatures = tracker ? tracker.getFeatures() : {};
+      const scoreInput = this._deferredScoreInput(
+        approachFeatures,
+        episode.position,
+        cumulativeBands
+      );
+      episode.deferredScore = this._deferredScorer.score(scoreInput);
+      episode.deferredScoreModel = this._deferredScorer.modelId;
     }
 
     // Clean up transient tracking state
@@ -1278,6 +1342,26 @@ export class ApproachRetreat {
   }
 
   /**
+   * Build the features object handed to the deferred-score model: the
+   * tracker's approach features, the result's rank position, and (when
+   * band data is supplied) the cumulative any/top/mid/bot ms. `bands` is
+   * whatever `_snapshotViewportBandsFor` returned, or null/omitted when
+   * viewport-band tracking is disabled — in that case the band keys are
+   * left absent so a v3 model that needs them scores null (missing
+   * feature) rather than silently treating "not tracked" as zero.
+   */
+  _deferredScoreInput(approachFeatures, position, bands) {
+    const input = { ...approachFeatures, position };
+    if (bands) {
+      input.any_ms = bands.any_ms;
+      input.top_ms = bands.top_ms;
+      input.mid_ms = bands.mid_ms;
+      input.bot_ms = bands.bot_ms;
+    }
+    return input;
+  }
+
+  /**
    * Per-position viewport-band dwell totals. Mirrors `getApproachFeatures`
    * in shape: an array of `{ position, vp_any_ms, vp_top_ms, vp_mid_ms,
    * vp_bot_ms }` sorted by position. Values are rounded to integer ms.
@@ -1436,7 +1520,20 @@ export class ApproachRetreat {
     for (const [el, tracker] of this._approachFeatures) {
       const position = parseInt(
         el.getAttribute(this.config.positionAttr) || '0', 10);
-      out.push({ position, ...tracker.getFeatures() });
+      const features = { position, ...tracker.getFeatures() };
+      if (this._deferredScorer) {
+        const bands = this.config.trackViewportBands
+          ? this._snapshotViewportBandsFor(el)
+          : null;
+        const scoreInput = this._deferredScoreInput(
+          tracker.getFeatures(),
+          position,
+          bands
+        );
+        features.deferred_score = this._deferredScorer.score(scoreInput);
+        features.deferred_score_model = this._deferredScorer.modelId;
+      }
+      out.push(features);
     }
     return out.sort((a, b) => a.position - b.position);
   }

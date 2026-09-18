@@ -8,3 +8,4 @@ export {
 
 export { createPostHogAdapter } from './adapters/posthog.js';
 export { createCallbackAdapter } from './adapters/callback.js';
+export { createDeferredScorer } from './deferred-score.js';

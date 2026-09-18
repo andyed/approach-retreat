@@ -25,7 +25,7 @@
 // the raw source runnable (and unit-testable) without a build step: an
 // undeclared identifier is safe to `typeof`-probe and yields 'undefined', so we
 // fall through to the literals. Fallback version MUST track package.json.
-const AR_VERSION = (typeof __AR_VERSION__ !== 'undefined') ? __AR_VERSION__ : '0.3.0';
+const AR_VERSION = (typeof __AR_VERSION__ !== 'undefined') ? __AR_VERSION__ : '0.4.0';
 const AR_BUILD = (typeof __AR_BUILD__ !== 'undefined') ? __AR_BUILD__ : 'dev';
 
 // The two version-stamp props added to EVERY emitted event so bundle-version
@@ -228,6 +228,12 @@ function flattenEpisode(episode) {
     ar_vp_top_ms: episode.vp_top_ms ?? null,
     ar_vp_mid_ms: episode.vp_mid_ms ?? null,
     ar_vp_bot_ms: episode.vp_bot_ms ?? null,
+    // Continuous deferred score from an M5-style model, when the library
+    // was constructed with `deferredScoreModel`. Null when the option is
+    // unset or a required feature was missing at finalize time — see
+    // src/deferred-score.js.
+    ar_deferred_score: episode.deferred_score ?? null,
+    ar_deferred_score_model: episode.deferred_score_model ?? null,
   };
 }
 
@@ -369,6 +375,25 @@ export function createPostHogAdapter(posthog, options = {}) {
       const approachFeatures =
         typeof ar.getApproachFeatures === 'function' ? ar.getApproachFeatures() : [];
 
+      // Deferred-score aggregates, guarded against empty input. Rows without
+      // a numeric, finite deferred_score (option unset, or a missing
+      // feature at score time) are excluded from both the mean and the
+      // by-position map rather than contributing a null/NaN.
+      const deferredScored = approachFeatures.filter(
+        (f) =>
+          typeof f.deferred_score === 'number' &&
+          Number.isFinite(f.deferred_score)
+      );
+      const deferredScoreMean =
+        deferredScored.length > 0
+          ? deferredScored.reduce((sum, f) => sum + f.deferred_score, 0) /
+            deferredScored.length
+          : null;
+      const deferredScoreByPosition = {};
+      for (const f of deferredScored) {
+        deferredScoreByPosition[f.position] = f.deferred_score;
+      }
+
       // Merge per-AOI viewport-band totals into the approach-features array
       // on `position`. Augmentative — the nine-feature schema is unchanged;
       // band fields are nullable on rows that have no band record. AOIs
@@ -465,6 +490,8 @@ export function createPostHogAdapter(posthog, options = {}) {
         ar_max_position_approached: maxPositionApproached >= 0 ? maxPositionApproached : null,
         ar_approach_features: mergedFeatures,
         ar_approach_feature_schema: 'edmonds-2026-m4-v1',
+        ar_deferred_score_mean: deferredScoreMean,
+        ar_deferred_score_by_position: deferredScoreByPosition,
         ar_viewport_band_schema: bandContext.schema,
         ar_viewport_band_basis_px: bandContext.viewport_h,
         ar_viewport_analytics_schema: analyticsContext.schema,
