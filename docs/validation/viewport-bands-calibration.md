@@ -1,25 +1,6 @@
 # Viewport-band calibration
 
-> **Lineage banner (2026-09-18).** Every number on this page was computed
-> on the fixation-selected LAB pool (n = 2,351) with the nine-feature LAB
-> retreat vector from `compute_cursor_approach_features.py`, whose
-> "cursor" features sample the cursor at fixation times and weight dwell
-> by fixation duration. Re-derivation of the three `vt_*` bands on the
-> cursor-only pool is pending; nothing below is on the current stream.
-> The current viewport-vs-cursor comparison is NB36
-> (`attentional-foraging/notebooks-v2/36_scroll_vs_cursor_deferred.ipynb`,
-> Key Claims in `docs/notebook-key-claims.md`), which compares the
-> viewport *vector*, not the three bands: on the full scroll-eligible pool
-> (8,653 rows, 46 participants, 2,075 trials; K1) viewport scores 0.713 vs
-> cursor 0.692 pooled, within-trial cursor 0.710 vs viewport 0.684 (K2);
-> paired by participant the viewport wins 20/46 with Wilcoxon p = 0.72
-> (K4); position plus both sensors reaches 0.758 pooled (K6), about
-> +0.05 over either sensor alone (0.692 cursor, 0.713 viewport; K2); and
-> the viewport vector falls from 0.714 to 0.633 after the first-visit
-> split on the full pool (K7); the single residence feature on the
-> 5,255-row scroll subset falls 0.702 → 0.479
-> (`attentional-foraging/docs/methodology/deferred-dwell-carve.md`). Cite NB36 for the sensor comparison until the bands variant of
-> `scroll_only_carve.py` runs on the cursor-only pool.
+> **Superseded 2026-09-18.** The calibration below was computed on the fixation-selected LAB pool with the nine-feature LAB retreat vector. It has been re-derived on the cursor-only pool (`attentional-foraging/scripts/viewport_bands_cursor_only.py`, note `docs/ablations/viewport_bands_cursor_only.md`; rows `AR-V3:K-cursor-1..12` in `key-claims.md`): bands alone 0.789 pooled / 0.773 within-trial vs cursor 0.691 / 0.718; combined 0.789 / 0.776; coefficient ordering unchanged (+1.45 / +0.83 / +0.28); `vt_top` positive at every rank P0–P5; first-visit split takes bands 0.771 → 0.553, so most of the band signal is the return itself. Read the body below as history.
 
 
 **What this library emits:** per-AOI cumulative ms in each of four bands —

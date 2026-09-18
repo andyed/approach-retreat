@@ -86,43 +86,23 @@ Full methodology at [`docs/validation/m5-calibration.md`](validation/m5-calibrat
 
 ---
 
-## 3. Viewport bands carry as much signal as cursor retreat — and combine separably
+## 3. Viewport bands carry more deferred-class signal than cursor retreat, and most of it is the return
 
-> **2026-09-18:** fixation-selected pool; re-derivation pending; see NB36.
+*Re-derived 2026-09-18 on the cursor-only pool `[AR-V3:K-cursor-1..12]`; the numbers this section carried before were the fixation-selected pool with the nine-feature LAB vector and are kept as superseded rows in `key-claims.md`.*
 
-The library's per-AOI viewport-band features (`vp_any_ms`, `vp_top_ms`, `vp_mid_ms`, `vp_bot_ms`) measure how long an AOI lived in each third of the viewport during a session. The calibration question: do these add anything to the cursor retreat features, or are they redundant?
+The library's per-AOI viewport-band features (`vp_top_ms` / `vp_mid_ms` / `vp_bot_ms`) measure how long an AOI's centre sat in each third of the viewport, cut at the press. On the same 9,932 approached non-click rows the deferred detector uses:
 
-**Headline `[AR-V3:K1, K3, K5]`:**
-- Retreat alone (9 features): bootstrap median AUC 0.796 [0.759, 0.830]
-- Viewport bands alone, target AOI (3 features): 0.800 [0.774, 0.828]
-- Retreat + bands combined (12 features): AUC 0.842 [0.818, 0.864]
+- Bands alone: pooled AUC **0.789**, within-trial **0.773** `[AR-V3:K-cursor-3]`
+- Cursor M4-7 alone: 0.691 / 0.718 `[AR-V3:K-cursor-1]`; paired bands − cursor +0.082 [+0.064, +0.100] `[K-cursor-6]`
+- Combined: 0.789 / 0.776, +0.006 over bands alone `[K-cursor-4, K-cursor-7]`
 
-The combined model is separable from retreat-alone at the upper CI (0.842 > 0.830). Bands carry as much signal as the nine-feature cursor retreat set on their own, and the lift from combining is measurable. Fully-contextual viewport (10 AOIs × bands + rank, 40 features) is *worse* than local at AUC 0.748 `[AR-V3:K4]` — the signal is per-AOI, not session-level. The library accordingly emits raw per-AOI band ms only and leaves rank-weighting to consumers.
+Unlike the NB36 viewport kinematics vector, whose pooled edge over the cursor vanished within trial, the band advantage holds inside the page. Coefficient ordering is unchanged from the historical rows: `vt_top` +1.45, `vt_mid` +0.83, `vt_bot` +0.28 `[K-cursor-8]`; top-of-viewport residence is what predicts a return. `vt_top` is positive at every rank P0–P5 with no interval touching zero `[K-cursor-9]`; the earlier P5 significance transition was a property of 122 rows, not of the feature.
 
-### Coefficient signs reveal the mechanism
+**The carve.** Cut the window at the end of the first gaze visit and bands fall from 0.771 to **0.553**, `vp_any` to 0.464, paired −0.195 [−0.213, −0.176] `[K-cursor-10, 11]`; the cursor on the same 9,141 rows is 0.679 `[K-cursor-12]`. A deferred result has spent longer in the top third *because* the eyes came back to it, and the viewport records that return as residence. This is the viewport form of the gaze-dwell circularity (`attentional-foraging/docs/methodology/deferred-dwell-carve.md`), and it is why the TODO's visit-number carve applies to viewport episodes on touch as much as to cursor episodes.
 
-Pooled standardized coefficients on the deferred outcome `[AR-V3:K6–K8]`:
-- `vt_top` = +1.83 (top-of-viewport dwell predicts deferred)
-- `vt_mid` = +0.83
-- `vt_bot` = +0.21
+**Practical implication for consumers.** Bands are the stronger deferred-class feature on desktop and the only one on touch, but only their pre-return portion is a predictor; whole-session per-AOI viewport analytics are the circular ones. Weight `vt_top` by rank if you like, but the rank dependence is a gentle decline now, not a cutoff at P5.
 
-Top-of-viewport dwell is ~9 × more discriminative than bottom-of-viewport dwell. Mechanistically consistent: top-of-viewport is where reading happens; bottom-of-viewport is where scrolling-past happens.
-
-### The rank-dependence finding (P0–P5 only)
-
-`vt_top`'s coefficient is rank-dependent and weakens monotonically with rank `[AR-V3:K9–K14]`:
-
-- P0 (+2.02, strong) → P1 (+1.67, strong) → P2 (+1.48, strong) → P3 (+1.10, strong) → P4 (+0.49, marginal) → P5 (+0.21, CI includes 0 — significance transition)
-
-Past P5 the per-position estimates are too sparse (n ≤ 91 per slice), participant-concentrated (top 4 contributors supply 44 % of the deep-rank bucket), and confounded by deep-rank approach behavior (bottom-of-page ad presence). Deep-rank values are retained in `bootstrap_results.json` for diagnostic use but must not be cited as calibration without a larger-corpus replication.
-
-**Practical implication for consumers.** Weight `vt_top` by rank with a piecewise function or smooth decay over P0–P5. A single pooled weight under-fits P0–P3 and over-fits the P4–P5 transition. If a single band feature is desired, `vt_mid` is the more rank-robust default (+0.5 to +1.2 across P1–P5).
-
-### JS↔Python parity verified
-
-`computeViewportBandsPure` (JS) and `viewport_ms_for_trial` (Python) produce identical output on a six-AOI synthetic fixture covering edge cases (AOI fully above / below viewport, center crossing all thirds during scroll, tall AOI with center off-viewport, zero-duration intervals). All 24 fields match exactly (Δ = 0) `[AR-V3:K15]`. The library tag for this feature is `edmonds-2026-vpbands-v1` `[AR-V3:K16]`.
-
-Full calibration at [`docs/validation/viewport-bands-calibration.md`](validation/viewport-bands-calibration.md).
+Full derivation: `attentional-foraging/docs/ablations/viewport_bands_cursor_only.md`; historical calibration at [`docs/validation/viewport-bands-calibration.md`](validation/viewport-bands-calibration.md).
 
 ---
 

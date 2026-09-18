@@ -230,16 +230,40 @@ The 0.769 → 0.752 delta (−0.017 AUC) is the measured cost of removing the tw
 
 ## V3: Viewport-band calibration
 
-> **2026-09-18:** fixation-selected pool; re-derivation pending, see NB36.
+> **Re-derived 2026-09-18 on the cursor-only pool.** Every row below the
+> "Cursor-only pool" block was computed on the fixation-selected LAB pool
+> with the nine-feature LAB retreat vector (superseded 2026-09-18:
+> fixation-selected feature lineage; see K-cursor-*). Producer for the
+> current rows: `attentional-foraging/scripts/viewport_bands_cursor_only.py`
+> → `scripts/output/viewport_bands_cursor_only/summary.json`; note
+> `docs/ablations/viewport_bands_cursor_only.md`.
 
-Source: [`attentional-foraging/scripts/viewport_bands_bootstrap.py`](../../attentional-foraging/scripts/viewport_bands_bootstrap.py) (post-cascade producer accepts `--attribution {absolute,organic}`)
+Source (historical rows): [`attentional-foraging/scripts/viewport_bands_bootstrap.py`](../../attentional-foraging/scripts/viewport_bands_bootstrap.py)
 Doc: [`docs/validation/viewport-bands-calibration.md`](validation/viewport-bands-calibration.md)
 Outcome: NB22 `gaze_regression_label` (1 = deferred, 0 = evaluated-rejected)
-Bootstrap: 1,000 participant-cluster-resampling seeds; point estimates from LOSO LR by participant.
 
-**Two attributions reported below.** The pre-cascade `[absolute legacy]` rows are the published values from the 2026-04-12 coordinate-space audit; the post-cascade `[organic]` rows are from the 2026-05-02 retrain on bbox-derived AOIs (`bootstrap_results_organic.json`). Sign and direction of every NB28 finding preserved across the cascade; absolute AUC numbers shift modestly within CI overlap.
+### Cursor-only pool — current `[LAB, AdSERP, typed, cursor-only, press-anchored 500 ms]` (2026-09-18)
 
-### Pooled performance — post-cascade `[organic]` (current)
+Pool: the 9,932 approached non-click rows of `m4_cursor_only_downstream` (6,800 deferred / 3,132 rejected), 47 participants; bands = cumulative ms the AOI centre spends in each viewport third, screenshot space, window cut at `mousedown` − 500 ms; gate: cursor M4-7 reproduces 0.6911 exactly. Within-trial AUC = P(deferred scored above rejected) over pairs inside one trial.
+
+| K-ID | Model | Features | Pooled AUC | Within-trial AUC | JSON key |
+|---|---|---:|---:|---:|---|
+| **AR-V3:K-cursor-1** | Cursor M4-7 alone | 7 | 0.691 | 0.718 | `models.cursor_M4_7` |
+| AR-V3:K-cursor-2 | `vp_any` alone | 1 | 0.746 | 0.720 | `models.vp_any` |
+| **AR-V3:K-cursor-3** | Bands alone (`vt_top`, `vt_mid`, `vt_bot`) | 3 | **0.789** | **0.773** | `models.bands_3` |
+| **AR-V3:K-cursor-4** | Cursor + bands | 10 | 0.789 | 0.776 | `models.cursor_M4_7_plus_bands_3` |
+| AR-V3:K-cursor-5 | Bands, raw 1024 px screen height (sensitivity) | 3 | 0.797 | 0.777 | `models.bands_3_raw_screen_height` |
+| AR-V3:K-cursor-6 | Paired by participant, bands − cursor | | +0.082 [+0.064, +0.100] | | `paired_by_participant` |
+| AR-V3:K-cursor-7 | Paired, combined − bands | | +0.006 [+0.002, +0.011] | | `paired_by_participant` |
+| AR-V3:K-cursor-8 | Coefficients, bands alone, standardized (+ = deferred) | | `vt_top` +1.45 · `vt_mid` +0.83 · `vt_bot` +0.28 | | `coefficients.bands_3` |
+| AR-V3:K-cursor-9 | `vt_top` by position P0–P5, 1,000 participant-cluster draws | | +1.40 [+1.05, +1.88] · +1.27 [+1.02, +1.57] · +0.90 [+0.73, +1.13] · +0.74 [+0.50, +1.08] · +0.77 [+0.60, +1.00] · +0.58 [+0.31, +0.90] | | `rank_dependence_vt_top` |
+| **AR-V3:K-cursor-10** | First-visit split (window ends at the end of the first gaze visit; 9,141 rows): bands full → first visit | 3 | **0.771 → 0.553** (paired −0.195 [−0.213, −0.176]) | 0.759 → 0.551 | `first_visit_carve.models.bands_3_*` |
+| AR-V3:K-cursor-11 | Same split, `vp_any` | 1 | 0.729 → 0.464 | | `first_visit_carve.models.vp_any_*` |
+| AR-V3:K-cursor-12 | Same rows, cursor M4-7 (no split needed; features end at the press) | 7 | 0.679 | 0.706 | `first_visit_carve.models.cursor_M4_7` |
+
+Reading: unlike the NB36 kinematics vector, the band advantage over the cursor survives within trial; the coefficient ordering of the historical rows (K6–K8) holds; the historical P5 "significance transition" and P3 peak do not survive on 787–1,705 rows per position, `vt_top` is positive at every rank. The first-visit split shows the band signal is largely the return itself: a result the eyes come back to has been in the top third longer *because* of the return. A scroll-only deployment cannot compute that cutoff, so the deploy caveat in TODO (visit-number carve) applies to the viewport channel as it does to the cursor.
+
+### Pooled performance — post-cascade `[organic]` (superseded 2026-09-18: fixation-selected feature lineage; see K-cursor-1..7)
 
 | K-ID | Model | Features | Bootstrap median AUC | 95 % CI | Regime |
 |---|---|---:|---:|---:|---|
@@ -266,7 +290,7 @@ Bootstrap: 1,000 participant-cluster-resampling seeds; point estimates from LOSO
 | AR-V3:K7 | `vt_mid` | +0.83 |
 | AR-V3:K8 | `vt_bot` | +0.21 |
 
-### Rank dependence of `vt_top` — post-cascade `[organic]` (current)
+### Rank dependence of `vt_top` — post-cascade `[organic]` (superseded 2026-09-18; see K-cursor-9)
 
 | K-ID | Position | n | `vt_top` median | 95 % CI | Verdict |
 |---|---|---:|---:|---:|---|

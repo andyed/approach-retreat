@@ -63,8 +63,8 @@ and the ranking experiment; the rest of the docs do not.
 
 | rows | verdict | note |
 |---|---|---|
-| K-bbox-1..5, K1–K5 (retreat alone 0.775 / 0.796; bands alone 0.743 / 0.800; combined 0.811 / 0.842) | **RE-DERIVE** | the rows are the fixation-selected pool with the nine-feature LAB retreat vector; nothing here is on the cursor-only stream. The nearest current evidence is NB36 (`36_scroll_vs_cursor_deferred.ipynb`): on the full scroll-eligible pool (8,653 rows) viewport vector 0.713 vs cursor 0.692 pooled, **within-trial cursor 0.710 vs viewport 0.684, paired test null (20/46, p 0.72)**; combined +0.05 pooled over either; viewport vector 0.714 → **0.633** after the first-visit split (NB36 K7; the single residence feature on the 5,255-row scroll subset falls 0.702 → 0.479, `deferred-dwell-carve.md`). These are the viewport *vector*, not the three `vt_*` bands; the bands need their own run on the cursor-only pool (`scroll_only_carve.py` has the residence features; a bands variant is a small addition) |
-| K6–K8 coefficient signs, K9–K14 / K-bbox-9..14 rank dependence | **RE-DERIVE** | same pool problem; the P0–P3 pattern may well survive, but it has not been measured on the current rows |
+| K-bbox-1..5, K1–K5 (retreat alone 0.775 / 0.796; bands alone 0.743 / 0.800; combined 0.811 / 0.842) | **RE-DERIVED 2026-09-18** (`AR-V3:K-cursor-1..12`; bands 0.789 / 0.773 within-trial, cursor 0.691 / 0.718, combined 0.789 / 0.776; first-visit split 0.771 → 0.553) — the remainder of this row is the pre-run reasoning | the rows are the fixation-selected pool with the nine-feature LAB retreat vector; nothing here is on the cursor-only stream. The nearest current evidence is NB36 (`36_scroll_vs_cursor_deferred.ipynb`): on the full scroll-eligible pool (8,653 rows) viewport vector 0.713 vs cursor 0.692 pooled, **within-trial cursor 0.710 vs viewport 0.684, paired test null (20/46, p 0.72)**; combined +0.05 pooled over either; viewport vector 0.714 → **0.633** after the first-visit split (NB36 K7; the single residence feature on the 5,255-row scroll subset falls 0.702 → 0.479, `deferred-dwell-carve.md`). These are the viewport *vector*, not the three `vt_*` bands; the bands need their own run on the cursor-only pool (`scroll_only_carve.py` has the residence features; a bands variant is a small addition) |
+| K6–K8 coefficient signs, K9–K14 / K-bbox-9..14 rank dependence | **RE-DERIVED 2026-09-18** | ordering holds (+1.45 / +0.83 / +0.28); `vt_top` positive at every rank P0–P5, the P5 transition does not survive |
 | K15–K16 (JS↔Python parity, tag) | **HOLDS** | code facts |
 
 ---
@@ -79,7 +79,7 @@ and the ranking experiment; the rest of the docs do not.
 | §1 "93.2 % of 2,589 clicked AOIs receive any proximity dwell; 82.7 % ≥ 500 ms; median 2.5 s" | | **RE-DERIVE** | pre-conversion buf500 cascade; recompute on the 2,608 cursor-only clicked rows (one pass over the cache) |
 | §2 M5, all bullets | | **STALE** | §1 V2 rows above; the supervision-signal paragraph survives with 1.30× in place of 1.49× |
 | §2 class prior 81 / 19 | | **STALE** | 68.5 / 31.5 |
-| §3 viewport bands, all | | **RE-DERIVE** | V3 above; until then, cite NB36 and say the bands rows are on the fixation-selected pool |
+| §3 viewport bands, all | | **REWRITTEN 2026-09-18** | from `AR-V3:K-cursor-*` |
 
 ---
 
