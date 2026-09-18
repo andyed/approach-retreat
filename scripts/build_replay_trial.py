@@ -219,10 +219,23 @@ _M5_CLF = None  # lazy-loaded
 
 
 def _m5() -> "m5_inference.M5Classifier":
+    """Load the deployed M5 classifier once per process.
+
+    No model path or threshold is named here on purpose: both come from
+    m5_inference's default (models/m5_cursor_only_v2.json since 2026-09-18)
+    and from that file's own `operating_threshold`, so a model swap reaches
+    the bundles without a second edit. The load is announced because it is
+    otherwise invisible — bundles carried the retired nine-feature scores
+    through several rebuilds with nothing in the log to show it.
+    """
     global _M5_CLF
     if _M5_CLF is None:
         import m5_inference
         _M5_CLF = m5_inference.M5Classifier()
+        print(f"  M5 model: {_M5_CLF.model_path.name} — "
+              f"{len(_M5_CLF.features)} features, "
+              f"threshold {_M5_CLF.threshold:.4f} (from model file), "
+              f"LOSO AUC {_M5_CLF.loso_auc:.4f}", file=sys.stderr)
     return _M5_CLF
 
 

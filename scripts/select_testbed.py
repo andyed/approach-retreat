@@ -15,6 +15,7 @@ import json
 import shutil
 import subprocess
 import sys
+import textwrap
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -32,6 +33,7 @@ CURATION_MD = AR_ROOT / "docs/CURATION.md"
 
 sys.path.insert(0, str(AR_ROOT / "scripts"))
 import build_replay_trial as brt  # noqa: E402
+import m5_inference  # noqa: E402  (every M5 number in CURATION.md is read from it)
 
 
 def select_diverse_top(scores_csv: Path, n: int, cap_per_participant: int) -> list[str]:
@@ -281,11 +283,114 @@ def classify(bundles: list[dict], target_per_group: dict[str, int]) -> dict:
     return {"groups": dict(groups), "features": feats, "bundle_query": {b["trial_id"]: query(b) for b in bundles}}
 
 
-def write_curation_md(curation: dict, n_pool: int, composition: dict | None = None) -> None:
+def alignment_disclosure(curation: dict, composition: dict | None,
+                         suspect_tids: set[str]) -> str:
+    """Blockquote naming the pooled trials on AllSERP's alignment-exclusion list.
+
+    Generated rather than hand-written: the list is AF's and grows, the pool
+    is re-selected here, and a disclosure that has to be re-typed after every
+    selection is a disclosure that silently stops being true.
+    """
+    if not composition:
+        return ""
+    pool = composition.get("audit_pool", {})
+    bucket_of = {tid: k for k, tids in pool.items() for tid in tids}
+    listed = [t for t in sorted(bucket_of) if t in suspect_tids]
+    if not listed:
+        return ""
+    group_of = {it["trial_id"]: key
+                for key, items in curation["groups"].items() for it in items}
+    n_testbed = sum(len(v) for v in curation["groups"].values())
+    excl = brt.load_alignment_exclusions()
+    date = excl.get("date") or "undated"
+    all_tids = excl.get("tids", [])
+
+    parts = []
+    for tid in listed:
+        where = (f"Group {group_of[tid]}, and the `{bucket_of[tid]}` composition bucket"
+                 if tid in group_of else
+                 f"`{bucket_of[tid]}` composition bucket, not in the {n_testbed}")
+        parts.append(f"[`{tid}`](../site/replay/trials/{tid}.html) ({where})")
+    if len(parts) == 1:
+        named, subject = parts[0], "It is a shift-periodic page"
+    else:
+        named = ", ".join(parts[:-1]) + " and " + parts[-1]
+        subject = "These are shift-periodic pages"
+    n = len(listed)
+    body = (
+        f"**{n} pooled trial{'s are' if n != 1 else ' is'} on AllSERP's "
+        f"alignment-exclusion list ({date}).** The testbed predates that list "
+        "and was not re-selected against it, so the overlap is stated here "
+        f"rather than silently carried: {named}. {subject} with pathological "
+        "widget rendering where a one-slot-wrong AOI lattice cannot be ruled "
+        "out geometrically, so AllSERP drops them from typed-flavor feature "
+        "derivation. Their replay pages carry an alignment-suspect badge and "
+        "stay published as demonstrations of the inference task; **do not read "
+        "their per-AOI labels as evidence about a specific result**, because "
+        "the AOI the label is attached to may be the wrong one. The full "
+        f"{len(all_tids)}-trial list is the authority: "
+        "`attentional-foraging/data/aoi-typed/alignment-exclusions.json`."
+    )
+    return textwrap.fill(body, width=76, initial_indent="> ",
+                         subsequent_indent="> ", break_on_hyphens=False)
+
+
+def m5_disagreement_rate(bundles: list[dict]) -> float | None:
+    """Share of M5-approached organic AOIs where M5 and the heuristic disagree.
+
+    Reported in CURATION.md. It moves whenever the model does, so it is
+    measured on the bundles being documented rather than quoted from an
+    old spot check.
+    """
+    n = n_diff = 0
+    for b in bundles:
+        for it in b["aoi_labels"].get("organic_result", []):
+            if it.get("m5_proba") is None:
+                continue
+            n += 1
+            if it["m5_label"] != it["heuristic_label"]:
+                n_diff += 1
+    return n_diff / n if n else None
+
+
+def write_curation_md(curation: dict, n_pool: int, composition: dict | None = None,
+                      disagreement: float | None = None) -> None:
     CURATION_MD.parent.mkdir(parents=True, exist_ok=True)
     g = curation["groups"]
     feats = curation["features"]
     queries = curation["bundle_query"]
+
+    # Every M5 number below is read out of the deployed model file. Until
+    # 2026-09-18 this document hand-typed a 0.395 threshold that matched
+    # neither shipped model: a constant transcribed into prose has no way
+    # to notice a model swap, and nothing downstream checks it.
+    clf = m5_inference.M5Classifier()
+    model_name = clf.model_path.name
+    n_feat = len(clf.features)
+    thr = clf.threshold
+    auc = clf.loso_auc
+    yj = clf.model.get("loso_youden_j", {})
+    prov = clf.model.get("provenance", {})
+    gate = prov.get("gate", {})
+    model_date = (prov.get("generated_utc") or "")[:10] or "undated"
+    producer = prov.get("producer", "attentional-foraging/scripts/export_m5_cursor_only.py")
+    feat_list = ", ".join(f"`{f}`" for f in clf.features)
+    n_feat_word = {7: "seven", 9: "nine"}.get(n_feat, str(n_feat))
+    suspect_tids = set(brt.load_alignment_exclusions().get("tids", []))
+    disagreement_txt = (f"{100 * disagreement:.0f} %" if disagreement is not None
+                        else "a large share")
+    banner = textwrap.fill(
+        f"**Model-version notice ({model_date}).** Replay labels are predictions. "
+        f"The deployed M5 is `scripts/models/{model_name}` ({n_feat_word} features, "
+        f"cursor-only typed stream, LOSO {auc:.3f}, p\\* = {thr:.3f}). The "
+        "nine-feature May model is retired to "
+        "`m5_final_model.legacy-2026-05-02.json`; replay bundles built before "
+        "that date carry its scores until rebuilt. See "
+        "[Current evidence](current-evidence.md), the "
+        "[claims inventory](validation/2026-09-18-claims-inventory.md) \u00a70, and "
+        "[attribution lineage](bbox-attribution-lineage.md).",
+        width=76, initial_indent="> ", subsequent_indent="> ",
+        break_on_hyphens=False)  # never split a hyphenated path inside a code span
 
     GROUP_DESCRIPTIONS = {
         "A":     ("Trivial calls", "Cursor walks to one result and clicks. The label assignment is unambiguous — useful as a sanity check that the inference logic agrees on easy cases."),
@@ -299,8 +404,15 @@ def write_curation_md(curation: dict, n_pool: int, composition: dict | None = No
     lines = [
         "# AR Replay Signal Testbed — Curation Rubric",
         "",
+        banner,
+        "",
         f"_Generated by `scripts/select_testbed.py`. Pool: top **{n_pool}** trials from `attentional-foraging/AdSERP/data/trial-scores.csv` after per-participant diversity capping. Final testbed: **{sum(len(v) for v in g.values())}** trials across {len(g)} groups._",
         "",
+    ]
+    disclosure = alignment_disclosure(curation, composition, suspect_tids)
+    if disclosure:
+        lines += [disclosure, ""]
+    lines += [
         "## What this is",
         "",
         "This is a **signal testbed**, not a showcase. Each trial is a tagged demonstration of the four-class taxonomy inference task: SERP screenshot + cursor + per-AOI labels overlaid. The viewer renders what a cursor-only classifier emits on this cursor stream.",
@@ -313,12 +425,12 @@ def write_curation_md(curation: dict, n_pool: int, composition: dict | None = No
         "",
         "### M5 (primary for organic AOIs)",
         "",
-        "Logistic regression on the M4 seven-feature approach set, **trained against NB22 gaze-derived labels** (6,800 deferred / 3,132 eval-rejected approached non-click rows across 47 AdSERP participants, `typed` attribution, cursor-only stream, press-anchored 500 ms buffer). Trained in `attentional-foraging/scripts/export_m5_cursor_only.py`; coefficients shipped at `scripts/models/m5_cursor_only_v2.json`.",
+        f"Logistic regression on the M4 {n_feat_word}-feature approach set, **trained against NB22 gaze-derived labels** ({clf.model.get('n_deferred', 0):,} deferred / {clf.model.get('n_eval_rej', 0):,} eval-rejected approached non-click rows across 47 AdSERP participants, `typed` attribution, cursor-only stream, press-anchored 500 ms buffer). Trained in `{producer}`; coefficients shipped at `scripts/models/{model_name}` (sidecar: `attentional-foraging/scripts/output/m5_cursor_only_v2/summary.json`).",
         "",
-        "- **LOSO AUC:** 0.691 pooled (fold mean 0.694 ± 0.070) `[LAB, AdSERP, typed, cursor-only]` (2026-09-18 retrain; previously 0.769 / p* = 0.489 / precision 87.8 % on the nine-feature 2026-05-02 model, now `m5_final_model.legacy-2026-05-02.json` — see `attentional-foraging/docs/ablations/deferred_drop_decomposition.md`)",
-        "- **Operating threshold:** p* = 0.477 (Youden-J on out-of-fold predictions)",
-        "- **Predicted-deferred precision:** 78.1 % (recall 72.8 %, F1 0.753)",
-        "- **Features (cursor-only, no gaze, no scroll):** `min_dist`, `mean_dist`, `dwell_in_proximity_ms`, `mean_approach_velocity`, `max_approach_velocity`, `direction_changes`, `frac_decreasing` — all geometric on cursor `pageY` relative to AOI y-center. `final_dist` and `retreat_dist` are computed but excluded from the model (click-buffer screen).",
+        f"- **LOSO AUC:** {auc:.3f} pooled (fold mean {clf.model.get('loso_fold_auc_mean', float('nan')):.3f} ± {clf.model.get('loso_fold_auc_sd', float('nan')):.3f}) `[LAB, AdSERP, typed, cursor-only]` — the {model_date} retrain, gated to reproduce `{gate.get('sidecar', 'm4_cursor_only_downstream/summary.json')}` §4.3 to {gate.get('tolerance', 1e-6):g} (diff {gate.get('abs_diff', float('nan')):g}). *Previously: 0.769 / p\\* = 0.489 / precision 87.8 % on nine features from the 2026-05-02 `m5_final_model.json` (now `m5_final_model.legacy-2026-05-02.json`); that stream selected rows by fixation and measured gaze-to-cursor distance, so it carried part of the gaze-return label and was not the runtime measurement — the 0.769 \u2192 {auc:.3f} drop is the removal of that term, not a regression (`attentional-foraging/docs/ablations/deferred_drop_decomposition.md`).*",
+        f"- **Operating threshold:** p* = {thr:.3f} ({clf.model.get('operating_threshold_method', 'Youden-J on out-of-fold predictions')})",
+        f"- **Predicted-deferred precision:** {100 * yj.get('precision', float('nan')):.1f} % (recall {100 * yj.get('recall', float('nan')):.1f} %, F1 {yj.get('f1', float('nan')):.3f})",
+        f"- **Features (cursor-only, no gaze, no scroll):** {feat_list} — all geometric on cursor `pageY` relative to AOI y-center. `final_dist` and `retreat_dist` are still computed by the extractor but excluded from the model (click-buffer screen, CIKM §3.4).",
         "- **Domain:** organic results only (M5's training population). Ad AOIs fall back to the heuristic.",
         "- **Approached-by-M5 definition:** `min_dist < 100px` (cursor came within 100px of the AOI's y-center). More permissive than the heuristic's bbox-containment definition.",
         "",
@@ -334,18 +446,18 @@ def write_curation_md(curation: dict, n_pool: int, composition: dict | None = No
         "### Final canonical label (per AOI)",
         "",
         "1. `CLICKED` if any bbox episode contains a click event (both classifiers agree on this case).",
-        "2. For organic AOIs: M5 prediction (DEFERRED if proba ≥ 0.477, the v2 model's `operating_threshold`, else EVALUATED_REJECTED; previously 0.395). NOT_APPROACHED if min_dist ≥ 100px.",
+        f"2. For organic AOIs: M5 prediction (DEFERRED if proba ≥ {thr:.3f}, the deployed model's `operating_threshold`, else EVALUATED_REJECTED; this document carried 0.395 until 2026-09-18, which matched neither shipped model). NOT_APPROACHED if min_dist ≥ 100px.",
         "3. For ad AOIs: bbox-episode heuristic.",
         "",
         "### Why surface both",
         "",
-        "M5 and the heuristic disagree often (~80% of approached organic AOIs in spot checks). The disagreement is meaningful: M5 sees \"deferred-like signature\" (close approach + dwell + retreat), the heuristic sees \"literal re-approach\" (cursor physically re-entered the bbox). Both are valid framings of the four-class taxonomy. Group D and the per-AOI badges (`≠ heur:LABEL` chevron) surface the disagreements directly so a reviewer can decide which framing is more defensible per case.",
+        f"M5 and the heuristic disagree often ({disagreement_txt} of the M5-approached organic AOIs in this pool). The disagreement is meaningful: M5 sees \"deferred-like signature\" (close approach + dwell + retreat), the heuristic sees \"literal re-approach\" (cursor physically re-entered the bbox). Both are valid framings of the four-class taxonomy. Group D and the per-AOI badges (`≠ heur:LABEL` chevron) surface the disagreements directly so a reviewer can decide which framing is more defensible per case.",
         "",
         "## Regime tag",
         "",
         "**`[CURSOR-ONLY]` algorithm running on `[LAB]` data, supervision was `[LAB, NB22 gaze-derived]`.**",
         "",
-        "Per the [LAB/WILD convention](../CLAUDE.md#role-in-the-cikm-paper-the-lab--wild-bridge), the four-class taxonomy is currently `[LAB]`-only because the canonical version is gaze-derived. M5 is the named cursor-only-bootstrap that earns `[BOTH]` *if* its agreement with the gaze-derived ground truth is high enough; M5's LOSO AUC of 0.794 against NB22 is the published evidence. The replay viewer is the visual inspection tool for that bootstrap — every disagreement between M5 and the heuristic on a specific AOI is a candidate for human adjudication.",
+        f"Per the [LAB/WILD convention](../CLAUDE.md#role-in-the-cikm-paper-the-lab--wild-bridge), the four-class taxonomy is currently `[LAB]`-only because the canonical version is gaze-derived. M5 is the named cursor-only-bootstrap that earns `[BOTH]` *if* its agreement with the gaze-derived ground truth is high enough; M5's cursor-only LOSO AUC of {auc:.3f} against NB22 `[LAB, AdSERP, typed, cursor-only]` (`{model_name}`) is the deployable evidence (previously 0.769 on the fixation-selected nine-feature stream; 0.794 is the `[absolute legacy]` gaze-gated diagnostic ceiling `[AR-V2:K9]`, neither deployable). The replay viewer is the visual inspection tool for that bootstrap — every disagreement between M5 and the heuristic on a specific AOI is a candidate for human adjudication.",
         "",
         "## Selection rubric",
         "",
@@ -381,7 +493,11 @@ def write_curation_md(curation: dict, n_pool: int, composition: dict | None = No
         for it in items:
             tid = it["trial_id"]
             q = queries.get(tid, tid)[:60]
-            lines.append(f"| [`{tid}`](../site/replay/trials/{tid}.html) | {q} | {it['caption']} |")
+            caption = it["caption"]
+            if tid in suspect_tids:
+                caption += (" **Alignment-suspect** — labels may be attached to "
+                            "the wrong AOI; see the exclusion note above.")
+            lines.append(f"| [`{tid}`](../site/replay/trials/{tid}.html) | {q} | {caption} |")
         lines.append("")
 
     if composition:
@@ -399,10 +515,13 @@ def write_curation_md(curation: dict, n_pool: int, composition: dict | None = No
         ]
         for k in COMPOSITION_KEYS:
             title, _ = COMPOSITION_TITLES[k]
-            n_pool = len(pool.get(k, []))
+            # NOT n_pool: that is the candidate-pool size the closing section
+            # prints, and shadowing it here turned "All 141 candidate trials"
+            # into "All 11" (the last cluster's count).
+            n_cluster = len(pool.get(k, []))
             n_pop = pop.get(k, 0)
             lines.append(
-                f"| {title} | {n_pool} ({100*n_pool/pool_total:.1f}%) | "
+                f"| {title} | {n_cluster} ({100*n_cluster/pool_total:.1f}%) | "
                 f"{n_pop} ({100*n_pop/pop_total:.1f}%) |"
             )
         lines.append("")
@@ -424,6 +543,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=250, help="candidate pool size (default 250)")
     ap.add_argument("--cap", type=int, default=3, help="max trials per participant (default 3)")
+    ap.add_argument(
+        "--no-prune", action="store_true",
+        help="keep bundles and screenshots outside the current selection. "
+             "The pool is not the whole published set: trials added by hand "
+             "with build_replay_trial.py (the README hero trials, for one) "
+             "have live pages linking to them, and the prune would delete "
+             "their bundles and leave those pages orphaned.")
     args = ap.parse_args()
 
     print(f"[1/6] Selecting top {args.n} (cap {args.cap}/participant)...")
@@ -471,8 +597,14 @@ def main() -> int:
     CURATION_JSON.write_text(json.dumps(out))
 
     print(f"[7/7] Writing docs/CURATION.md...")
-    write_curation_md(curation, len(selected), composition)
+    disagreement = m5_disagreement_rate(bundles)
+    write_curation_md(curation, len(selected), composition, disagreement)
     print(f"      wrote {CURATION_MD}")
+
+    if args.no_prune:
+        print("\n[orphan-prune] skipped (--no-prune)")
+        print("\nDone. Run `python3 scripts/build_replay_pages.py` to refresh the viewer index.")
+        return 0
 
     print(f"\n[orphan-prune] Removing screenshots not in current selection...")
     keep = {b["trial_id"] for b in bundles}

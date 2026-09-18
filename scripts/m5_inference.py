@@ -138,6 +138,10 @@ def extract_m5_features(cursor: list[dict], aoi_y_center: float, prox_threshold:
 
 class M5Classifier:
     def __init__(self, model_path: Path = MODEL_JSON):
+        # Kept so consumers can log which coefficients they actually loaded.
+        # Replay bundles shipped legacy scores for months because nothing
+        # printed the model file at build time (claims inventory §0).
+        self.model_path = model_path
         self.model = json.loads(model_path.read_text())
         self.features = self.model["features"]
         self.mean = self.model["scaler_mean"]
