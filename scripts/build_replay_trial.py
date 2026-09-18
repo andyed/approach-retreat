@@ -58,6 +58,14 @@ def parse_metadata(trial_id: str) -> dict:
     root = ET.fromstring(xml.read_text())
     win = root.findtext("window") or "1280x1024"
     doc = root.findtext("document") or "1280x1024"
+    # <screen> is the physical display / browser-viewport resolution (e.g.
+    # 1280x1024) -- NOT the full-page screenshot height, which is much
+    # taller (doc_height * ratio_y). This is attentional-foraging's
+    # get_trial_geometry() convention (notebooks-v2/data_loader.py): viewport
+    # bands need the visible-viewport height, and <window> overhangs the
+    # display on Windows so it is the wrong source for that.
+    scr = root.findtext("screen") or "1280x1024"
+    scr_w, scr_h = (int(v) for v in scr.split("x"))
     win_w, win_h = (int(v) for v in win.split("x"))
     doc_w, doc_h = (int(v) for v in doc.split("x"))
     return {
@@ -65,6 +73,7 @@ def parse_metadata(trial_id: str) -> dict:
         "task": root.findtext("task") or "",
         "win_width": win_w, "win_height": win_h,
         "doc_width": doc_w, "doc_height": doc_h,
+        "screen_width": scr_w, "screen_height": scr_h,
     }
 
 
@@ -195,6 +204,36 @@ def compute_lfhf_track(pupil: list[dict]) -> list[dict]:
         ratio = lf_var / hf_var
         out.append({"t": int(ts[c]), "lfhf": round(ratio, 4)})
     return out
+
+
+def _viewport_timeline(cursor: list[dict], t_end: float) -> list[dict]:
+    """Scroll-step timeline in the {"t", "scrollY"} shape m5_inference's
+    extract_viewport_bands (-> compute_viewport_bands_py) expects.
+
+    Mirrors the construction in attentional-foraging's band_ms()
+    (scripts/viewport_bands_cursor_only.py): force scrollY=0 at the window
+    start (the page loads unscrolled), step at each scroll sample inside
+    the window, and hold the last value to t_end.
+
+    Window note: AF's band_ms() anchors its own window at
+    mousedown(final click) - 500ms (BUFFER_MS), matching the press-anchored
+    buf500 stream M5 v3 was trained on. This builder does NOT apply that
+    cut -- derive_aoi_labels() already runs extract_m5_features on the
+    FULL cursor stream (t=0..duration_ms), not a press-anchored window, so
+    computing bands over the same full window keeps the cursor and band
+    features drawn from one observation period rather than two different
+    ones. If the cursor window here is ever tightened to match AF's
+    buf500 convention, this should move with it.
+    """
+    scrolls = sorted(
+        (s["t"], s["y"]) for s in cursor
+        if s.get("event") == "scroll" and 0 <= s["t"] < t_end
+    )
+    timeline = [{"t": 0.0, "scrollY": 0.0}]
+    for t, y in scrolls:
+        timeline.append({"t": float(t), "scrollY": float(y)})
+    timeline.append({"t": float(t_end), "scrollY": timeline[-1]["scrollY"]})
+    return timeline
 
 
 def trial_t0(trial_id: str) -> int:
@@ -387,30 +426,55 @@ def _on_main_axis(card: dict) -> bool:
     return card.get("position", -1) >= 0
 
 
-def derive_aoi_labels(cursor: list[dict], bboxes: dict, min_dwell_ms: int = 100) -> dict:
-    """For each AOI, assign a four-class label using M5 (primary) and a
-    bbox episode-count heuristic (secondary, for comparison).
+def derive_aoi_labels(cursor: list[dict], bboxes: dict, viewport: dict | None = None,
+                       min_dwell_ms: int = 100) -> dict:
+    """For each AOI, assign a four-class label from the bbox episode-count
+    heuristic (canonical, "observed") and report M5's continuous score as
+    a secondary field.
+
+    Decision (2026-09-19, docs/CURATION.md): M5's cursor-only LOSO AUC
+    (0.69-0.79 depending on model version) cannot cleanly separate
+    DEFERRED from EVALUATED_REJECTED -- at v2's own Youden threshold a
+    REJECTED call is right only 48.5% of the time. So M5 is no longer the
+    canonical label source. The canonical `label` is now the heuristic's
+    observed cursor re-entry (which also already captures CLICKED and
+    NOT_APPROACHED), for every AOI kind including organics. M5's score is
+    reported as `deferred_score` (continuous) and `m5_label` (a
+    convenience hard call at the model's own operating_threshold) so the
+    viewer can show both without pretending the label IS the score.
 
     Both classifiers operate on cursor + AOI bbox, no gaze. They disagree
     on what "DEFERRED" means:
-      - HEURISTIC: cursor literally entered the bbox ≥2 times (with each
-        episode dwell ≥ min_dwell_ms).
-      - M5: cursor signature looks deferred-like (close approach + dwell
-        + retreat) per LR coefficients learned against NB22 gaze labels.
-        See scripts/m5_inference.py.
+      - HEURISTIC (canonical): cursor literally entered the bbox ≥2 times
+        (with each episode dwell ≥ min_dwell_ms).
+      - M5 (secondary score, organic AOIs only): cursor signature looks
+        deferred-like (close approach + dwell + retreat) per LR
+        coefficients learned against NB22 gaze labels. See
+        scripts/m5_inference.py.
+
+    viewport: optional {"timeline": [...], "vp_h": px} for computing the
+      v3 viewport-band features (vt_top/vt_mid/vt_bot) the loaded model may
+      need. None when trial geometry is unavailable; a model that needs
+      bands then simply gets no M5 score for that AOI (m5_label stays
+      NOT_APPROACHED, deferred_score stays None) rather than crashing.
 
     Per-AOI output:
-      label              — final canonical label (M5-primary, see below)
-      m5_label           — M5's prediction (DEFERRED / EVALUATED_REJECTED / NOT_APPROACHED)
-      m5_proba           — M5 P(deferred), or None if not approached
-      heuristic_label    — bbox episode-count heuristic label
+      label              — final canonical label: the heuristic's observed class
+      m5_label           — M5's convenience label at operating_threshold
+                            (DEFERRED / EVALUATED_REJECTED), or NOT_APPROACHED
+                            when M5 features weren't extractable
+      m5_proba           — M5 P(deferred), or None if not scored (back-compat name)
+      deferred_score      — same value as m5_proba (the canonical M5 field name
+                            going forward; kept alongside m5_proba, not replacing it)
+      m5_model           — file name of the M5 model that produced the score
+      vt_top_ms/vt_mid_ms/vt_bot_ms/vp_any_ms — viewport-band ms, when computed
+      heuristic_label    — bbox episode-count heuristic label (same value as `label`)
       episodes           — bbox episode count (heuristic input)
       total_dwell_ms     — sum of bbox episode dwells
 
-    Final label rules (priority):
-      CLICKED            — any bbox episode contains a click event
-      M5 if extractable  — M5_label (DEFERRED or EVALUATED_REJECTED)
-      NOT_APPROACHED     — M5 features not extractable AND no bbox episodes
+    Final label rule: `label` == `heuristic_label` for every AOI, always.
+    M5 runs alongside (organic AOIs only, M5's training population) purely
+    to populate the secondary score fields.
     """
     import m5_inference  # noqa: E402  (module under scripts/, sys.path appended by caller)
     def hit(x: float, y: float, b: dict) -> bool:
@@ -420,6 +484,8 @@ def derive_aoi_labels(cursor: list[dict], bboxes: dict, min_dwell_ms: int = 100)
 
     clf = _m5()
     moves = [s for s in cursor if s.get("event") == "mousemove"]
+    needs_bands = any(f in ("vt_top", "vt_mid", "vt_bot") for f in clf.features)
+    needs_position = "position" in clf.features
 
     out: dict[str, list[dict]] = {}
     for kind, items in bboxes.items():
@@ -465,31 +531,56 @@ def derive_aoi_labels(cursor: list[dict], bboxes: dict, min_dwell_ms: int = 100)
                 heuristic_label = "NOT_APPROACHED"
 
             # ── M5 inference (organic AOIs only — M5's training population) ──
+            # Secondary score only; the canonical label is heuristic_label
+            # (assigned above) for every AOI, organic or not.
             m5_proba = None
             m5_label = "NOT_APPROACHED"
+            bands = None
             if kind == "organic_result":
                 feats = m5_inference.extract_m5_features(moves, m5_inference.aoi_y_center(item))
                 if feats is not None:
-                    m5_proba = clf.predict_proba(feats)
-                    m5_label = clf.predict_label(feats)
+                    scoreable = True
+                    if needs_bands:
+                        if viewport is None:
+                            # Geometry unavailable (e.g. no <screen> dims) --
+                            # can't build the bands this model needs. Skip
+                            # scoring rather than crash; NOT_APPROACHED/None
+                            # is the same "couldn't extract" signal M5
+                            # already reports for other unscoreable AOIs.
+                            scoreable = False
+                        else:
+                            aoi_geom = {
+                                "position": item.get("position", idx),
+                                "page_top": item["location"]["y"],
+                                "page_bot": item["location"]["y"] + item["size"]["height"],
+                            }
+                            bands = m5_inference.extract_viewport_bands(
+                                viewport["timeline"], aoi_geom, viewport["vp_h"])
+                    if scoreable:
+                        position = item.get("position") if needs_position else None
+                        vec = m5_inference.build_feature_vector(feats, bands=bands, position=position)
+                        m5_proba = clf.predict_score(vec)
+                        m5_label = clf.predict_label(vec)
 
-            # ── Final canonical label: CLICKED > M5 (organic) > heuristic (ads) ──
-            if had_click:
-                label = "CLICKED"
-            elif kind == "organic_result":
-                label = m5_label
-            else:
-                label = heuristic_label
+            # ── Final canonical label: the observed heuristic, for every AOI ──
+            label = heuristic_label
 
             entry = {
                 "kind": kind,
                 "label": label,
                 "m5_label": m5_label,
                 "m5_proba": round(m5_proba, 4) if m5_proba is not None else None,
+                "deferred_score": round(m5_proba, 4) if m5_proba is not None else None,
+                "m5_model": clf.model_path.name,
                 "heuristic_label": heuristic_label,
                 "episodes": n_ep,
                 "total_dwell_ms": sum(e["dwell"] for e in episodes),
             }
+            if bands is not None:
+                entry["vt_top_ms"] = round(bands["vt_top"], 1)
+                entry["vt_mid_ms"] = round(bands["vt_mid"], 1)
+                entry["vt_bot_ms"] = round(bands["vt_bot"], 1)
+                entry["vp_any_ms"] = round(bands["vp_any"], 1)
             if "position" in item:
                 entry["position"] = item["position"]
             entry["bbox_index"] = idx
@@ -673,8 +764,22 @@ def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
     # their own four-class heuristic label per cell (M5 stays organic-only).
     cells = _load_cell_subbboxes(trial_id)
     bboxes.update(cells)
-    aoi_labels = derive_aoi_labels(cursor, bboxes)
 
+    # Viewport-band geometry for the M5 v3 features (vt_top/vt_mid/vt_bot).
+    # vp_h follows attentional-foraging's get_trial_geometry() convention
+    # (notebooks-v2/data_loader.py): screen_height (the physical viewport,
+    # from <screen> in the trial XML) times the SAME document->screenshot
+    # ratio_y already used for cursor/AOI coordinates -- not doc_height
+    # (the full scrollable page) and not window_height (overhangs the
+    # display on Windows). See _viewport_timeline()'s docstring for how
+    # this builder's cursor window differs from AF's press-anchored one.
+    scr_h = meta.get("screen_height")
+    vp_h = scr_h * ratio_y if scr_h else None
+    viewport = ({"timeline": _viewport_timeline(cursor, duration_ms), "vp_h": vp_h}
+                if vp_h else None)
+    aoi_labels = derive_aoi_labels(cursor, bboxes, viewport=viewport)
+
+    clf = _m5()
     exclusions = load_alignment_exclusions()
     alignment_suspect = trial_id in set(exclusions.get("tids", []))
     if alignment_suspect:
@@ -695,6 +800,7 @@ def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
         "url": meta["url"],
         "bboxes": bboxes,
         "aoi_labels": aoi_labels,
+        "model_operating_points": clf.operating_points(),
         "cursor": cursor,
         "xy_delta": xy_delta,
         "fixations": fixations,
@@ -716,10 +822,15 @@ def build_trial(trial_id: str, flavor: str = "typed_gapfill") -> dict | None:
             "n_cursor": len(cursor),
             "n_fixations": len(fixations),
             "n_pupil": len(pupil),
+            # label_summary now tallies the CANONICAL (observed/heuristic)
+            # label -- see derive_aoi_labels()'s docstring, 2026-09-19 decision.
             "label_summary": {
                 lbl: sum(1 for kind in aoi_labels.values() for it in kind if it["label"] == lbl)
                 for lbl in ("CLICKED", "DEFERRED", "EVALUATED_REJECTED", "NOT_APPROACHED")
             },
+            "m5_model": clf.model_path.name,
+            "m5_loso_auc": clf.loso_auc,
+            "m5_operating_threshold": clf.threshold,
         },
     }
 

@@ -117,6 +117,12 @@ __SUSPECT_BANNER__
 <div class="footer-note">
   AdSERP raw signals replayed over the dataset's shipped 1280-wide screenshot. Cursor xpos scaled by 1280/win_width; ypos is document-space. AOIs: ads from <code>ad-boundary-data</code> (shipped), organic results from row-projection CV detection (see <code>attentional-foraging/scripts/extract_organic_bboxes.py</code>).
 </div>
+<!-- Legend text set to #ccc (not the footer-note default #666) so it clears
+     the 8:1 contrast floor against #1a1a1a: #ccc measures ~10.8:1, #666
+     only ~3.0:1. -->
+<div class="footer-note" style="color:#ccc;" id="m5-legend">
+  Label = observed cursor episodes. p(def) = M5 deferred score (LOSO AUC <span id="m5-legend-auc">—</span>, model <span id="m5-legend-model">—</span>, read from this trial's bundle); thresholds are the reader's choice — see <a href="https://github.com/andyed/approach-retreat/blob/main/docs/CURATION.md" style="color:#ff9933;">CURATION</a>.
+</div>
 <script>
 const TRIAL = __TRIAL_DATA__;
 const W = 1280;
@@ -164,6 +170,14 @@ const LABEL_STYLE = {
   EVALUATED_REJECTED: { fill: '#ef4444', text: '#fff', short: 'EVAL-REJ' },
   NOT_APPROACHED:     { fill: '#444',    text: '#aaa', short: '·' },  // hidden by default
 };
+// p(def) score-chip colour ramp — see the contrast note where it's used.
+const SCORE_CHIP_LO = [0x37, 0x41, 0x51];  // #374151
+const SCORE_CHIP_HI = [0x7c, 0x2d, 0x12];  // #7c2d12
+function scoreChipColor(score) {
+  const s = Math.max(0, Math.min(1, score));
+  const c = SCORE_CHIP_LO.map((v, i) => Math.round(v + (SCORE_CHIP_HI[i] - v) * s));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
 function drawAOIs() {
   aoiSvg.innerHTML = '';
   for (const [kind, items] of Object.entries(TRIAL.bboxes)) {
@@ -200,15 +214,15 @@ function drawAOIs() {
       aoiSvg.appendChild(tx);
       // Four-class label badge (top-right corner) — skip NOT_APPROACHED.
       // Parents (dd_top, dd_right) get labels too when no cells split them.
+      // `label` is now the observed (bbox-episode) class — canonical since
+      // the 2026-09-19 decision (docs/CURATION.md). M5's continuous score
+      // gets its own chip below, coloured by value, not folded into the
+      // label badge's text.
       if (isApproached) {
         const ls = LABEL_STYLE[lbl.label];
-        // Source-tagged primary text: M5 for organics, EPISODE for ads
         const isOrganic = (kind === 'organic_result');
-        const sourceBit = (isOrganic && lbl.m5_proba != null)
-          ? `M5 ${lbl.m5_proba.toFixed(2)}`
-          : `EPISODE ${lbl.episodes}ep`;
         const dwellBit = `${Math.round(lbl.total_dwell_ms)}ms`;
-        const badgeText = `${ls.short} · ${sourceBit} · ${dwellBit}`;
+        const badgeText = `${ls.short} · ${dwellBit}`;
         const badgeW = badgeText.length * 6.5 + 12;
         const badgeH = 18;
         const bx = x + w - badgeW - 4;
@@ -218,14 +232,38 @@ function drawAOIs() {
         const btx = mkSvg('text', {x: bx + 6, y: by + 13, fill: ls.text, 'font-family': 'monospace', 'font-size': 10, 'font-weight': 'bold'});
         btx.textContent = badgeText;
         aoiSvg.appendChild(btx);
-        // Disagreement chevron — ONLY when both classifiers ran (organic AOI
-        // with extractable M5 features) AND they actually disagree.
-        if (isOrganic && lbl.m5_proba != null && lbl.m5_label !== lbl.heuristic_label) {
-          const dchip = mkSvg('rect', {x: bx, y: by + badgeH + 1, width: badgeW, height: 11, rx: 2, ry: 2, fill: '#1a1a1a', stroke: '#666', 'stroke-width': 1});
+
+        let nextY = by + badgeH + 1;
+        // p(def) score chip (organic AOIs only, when M5 produced a score).
+        // Colour ramp: dark slate #374151 (score 0) -> dark burnt-orange
+        // #7c2d12 (score 1), linearly interpolated in RGB, white text on
+        // top throughout. WCAG relative-luminance contrast of white on the
+        // two endpoints: 10.30:1 and 9.37:1; the RGB midpoint measures
+        // 10.42:1 -- the ramp stays >= 8:1 across its whole range, not
+        // just at the ends.
+        if (isOrganic && lbl.deferred_score != null) {
+          const scoreText = `p(def) ${lbl.deferred_score.toFixed(2)}`;
+          const scoreW = scoreText.length * 6.2 + 10;
+          const sx = x + w - scoreW - 4;
+          const sy = nextY;
+          const sh = 14;
+          const fill = scoreChipColor(lbl.deferred_score);
+          const chip = mkSvg('rect', {x: sx, y: sy, width: scoreW, height: sh, rx: 2, ry: 2, fill, stroke: '#000', 'stroke-width': 1});
+          aoiSvg.appendChild(chip);
+          const stx = mkSvg('text', {x: sx + 5, y: sy + 10, fill: '#fff', 'font-family': 'monospace', 'font-size': 9, 'font-weight': 'bold'});
+          stx.textContent = scoreText;
+          aoiSvg.appendChild(stx);
+          nextY += sh + 1;
+        }
+        // Disagreement chip — M5's label at its own operating threshold vs
+        // the canonical observed (bbox-episode) label. Expected to fire
+        // often at AUC ~0.69-0.79 (see the legend / CURATION.md) -- it is
+        // the reviewer's cue, not a bug indicator.
+        if (isOrganic && lbl.m5_proba != null && lbl.m5_label !== lbl.label) {
+          const dchip = mkSvg('rect', {x: bx, y: nextY, width: badgeW, height: 11, rx: 2, ry: 2, fill: '#1a1a1a', stroke: '#666', 'stroke-width': 1});
           aoiSvg.appendChild(dchip);
-          const dtxt = mkSvg('text', {x: bx + 4, y: by + badgeH + 9, fill: '#aaa', 'font-family': 'monospace', 'font-size': 8});
-          const heurShort = (LABEL_STYLE[lbl.heuristic_label] || {short: lbl.heuristic_label}).short;
-          dtxt.textContent = `≠ EPISODE:${heurShort}`;
+          const dtxt = mkSvg('text', {x: bx + 4, y: nextY + 8, fill: '#aaa', 'font-family': 'monospace', 'font-size': 8});
+          dtxt.textContent = 'M5@p* ≠ observed';
           aoiSvg.appendChild(dtxt);
         }
       }
@@ -616,6 +654,9 @@ document.getElementById('lbl-clk').textContent = `CLICKED ${summary.CLICKED || 0
 document.getElementById('lbl-def').textContent = `DEFERRED ${summary.DEFERRED || 0}`;
 document.getElementById('lbl-rej').textContent = `EVAL-REJ ${summary.EVALUATED_REJECTED || 0}`;
 document.getElementById('lbl-not').textContent = `NOT-APP ${summary.NOT_APPROACHED || 0}`;
+const m5meta = TRIAL._meta || {};
+document.getElementById('m5-legend-auc').textContent = (m5meta.m5_loso_auc != null) ? m5meta.m5_loso_auc.toFixed(3) : '—';
+document.getElementById('m5-legend-model').textContent = m5meta.m5_model || '—';
 
 // Wait for image to size svgs, then paint everything.
 // Default: park playhead at end so the full trail is visible up-front.

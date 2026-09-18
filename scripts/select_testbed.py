@@ -148,13 +148,16 @@ def composition_for_bundles(bundles: list[dict]) -> dict[str, list[str]]:
 def trial_features(b: dict) -> dict:
     """Per-trial summary for group assignment.
 
-    Uses HEURISTIC counts (bbox re-entry) — not the final M5-driven labels —
-    because the heuristic still cleanly distinguishes DEFERRED (≥2 episodes)
-    from EVALUATED_REJECTED (1 episode), where M5 collapses both toward
-    DEFERRED at threshold 0.477 (the v2 model's operating_threshold).
+    Uses HEURISTIC counts (bbox re-entry) — the same counts `label` now
+    carries as the canonical class (2026-09-19 decision: the heuristic is
+    primary, M5 is a secondary score). Kept as its own read here anyway
+    because the heuristic still cleanly distinguishes DEFERRED (≥2
+    episodes) from EVALUATED_REJECTED (1 episode) at the episode level,
+    which is what group assignment wants, independent of whichever M5
+    score/threshold happens to be loaded.
 
-    The viewer still shows M5 as the primary per-AOI label; this function
-    is only for finding canonical exemplars to surface in pedagogical groups.
+    This function is only for finding canonical exemplars to surface in
+    pedagogical groups; it does not touch M5 at all.
     """
     n_clk = n_def = n_rej = n_not = 0
     for kind in b["aoi_labels"].values():
@@ -336,7 +339,8 @@ def alignment_disclosure(curation: dict, composition: dict | None,
 
 
 def m5_disagreement_rate(bundles: list[dict]) -> float | None:
-    """Share of M5-approached organic AOIs where M5 and the heuristic disagree.
+    """Share of M5-scored organic AOIs where M5's label at its own operating
+    threshold disagrees with the observed (canonical) label.
 
     Reported in CURATION.md. It moves whenever the model does, so it is
     measured on the bundles being documented rather than quoted from an
@@ -348,9 +352,83 @@ def m5_disagreement_rate(bundles: list[dict]) -> float | None:
             if it.get("m5_proba") is None:
                 continue
             n += 1
-            if it["m5_label"] != it["heuristic_label"]:
+            if it["m5_label"] != it["label"]:
                 n_diff += 1
     return n_diff / n if n else None
+
+
+def _operating_points_table(clf: "m5_inference.M5Classifier") -> list[str]:
+    """Markdown table rows for the model's `operating_points` block.
+
+    Empty list when the loaded model doesn't carry one (v2-only) — the
+    caller falls back to _v2_only_operating_row() in that case.
+    """
+    ops = clf.operating_points()
+    if not ops:
+        return []
+    lines = [
+        "| Threshold | Predicted-deferred share | Deferred precision/recall | Rejected precision/recall |",
+        "|---|---|---|---|",
+    ]
+    for row in ops:
+        method = row.get("method", "")
+        tag = f" ({method})" if method else ""
+        lines.append(
+            f"| {row['threshold']:.3f}{tag} | {100 * row['predicted_deferred_share']:.1f}% | "
+            f"{100 * row['deferred_precision']:.1f}% / {100 * row['deferred_recall']:.1f}% | "
+            f"{100 * row['rejected_precision']:.1f}% / {100 * row['rejected_recall']:.1f}% |"
+        )
+    return lines
+
+
+def _v2_only_operating_row(clf: "m5_inference.M5Classifier") -> list[str]:
+    """Fallback table (one Youden row) for a model with no `operating_points`
+    block. v2's `loso_youden_j` only carries the deferred-side precision/
+    recall directly; the rejected side is derived from TPR/FPR when the
+    class counts are available, else printed as 'not recorded' rather than
+    silently omitted."""
+    yj = clf.model.get("loso_youden_j") or {}
+    if not yj:
+        return []
+    n_def = clf.model.get("n_deferred")
+    n_rej = clf.model.get("n_eval_rej")
+    tpr, fpr = yj.get("tpr"), yj.get("fpr")
+    rej_prec = rej_rec = "not recorded"
+    if tpr is not None and fpr is not None and n_def and n_rej:
+        fn = n_def * (1 - tpr)
+        tn = n_rej * (1 - fpr)
+        rej_rec = f"{100 * (1 - fpr):.1f}%"
+        if (tn + fn) > 0:
+            rej_prec = f"{100 * tn / (tn + fn):.1f}%"
+    prec, rec = yj.get("precision"), yj.get("recall")
+    def_cell = f"{100 * prec:.1f}% / {100 * rec:.1f}%" if prec is not None and rec is not None else "not recorded"
+    thr = yj.get("threshold", clf.threshold)
+    return [
+        "| Threshold | Predicted-deferred share | Deferred precision/recall | Rejected precision/recall |",
+        "|---|---|---|---|",
+        f"| {thr:.3f} (Youden-J) | not recorded | {def_cell} | {rej_prec} / {rej_rec} |",
+    ]
+
+
+def _calibration_line(clf: "m5_inference.M5Classifier") -> str | None:
+    """One line stating the model's calibration verdict, or None when the
+    model carries no `calibration` block (v2)."""
+    cal = clf.calibration()
+    if not cal:
+        return None
+    verdict = cal.get("verdict", "no verdict recorded")
+    brier = cal.get("brier_score", cal.get("brier"))
+    gap = cal.get("max_abs_gap_mean_score_minus_observed_rate", cal.get("max_abs_gap"))
+    n_bins = cal.get("n_bins", len(cal.get("bins", [])) or None)
+    detail = []
+    if brier is not None:
+        detail.append(f"Brier {brier:.3f}")
+    if gap is not None:
+        detail.append(f"max |gap| {gap:.3f}")
+    if n_bins:
+        detail.append(f"{n_bins} equal-count bins")
+    suffix = f" ({', '.join(detail)})" if detail else ""
+    return f"- **Calibration:** {verdict}{suffix}."
 
 
 def write_curation_md(curation: dict, n_pool: int, composition: dict | None = None,
@@ -372,18 +450,32 @@ def write_curation_md(curation: dict, n_pool: int, composition: dict | None = No
     yj = clf.model.get("loso_youden_j", {})
     prov = clf.model.get("provenance", {})
     gate = prov.get("gate", {})
+    # v2's gate is flat ({abs_diff, tolerance, sidecar, ...}); v3's nests per-
+    # check results under "checks" (cursor-only / bands-only / combined) with
+    # no top-level abs_diff. Prefer the combined check (the shipped model's
+    # own number) when present, so the sentence doesn't print "diff nan".
+    gate_abs_diff = gate.get("abs_diff")
+    if gate_abs_diff is None:
+        checks = gate.get("checks", {})
+        combined = checks.get("cursor_M4_7_plus_bands_3") or next(iter(checks.values()), {})
+        gate_abs_diff = combined.get("abs_diff", float("nan"))
     model_date = (prov.get("generated_utc") or "")[:10] or "undated"
     producer = prov.get("producer", "attentional-foraging/scripts/export_m5_cursor_only.py")
     feat_list = ", ".join(f"`{f}`" for f in clf.features)
-    n_feat_word = {7: "seven", 9: "nine"}.get(n_feat, str(n_feat))
+    n_feat_word = {7: "seven", 9: "nine", 10: "ten", 11: "eleven"}.get(n_feat, str(n_feat))
+    ops_table = _operating_points_table(clf) or _v2_only_operating_row(clf)
+    calibration_line = _calibration_line(clf)
     suspect_tids = set(brt.load_alignment_exclusions().get("tids", []))
     disagreement_txt = (f"{100 * disagreement:.0f} %" if disagreement is not None
                         else "a large share")
     banner = textwrap.fill(
-        f"**Model-version notice ({model_date}).** Replay labels are predictions. "
-        f"The deployed M5 is `scripts/models/{model_name}` ({n_feat_word} features, "
-        f"cursor-only typed stream, LOSO {auc:.3f}, p\\* = {thr:.3f}). The "
-        "nine-feature May model is retired to "
+        f"**Model-version notice ({model_date}).** Replay labels are the "
+        "observed bbox-episode class, not a model prediction. "
+        f"M5's continuous deferred score comes from `scripts/models/{model_name}` "
+        f"({n_feat_word} features, cursor-only typed stream, LOSO {auc:.3f}). "
+        "M5 emits a score, not a label (2026-09-19 decision: at v2's own "
+        "Youden threshold a REJECTED call was right only 48.5% of the time) "
+        "\u2014 the nine-feature May model is retired to "
         "`m5_final_model.legacy-2026-05-02.json`; replay bundles built before "
         "that date carry its scores until rebuilt. See "
         "[Current evidence](current-evidence.md), the "
@@ -415,43 +507,41 @@ def write_curation_md(curation: dict, n_pool: int, composition: dict | None = No
     lines += [
         "## What this is",
         "",
-        "This is a **signal testbed**, not a showcase. Each trial is a tagged demonstration of the four-class taxonomy inference task: SERP screenshot + cursor + per-AOI labels overlaid. The viewer renders what a cursor-only classifier emits on this cursor stream.",
+        "This is a **signal testbed**, not a showcase. Each trial is a tagged demonstration of the four-class taxonomy inference task: SERP screenshot + cursor + per-AOI labels overlaid. The viewer renders the observed class alongside a continuous cursor-only deferred score.",
         "",
-        "Per-AOI labels are **predictions**, not ground truth. The classifier uses cursor + AOI bboxes only; gaze and pupil are shown for context. If you disagree with a label on a specific trial, that trial belongs in Group F (failure modes) and the inference logic needs work.",
+        "Per-AOI `label`s are the **observed** bbox-episode class \u2014 cursor re-entry, not a model call. M5's `deferred_score` is a **prediction**, reported alongside the observed label rather than folded into it. Gaze and pupil are shown for context, not used by either signal. If you disagree with the observed label on a specific trial, that trial belongs in Group F (failure modes) and the episode heuristic needs work; if you disagree with M5's score, that's a modeling question, not a labeling bug.",
         "",
-        "## Inference: M5 (primary) + bbox-episode heuristic (secondary)",
+        "## Inference: bbox-episode heuristic (canonical label) + M5 deferred score (secondary)",
         "",
-        "Two classifiers run on every organic AOI; both are reported in the trial JSON and in the viewer.",
+        "Two signals are computed for every organic AOI; both are reported in the trial JSON and in the viewer. The heuristic assigns the canonical `label` for every AOI kind. M5 contributes a continuous score for organic AOIs only \u2014 it does not assign the label.",
         "",
-        "### M5 (primary for organic AOIs)",
+        "### Bbox-episode heuristic (canonical, all AOIs)",
         "",
-        f"Logistic regression on the M4 {n_feat_word}-feature approach set, **trained against NB22 gaze-derived labels** ({clf.model.get('n_deferred', 0):,} deferred / {clf.model.get('n_eval_rej', 0):,} eval-rejected approached non-click rows across 47 AdSERP participants, `typed` attribution, cursor-only stream, press-anchored 500 ms buffer). Trained in `{producer}`; coefficients shipped at `scripts/models/{model_name}` (sidecar: `attentional-foraging/scripts/output/m5_cursor_only_v2/summary.json`).",
+        "Walk the cursor stream against the AOI bbox. An **episode** is an enter\u2192exit traversal where dwell \u2265 100ms (filters drive-by crossings). Label rules \u2014 this is the observed class, `label` in the bundle:",
         "",
-        f"- **LOSO AUC:** {auc:.3f} pooled (fold mean {clf.model.get('loso_fold_auc_mean', float('nan')):.3f} ± {clf.model.get('loso_fold_auc_sd', float('nan')):.3f}) `[LAB, AdSERP, typed, cursor-only]` — the {model_date} retrain, gated to reproduce `{gate.get('sidecar', 'm4_cursor_only_downstream/summary.json')}` §4.3 to {gate.get('tolerance', 1e-6):g} (diff {gate.get('abs_diff', float('nan')):g}). *Previously: 0.769 / p\\* = 0.489 / precision 87.8 % on nine features from the 2026-05-02 `m5_final_model.json` (now `m5_final_model.legacy-2026-05-02.json`); that stream selected rows by fixation and measured gaze-to-cursor distance, so it carried part of the gaze-return label and was not the runtime measurement — the 0.769 \u2192 {auc:.3f} drop is the removal of that term, not a regression (`attentional-foraging/docs/ablations/deferred_drop_decomposition.md`).*",
-        f"- **Operating threshold:** p* = {thr:.3f} ({clf.model.get('operating_threshold_method', 'Youden-J on out-of-fold predictions')})",
-        f"- **Predicted-deferred precision:** {100 * yj.get('precision', float('nan')):.1f} % (recall {100 * yj.get('recall', float('nan')):.1f} %, F1 {yj.get('f1', float('nan')):.3f})",
-        f"- **Features (cursor-only, no gaze, no scroll):** {feat_list} — all geometric on cursor `pageY` relative to AOI y-center. `final_dist` and `retreat_dist` are still computed by the extractor but excluded from the model (click-buffer screen, CIKM §3.4).",
-        "- **Domain:** organic results only (M5's training population). Ad AOIs fall back to the heuristic.",
-        "- **Approached-by-M5 definition:** `min_dist < 100px` (cursor came within 100px of the AOI's y-center). More permissive than the heuristic's bbox-containment definition.",
+        "- `CLICKED` \u2014 any episode contains a click event inside the bbox.",
+        "- `DEFERRED` \u2014 \u22652 kept episodes (cursor literally re-entered the bbox).",
+        "- `EVALUATED_REJECTED` \u2014 exactly 1 kept episode.",
+        "- `NOT_APPROACHED` \u2014 0 kept episodes.",
         "",
-        "### Bbox-episode heuristic (secondary, all AOIs)",
+        "### M5 deferred score (secondary, organic AOIs only)",
         "",
-        "Walk the cursor stream against the AOI bbox. An **episode** is an enter→exit traversal where dwell ≥ 100ms (filters drive-by crossings). Label rules:",
+        f"Logistic regression on the M4 {n_feat_word}-feature approach set, **trained against NB22 gaze-derived labels** ({clf.model.get('n_deferred', 0):,} deferred / {clf.model.get('n_eval_rej', 0):,} eval-rejected approached non-click rows across 47 AdSERP participants, `typed` attribution, cursor-only stream, press-anchored 500 ms buffer). Trained in `{producer}`; coefficients shipped at `scripts/models/{model_name}`.",
         "",
-        "- `CLICKED` — any episode contains a click event inside the bbox.",
-        "- `DEFERRED` — ≥2 kept episodes (cursor literally re-entered the bbox).",
-        "- `EVALUATED_REJECTED` — exactly 1 kept episode.",
-        "- `NOT_APPROACHED` — 0 kept episodes.",
+        f"- **LOSO AUC:** {auc:.3f} pooled (fold mean {clf.model.get('loso_fold_auc_mean', float('nan')):.3f} \u00b1 {clf.model.get('loso_fold_auc_sd', float('nan')):.3f}) `[LAB, AdSERP, typed, cursor-only]` \u2014 the {model_date} retrain, gated to reproduce `{gate.get('sidecar', 'm4_cursor_only_downstream/summary.json')}` \u00a74.3 to {gate.get('tolerance', 1e-6):g} (diff {gate_abs_diff:g}). *Previously: 0.769 / p\\* = 0.489 / precision 87.8 % on nine features from the 2026-05-02 `m5_final_model.json` (now `m5_final_model.legacy-2026-05-02.json`); that stream selected rows by fixation and measured gaze-to-cursor distance, so it carried part of the gaze-return label and was not the runtime measurement \u2014 the 0.769 \u2192 {auc:.3f} drop is the removal of that term, not a regression (`attentional-foraging/docs/ablations/deferred_drop_decomposition.md`).*",
+        f"- **Features:** {feat_list} \u2014 the cursor terms are all geometric on cursor `pageY` relative to AOI y-center; `final_dist` and `retreat_dist` are still computed by the extractor but excluded from the model (click-buffer screen, CIKM \u00a73.4). Viewport-band terms (`vt_top`/`vt_mid`/`vt_bot`, when present) are cumulative ms the AOI's centre spent in the top/mid/bottom third of the viewport (`edmonds-2026-vpbands-v1`).",
+        "- **Domain:** organic results only (M5's training population). Ad AOIs get no M5 score; their `label` is the heuristic's, same as organics.",
+        "- **Approached-by-M5 definition:** `min_dist < 100px` (cursor came within 100px of the AOI's y-center). More permissive than the heuristic's bbox-containment definition \u2014 M5 can score an AOI the heuristic calls NOT_APPROACHED.",
+        f"- **The instrument emits a score, not a label** (2026-09-19 decision). At v2's own Youden threshold (p\\* = 0.477), a predicted-DEFERRED call was right 78.1 % of the time but a predicted-REJECTED call was right only 48.5 % \u2014 worse than a coin flip's complement (from TPR 0.7276 / FPR 0.4425 on 6,800 deferred / 3,132 rejected). `m5_label` (DEFERRED/EVALUATED_REJECTED at the model's own `operating_threshold` p\\* = {thr:.3f}) is a convenience view at ONE point on that curve, not the canonical output.",
         "",
-        "### Final canonical label (per AOI)",
+        "**Operating points** (from the model's own `operating_points` block when present, else the single Youden-J row derived from `loso_youden_j`):",
         "",
-        "1. `CLICKED` if any bbox episode contains a click event (both classifiers agree on this case).",
-        f"2. For organic AOIs: M5 prediction (DEFERRED if proba ≥ {thr:.3f}, the deployed model's `operating_threshold`, else EVALUATED_REJECTED; this document carried 0.395 until 2026-09-18, which matched neither shipped model). NOT_APPROACHED if min_dist ≥ 100px.",
-        "3. For ad AOIs: bbox-episode heuristic.",
+        *ops_table,
         "",
+        *([calibration_line, ""] if calibration_line else []),
         "### Why surface both",
         "",
-        f"M5 and the heuristic disagree often ({disagreement_txt} of the M5-approached organic AOIs in this pool). The disagreement is meaningful: M5 sees \"deferred-like signature\" (close approach + dwell + retreat), the heuristic sees \"literal re-approach\" (cursor physically re-entered the bbox). Both are valid framings of the four-class taxonomy. Group D and the per-AOI badges (`≠ heur:LABEL` chevron) surface the disagreements directly so a reviewer can decide which framing is more defensible per case.",
+        f"M5's label at p\\* disagrees with the observed heuristic often ({disagreement_txt} of the M5-scored organic AOIs in this pool). The disagreement is expected, not a bug: M5's LOSO AUC of {auc:.3f} means a hard call at any single threshold will miss often, especially on the rejected side (see the operating-points table above). M5 sees a \"deferred-like signature\" (close approach + dwell + retreat); the heuristic sees \"literal re-approach\" (cursor physically re-entered the bbox). Group D and the per-AOI badges (`M5@p* \u2260 observed` chip) surface the disagreements directly so a reviewer can decide, per case, whether the score or the observed re-entry is the more defensible read \u2014 and can pick a different threshold from the operating-points table if p\\* isn't the right cut for their question.",
         "",
         "## Regime tag",
         "",
