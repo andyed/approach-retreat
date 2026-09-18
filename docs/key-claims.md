@@ -116,7 +116,7 @@ Doc: [`docs/validation/m5-calibration.md`](validation/m5-calibration.md)
 Target: NB22 `gaze_regression_label` (deferred = gaze returned for second examination)
 Population: 9,932 approached (`min_dist` < 100 px) non-click rows on the cursor-only stream (current); the historical rows used 2,351 / 2,070 / 2,067 fixation-selected episodes
 
-### Cursor-only stream (current, 2026-09-06 producer, transcribed 2026-09-18) `[LAB, AdSERP, typed, cursor-only, press-anchored 500 ms]`
+### Cursor-only stream — v2 (previous deployed model, superseded 2026-09-18 by the v3 score model below; kept as `m5_cursor_only_v2.json`) `[LAB, AdSERP, typed, cursor-only, press-anchored 500 ms]`
 
 Features are the seven-feature M4 vector as the library's `ResultFeatureTracker` computes it: one-dimensional cursor-to-AOI-centre distance on native `mousemove` events, samples within 500 ms of the `mousedown` anchor excluded, typed AOI maps (AllSERP v1.1.0). Every row is an approached non-click AOI in an included trial; no gaze input at any stage. LOSO by participant (47 folds), `StandardScaler` → balanced `LogisticRegression(C=1)`. Values are transcribed from the sidecar keys named in each row; prose rounds to three decimals.
 
@@ -136,6 +136,25 @@ Features are the seven-feature M4 vector as the library's `ResultFeatureTracker`
 | AR-V2:K-cursor-12 | Deployable M5 (K-cursor-1 at K-cursor-3) disagreement vs NB22 ground truth | 32.6 % (34.6 % at *p* = 0.5) | `section_4_2.deployable_disagreement_pct` (32.602), `…deployable_disagreement_pct_at_0_5` |
 | **AR-V2:K-cursor-13** | Supervision-signal advantage of K-cursor-12 over K-cursor-11 | **1.30 ×** label-disagreement reduction | 42.489 / 32.602 |
 | AR-V2:K-cursor-14 | Click-thresholded split of the same pool vs the gaze-regression split | 4,840 / 5,092 (48.7 % deferred) vs 6,800 / 3,132 (68.5 %); Jaccard on evaluated-rejected 0.322 | `section_4_2.click_thresholded_split`, `…gaze_regression_split`, `…jaccard_eval_rejected` |
+
+### v3 score model — cursor + viewport bands (DEPLOYED 2026-09-18) `[LAB, AdSERP, typed, cursor-only + viewport bands]`
+
+**Decision: the instrument emits a deferred SCORE, not a predicted label.** Hard four-class labels stay reserved for observed cursor episodes (re-entered the bbox = deferred, single episode = evaluated-rejected). K-cursor-1–14 above is the previous deployed model, **superseded 2026-09-18**, kept as `m5_cursor_only_v2.json`. Producer `attentional-foraging/scripts/export_m5_v3.py` → `scripts/output/m5_v3/{m5_v3_cursor_bands.json, m5_v3_cursor_bands_rank.json, summary.json}`; note `attentional-foraging/docs/ablations/m5_v3_export.md`. Same 9,932-row pool as K-cursor-1–14 (6,800 deferred / 3,132 rejected, 47 participants), same LOSO-by-participant protocol. The gate reproduces `viewport_bands_cursor_only/summary.json` to 1e-6 before any v3 model is fitted: cursor M4-7 0.691065519, bands-alone 0.788615666, cursor+bands 0.789133048, all `abs_diff` 0.0.
+
+| K-ID | Claim | Value | Sidecar key |
+|---|---|---:|---|
+| **AR-V2:K-cursor-15** | Deployed model | seven cursor M4-7 features + `vt_top`/`vt_mid`/`vt_bot` viewport bands, **unweighted** LR (`class_weight: null`) refit after the balanced gate | `exported.cursor_M4_7_plus_bands_3` |
+| **AR-V2:K-cursor-16** | LOSO pooled AUC / within-trial AUC | pooled **0.7894**, within-trial **0.7758** | `loso_unweighted_deployed.cursor_M4_7_plus_bands_3.pooled_auc` (0.78940477) / `.within_trial_auc` (0.77584085) |
+| AR-V2:K-cursor-16b | Per-fold AUC, mean ± sd | 0.7822 ± 0.0575 | `…fold_auc_mean` / `fold_auc_sd` |
+| **AR-V2:K-cursor-17** | Paired lift over cursor-only alone (K-cursor-1) | **+0.0882** [+0.0722, +0.1046], Wilcoxon *p* = 2.0e-13 | `paired_by_participant.cursor_plus_bands_minus_cursor` |
+| **AR-V2:K-cursor-18** | Calibration (equal-count decile bins, LOSO out-of-fold score) | Brier **0.1679**, worst bin off by **0.044**, no Platt layer added, training prior 0.6847, `class_weight: null` | `exported.cursor_M4_7_plus_bands_3.calibration` (0.16789782 / 0.04426648), `.training_prior` (0.68465566), `.platt` (null) |
+| **AR-V2:K-cursor-19** | Operating point — Youden-*J*, *t* = 0.660 | predicted-deferred share 0.551; deferred P/R **0.859 / 0.692**; rejected P/R **0.529 / 0.753** | `exported.cursor_M4_7_plus_bands_3.operating_points` (threshold 0.6599276877, method "Youden-J on LOSO out-of-fold scores") |
+| **AR-V2:K-cursor-20** | Operating point — prior-matching, *t* = 0.556 | predicted-deferred share 0.685 (= pool prior 0.6847); deferred P/R **0.814 / 0.814**; rejected P/R **0.596 / 0.596** | `exported.cursor_M4_7_plus_bands_3.operating_points` (threshold 0.5562262453, method "prior-matching") |
+| AR-V2:K-cursor-21 | Rank variant (+ `position`) does not help | paired +0.0009 [−0.0017, +0.0034], *p* = 0.37; pooled 0.7902 vs 0.7894 | `paired_by_participant.cursor_plus_bands_plus_rank_minus_cursor_plus_bands` |
+| **AR-V2:K-cursor-22** | Aggregate use — not established | every AdSERP page is seen by exactly one participant: 2,437 distinct page slugs / 2,437 distinct task ids across the 2,437 pool trials, `max_participants_per_page = 1`; a mean-score-per-result-across-sessions claim cannot be validated on LAB | `aggregate_use` (`status: "not_established"`) |
+| AR-V2:K-cursor-23 | Balanced fit (`class_weight="balanced"`), not shipped, for contrast | Brier 0.1918, worst bin off by 0.226, under-predicts in 9 of 10 deciles | `balanced_score_not_exported.cursor_M4_7_plus_bands_3.calibration` |
+
+Reading: ranking is unchanged by the class-weight choice (pooled AUC 0.789 either way, paired unweighted-minus-balanced delta +0.0004 [−0.0001, +0.0008]); dropping the balanced weighting is what fixes calibration, not discrimination. The Youden point buys rejected recall (0.753) at rejected precision 0.529; the prior-matching point keeps the predicted-deferred share equal to the pool's own rate, which is the safer default for a consumer that aggregates rather than acts on one result. Full 12-row operating-point table and per-fold coefficients are in `m5_v3_cursor_bands.json`.
 
 ### The ladder: why the fixation-selected rows scored 0.75–0.77 `[LAB, AdSERP, typed]`
 

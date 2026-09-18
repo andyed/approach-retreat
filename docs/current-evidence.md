@@ -1,6 +1,6 @@
 # Current evidence and open questions
 
-**Checked 2026-09-18: press-anchored cursor-only results, nested ranking, matched window/rate comparisons, the lineage decomposition and the graded-label test retained; earlier measurement versions remain dated below.**
+**Checked 2026-09-18: press-anchored cursor-only results, nested ranking, matched window/rate comparisons, the lineage decomposition, the graded-label test, and (later the same day) the v3 deferred-score model retained; earlier measurement versions remain dated below.**
 
 Approach-retreat measures cursor behavior relative to individual results on a
 search engine results page (SERP). Its research question is whether that
@@ -349,6 +349,86 @@ in `m4_cursor_only_downstream/summary.json`; precision 78.1%, recall
 72.8%, F1 0.753). The expected change, 0.769 → 0.691, is the removal of a
 gaze term from the training features, not a regression. The old file is
 kept as `m5_final_model.legacy-2026-05-02.json`.
+
+## 2026-09-18 (later): score, not label
+
+The M5 line above closed on `m5_cursor_only_v2.json` (LOSO 0.691) as the
+deployed model. A same-day review of that model's own operating point
+changed the decision: at its Youden-*J* threshold (*p* = 0.477) the model's
+`EVALUATED_REJECTED` call has precision 0.485 (from TPR 0.7276 / FPR 0.4425
+on 6,800 deferred / 3,132 rejected rows) — a hard rejected label from cursor
+alone is right less often than a coin flip. The graded-label result above
+already showed the same thing from the ranking side: the LTR gain from
+gaze-derived grades is in aggregate ordering (+0.05 NDCG against the
+four-grade relevance, +0.012 click MRR), not in per-instance label
+correctness. **The instrument now emits a deferred SCORE, not a predicted
+label.** Hard four-class labels stay reserved for observed cursor episodes:
+re-entered the bbox after leaving it is `DEFERRED`, a single episode with no
+re-entry is `EVALUATED_REJECTED`. `m5_cursor_only_v2.json` is retired as the
+deployed model and kept for citation history.
+
+**The v3 export.** `attentional-foraging/scripts/export_m5_v3.py` →
+`scripts/output/m5_v3/{m5_v3_cursor_bands.json, m5_v3_cursor_bands_rank.json,
+summary.json}` (note `attentional-foraging/docs/ablations/m5_v3_export.md`).
+Same 9,932-row pool, same LOSO-by-participant protocol as the cursor-only
+detector above, plus the library's `vt_top` / `vt_mid` / `vt_bot` viewport
+bands cut at `mousedown` − 500 ms. Gate: reproduces
+`viewport_bands_cursor_only/summary.json` to 1e-6 for cursor-alone
+(0.691065519), bands-alone (0.788615666), and cursor+bands (0.789133048)
+before any v3 model is fitted (`abs_diff` 0.0 on all three). Deployed model
+`m5_v3_cursor_bands.json`: seven cursor features + three bands, LOSO pooled
+AUC **0.7894**, within-trial **0.7758**, paired lift over cursor alone
+**+0.0882** [+0.0722, +0.1046] `[AR-V2:K-cursor-15–17]`. A rank variant that
+adds `position` does not help: paired +0.0009 [−0.0017, +0.0034], *p* = 0.37
+`[AR-V2:K-cursor-21]`.
+
+**The calibration fix.** The gate and every comparison row use
+`class_weight="balanced"`, matching v2 and the bands ablation. The two
+exported model files do not: they are refit unweighted (`class_weight:
+null`) because the balanced fit is not a probability — it scores as though
+the pool prior were 0.5 when the true prior is 0.6847, and under-predicts in
+nine of ten equal-count bins (Brier 0.1918, worst bin off by 0.226). Ranking
+is unchanged by the choice (pooled AUC 0.789 either way, paired
+unweighted-minus-balanced delta +0.0004 [−0.0001, +0.0008]); calibration is
+not: Brier 0.1918 → **0.1679**, worst bin 0.226 → **0.044**, inside the 0.05
+tolerance, so no Platt layer was added `[AR-V2:K-cursor-18, K-cursor-23]`.
+`training_prior` (0.6847) and a logit prior-shift recipe ship inside each
+model file's `score_semantics` for a consumer whose own base rate differs.
+
+**Operating points** (deployed, unweighted, LOSO out-of-fold): at the
+Youden-*J* point (*t* = 0.660) deferred P/R is 0.859 / 0.692 and rejected P/R
+is 0.529 / 0.753; at the prior-matching point (*t* = 0.556, predicted-deferred
+share = the pool's own 0.685) deferred P/R is 0.814 / 0.814 and rejected P/R
+is 0.596 / 0.596 `[AR-V2:K-cursor-19, K-cursor-20]`. Both beat v2's 0.485
+rejected precision; neither is a label to treat as a fact about one result.
+
+**Aggregate use is not established.** Every AdSERP page is seen by exactly
+one participant — 2,437 distinct page slugs and 2,437 distinct task ids
+across the 2,437 pool trials, `max_participants_per_page = 1`
+(`aggregate_use` in `summary.json`). Whether a 0.69-to-0.79 per-instance
+score becomes a clean separation when averaged over many sessions viewing
+the same result cannot be tested on this dataset; it needs a corpus where
+one page is served to many sessions `[AR-V2:K-cursor-22]`.
+
+**Library surface.** approach-retreat 0.4.0 exposes a `deferredScoreModel`
+option that emits `deferred_score` on result summaries and the PostHog
+adapter's `ar_deferred_score*` fields (see `CHANGELOG.md`). It reads the v3
+model file directly; no threshold is applied inside the library.
+
+**Runtime convention gap.** The JS runtime and the replay builder both
+accumulate features over the whole trial to date, while the v3 training
+window (like the seven cursor features already used by v2) ends at the
+final press minus 500 ms. This is the same pre-existing feature-window gap
+the cursor-only detector already carried; the viewport bands inherit it
+rather than introduce a new one.
+
+**Science caveat.** The band term (`vt_top` +1.412 standardized, dominant
+over every cursor term) is mostly the return: on the first-visit carve the
+bands-alone AUC falls from 0.771 to 0.553 (`AR-V3:K-cursor-10`). The
+instrument does not distinguish "spent long in the top third before
+returning" from "returned, which is why it accumulated top-third time" —
+the score's discrimination is real, but its mechanism is largely
+retrospective.
 
 ## Earlier producers measured different things
 

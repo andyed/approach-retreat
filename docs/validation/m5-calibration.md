@@ -7,7 +7,74 @@
 > population, and training artifact together; use
 > [Current evidence](../current-evidence.md) for the current status.
 
-## Current calibration (2026-09-18)
+## Current calibration — v3 deferred score (2026-09-18, later)
+
+`[LAB, AdSERP, typed, cursor-only + viewport bands]`. Producer:
+`attentional-foraging/scripts/export_m5_v3.py` → `scripts/output/m5_v3/
+{m5_v3_cursor_bands.json, m5_v3_cursor_bands_rank.json, summary.json}`; note
+`attentional-foraging/docs/ablations/m5_v3_export.md`; transcribed 2026-09-18
+as `[AR-V2:K-cursor-15–23]` in [`key-claims.md`](../key-claims.md). Same
+9,932-row pool as the v2 record below (6,800 deferred / 3,132 rejected, 47
+participants), plus the library's `vt_top` / `vt_mid` / `vt_bot` viewport
+bands cut at `mousedown` − 500 ms. Gate: reproduces
+`viewport_bands_cursor_only/summary.json` to 1e-6 for cursor-alone
+(0.691065519), bands-alone (0.788615666), and combined (0.789133048) —
+`abs_diff` 0.0 on all three — before any v3 model is fitted.
+
+**The decision this section records: M5 now emits a deferred SCORE, not a
+predicted label.** The v2 model below is a hard four-class classifier at its
+own operating point; its rejected-class precision there is 48.5 % (derived
+from TPR 0.7276 / FPR 0.4425 on 6,800 / 3,132), a coin flip. Hard four-class
+labels are reserved for observed cursor episodes (re-entered the bbox =
+`DEFERRED`, single episode = `EVALUATED_REJECTED`); the model's job is to
+rank and score, not to assert a class for one result.
+
+| Metric | Value | Sidecar key |
+|---|---:|---|
+| Deployed features | 7 cursor M4-7 + `vt_top`/`vt_mid`/`vt_bot` | `exported.cursor_M4_7_plus_bands_3` |
+| LOSO pooled AUC | **0.7894** | `loso_unweighted_deployed.cursor_M4_7_plus_bands_3.pooled_auc` |
+| Within-trial AUC | **0.7758** | `…within_trial_auc` |
+| Per-fold AUC, mean ± sd | 0.7822 ± 0.0575 | `…fold_auc_mean` / `fold_auc_sd` |
+| Paired lift over cursor alone | **+0.0882** [+0.0722, +0.1046], Wilcoxon *p* = 2.0e-13 | `paired_by_participant.cursor_plus_bands_minus_cursor` |
+| Rank variant (+ `position`) | +0.0009 [−0.0017, +0.0034], *p* = 0.37 — does not help | `paired_by_participant.cursor_plus_bands_plus_rank_minus_cursor_plus_bands` |
+| Weighting shipped | **unweighted** (`class_weight: null`), refit after the balanced gate | `exported.cursor_M4_7_plus_bands_3.class_weight` |
+| Calibration (deployed, unweighted) | Brier **0.1679**, worst equal-count bin off by **0.044** — inside 0.05 tolerance, no Platt layer | `exported.cursor_M4_7_plus_bands_3.calibration` |
+| Calibration (balanced, not shipped) | Brier 0.1918, worst bin off by 0.226, under-predicts in 9/10 bins | `balanced_score_not_exported.cursor_M4_7_plus_bands_3.calibration` |
+| Training prior | 0.6847 (6,800 / 9,932); logit prior-shift recipe in `score_semantics` | `exported.cursor_M4_7_plus_bands_3.training_prior` |
+| Operating point — Youden-*J*, *t* = 0.660 | deferred P/R 0.859/0.692; rejected P/R 0.529/0.753; predicted-deferred share 0.551 | `exported.cursor_M4_7_plus_bands_3.operating_points` |
+| Operating point — prior-matching, *t* = 0.556 | deferred P/R 0.814/0.814; rejected P/R 0.596/0.596; predicted-deferred share 0.685 | same key |
+| Aggregate use | **not established** — every AdSERP page seen by exactly 1 participant (2,437 distinct slugs / 2,437 pool trials) | `aggregate_use` |
+
+**Why unweighted.** The gate and every comparison row use
+`class_weight="balanced"`, matching v2 and the bands ablation, so this
+section's ranking numbers line up with the rest of the record. The two
+exported model files are refit without class weighting because the balanced
+fit is not a probability — it fits as though the prior were 0.5 against a
+true prior of 0.6847. Dropping the weighting does not move the ranking
+(pooled AUC unchanged to three decimals; paired unweighted-minus-balanced
+delta +0.0004 [−0.0001, +0.0008]); it fixes the calibration (Brier
+0.1918 → 0.1679, worst bin 0.226 → 0.044).
+
+**Why the bands dominate, and the one caveat.** Standardized coefficients
+(mean over 47 LOSO folds): `vt_top` +1.412, `vt_mid` +0.721, `vt_bot` +0.244,
+every cursor term under 0.26 in magnitude. On the first-visit carve (window
+cut at the end of the first gaze visit) bands-alone AUC falls 0.771 → 0.553
+(`AR-V3:K-cursor-10`): a result the eyes came back to has spent longer in
+the top third of the viewport *because* of the return, so the band signal
+is mostly the return itself, not a pre-return predictor of it.
+
+**Deployment.** `m5_v3_cursor_bands.json` keeps every v2 JSON key
+(`features`, `scaler_mean`, `scaler_scale`, `coefficients_raw`, `intercept`,
+`operating_threshold`, `apply`, provenance) so `scripts/m5_inference.py`
+loads it unchanged, plus `score_semantics`, `operating_points`,
+`calibration`, `feature_units`, and `loso_within_trial_auc`.
+`m5_cursor_only_v2.json` (below) is retired as the deployed model and kept
+for citation history — the ladder and supervision-signal arguments on that
+page still hold on the cursor-only stream.
+
+---
+
+## Current calibration — v2, previous deployed model (2026-09-18, superseded)
 
 `[LAB, AdSERP, typed, cursor-only, press-anchored 500 ms]`. Producer: `attentional-foraging/scripts/m4_cursor_only_downstream.py` → `scripts/output/m4_cursor_only_downstream/summary.json` (2026-09-06), `section_4_3.deployable_M4_7` and `section_4_2`; transcribed 2026-09-18 as `[AR-V2:K-cursor-1–14]` in [`key-claims.md`](../key-claims.md). The features are the seven-feature M4 vector as this library's `ResultFeatureTracker` computes it (one-dimensional cursor-to-AOI-centre distance on native `mousemove` events, samples within 500 ms of the `mousedown` anchor excluded; no `final_dist`, no `retreat_dist`). Rows are every approached (`min_dist` < 100 px) non-click AOI in an included trial; the target is the NB22 gaze-regression label; LOSO by participant, 47 folds, `StandardScaler` → balanced `LogisticRegression(C=1)`.
 

@@ -116,3 +116,31 @@ and the ranking experiment; the rest of the docs do not.
 
 Nothing in `src/` changes. The tracker is what the current producers call;
 the claims around it are what moved.
+
+---
+
+## Resolved later the same day
+
+This inventory's §0 action item ("Retrain and re-export... ship as
+`m5_cursor_only_v2.json`") landed as scoped, then the deployed model changed
+again the same day. `m5_cursor_only_v2.json`'s own Youden-*J* operating
+point gives `EVALUATED_REJECTED` precision 48.5 % (TPR 0.7276 / FPR 0.4425
+on 6,800 / 3,132) — a hard rejected label from cursor alone is worse than a
+coin flip. The instrument now emits a deferred **score**, not a predicted
+label; hard four-class labels are reserved for observed cursor episodes.
+
+**Current rows:** `docs/key-claims.md` `AR-V2:K-cursor-15–23` (the v3 export:
+LOSO pooled 0.7894, within-trial 0.7758, paired lift over cursor alone
++0.0882, unweighted calibration Brier 0.1679 / worst bin 0.044, two named
+operating points, rank variant does not help, aggregate use not
+established). `docs/findings.md` §2 is rewritten to the score framing.
+`docs/validation/m5-calibration.md` carries the current v3 section above
+the v2 section this inventory produced. `docs/current-evidence.md` carries
+the dated section "2026-09-18 (later): score, not label" with the full
+reasoning. `m5_cursor_only_v2.json` is retired as the deployed model and
+kept for citation history; its ladder and supervision-signal arguments still
+hold.
+
+Producer: `attentional-foraging/scripts/export_m5_v3.py` →
+`scripts/output/m5_v3/summary.json`; note
+`attentional-foraging/docs/ablations/m5_v3_export.md`.

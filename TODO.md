@@ -85,6 +85,42 @@ the run did. What that means for the library, in priority order:
       pre-click feature snapshot (features as of `clicked_at - 500 ms`) on the
       clicked episode, or state the constraint in `docs/current-evidence.md`.
 
+- [ ] **Validate aggregate use on a corpus where pages repeat across users.**
+      The v3 deferred score (`m5_v3_cursor_bands.json`, 2026-09-18) is
+      validated per-instance (LOSO pooled AUC 0.789) but not in aggregate:
+      AdSERP serves every page to exactly one participant (2,437 distinct
+      slugs / 2,437 pool trials, `max_participants_per_page = 1`), so
+      whether the score's mean over many sessions viewing the same result
+      is a clean separation cannot be tested here (`AR-V2:K-cursor-22`).
+      Checked ACD (`analysis/attcur-validation/`) as a candidate: the raw
+      dataset lives at `$ATTCUR_DATA` / `/tmp/attcur/...` and is not
+      currently cached on this machine, so page/ad-identity repetition
+      across participants could not be checked directly this session. ACD
+      is also single-AOI-per-session by construction (one native ad), so
+      even with the data present it would need an ad/campaign identifier
+      that repeats across sessions, not a result-position identifier — a
+      different check than AdSERP's page-slug one. If refetched, look for
+      a stable ad/campaign id column and tabulate participants-per-id the
+      same way `aggregate_use` does for AdSERP.
+- [ ] **Align the runtime feature window with the training window, or
+      retrain on the whole-trial window.** The JS runtime and the replay
+      builder both accumulate cursor and viewport-band features over the
+      whole trial to date; v2 and v3 are both trained on a window that ends
+      at the final press minus 500 ms. This gap predates v3 (the seven
+      cursor features already had it) and the viewport bands inherit it
+      unchanged rather than introduce a new one. Either add a pre-press
+      snapshot to the runtime/replay path, or retrain v3 on the whole-trial
+      window and re-gate against `viewport_bands_cursor_only/summary.json`.
+- [ ] **Per-rank operating points, if a consumer asks.** v3's exported
+      operating-point table (12 rows, 0.30–0.75) is pooled over all ranks;
+      `AR-V3:K-cursor-9` shows `vt_top`'s coefficient is rank-dependent
+      (+1.40 at P0 down to +0.58 at P5), so a consumer scoring near the
+      bottom of the SERP may see systematically different calibration than
+      the pooled table promises. Not built until a consumer needs it —
+      the rank variant (`m5_v3_cursor_bands_rank.json`) already carries
+      `position` as a feature if the per-rank breakdown becomes worth the
+      complexity.
+
 Confirmed, no change: episode grain is correct (page-grain features score
 0.500 within-trial by construction and must never be broadcast to candidates);
 the 15 Hz throttle has headroom (deferred task flat to 1 Hz under uniform
