@@ -1,0 +1,1477 @@
+{
+  "generated": "2026-10-15T13:13:08+00:00",
+  "regime": "WILD, ACD",
+  "config": {
+    "data_dir": "/Users/andyed/Downloads/attcur/the-attentive-cursor-dataset-master",
+    "target": "ad_clicked",
+    "deltas_ms": [
+      0,
+      500,
+      1000,
+      2000
+    ],
+    "features": {
+      "m4_7_vertical": [
+        "min_dist",
+        "mean_dist",
+        "dwell_in_proximity_ms",
+        "mean_approach_velocity",
+        "max_approach_velocity",
+        "direction_changes",
+        "frac_decreasing"
+      ],
+      "mouse_length": [
+        "total_mouse_length"
+      ]
+    },
+    "distance": "|y_t - ad_center_y|, ad box from the joint corner+center fit (m4_seven.ad_bbox)",
+    "rules": {
+      "committed": "anchor = last click of any kind; \u0394=0 means no truncation (run_analysis.truncate_at_click)",
+      "ad_anchor": "ad-clicked: last in-target mousedown at/before the first in-target click, else that click, else last click of any kind; non-clicked: last click of any kind; keep ts < anchor - \u0394 (\u0394=0 cuts at the anchor); no click logged -> session left whole",
+      "ad_anchor_drop_noclick_pos": "ad_anchor minus ad-clicked sessions with no click event",
+      "ad_anchor_drop_noclick_both": "ad_anchor minus sessions of either class with no click event"
+    },
+    "population_rule": ">= 3 mouse events with a valid extras.middle after truncation (run_analysis.compute_features)",
+    "split_protocol": "5 stratified 70/30 train_test_split by session (random_state 0..4), plus 100 for sensitivity; StandardScaler + class-balanced LogisticRegression; mean \u00b1 population SD. Each row re-draws its splits on its own population.",
+    "samples": "parse_log events (mouse events with x,y != 0). samples_removed / sessions_hit count every event cut (incl. the click/mousedown/mouseup at the press); mousemoves_removed / sessions_hit_mousemove count only mousemove events (incl. post-press motion); approach_mousemoves_removed / sessions_hit_approach count mousemoves in [anchor - \u0394, anchor) only. Counted over all sessions entering the rule, before the >=3 drop."
+  },
+  "anchors": {
+    "counts": {
+      "clicked": {
+        "no_click_logged": 34,
+        "ad_mousedown": 244,
+        "fallback_last_click_no_ad_click": 12
+      },
+      "not_clicked": {
+        "last_click": 610,
+        "no_click_logged": 60
+      }
+    },
+    "ad_press_to_ad_click_ms": {
+      "n": 244,
+      "p50": 120.0,
+      "p90": 178.70000000000002
+    }
+  },
+  "repro_gate": {
+    "committed": {
+      "m4_7_vertical": 0.765,
+      "baseline_mouse_length": 0.653,
+      "n_sessions": 902
+    },
+    "recomputed": {
+      "m4_7_vertical": 0.765,
+      "baseline_mouse_length": 0.653,
+      "n_sessions": 902
+    },
+    "pass": true
+  },
+  "upstream_copy_check": {
+    "status": "identical",
+    "upstream_file": "/Users/andyed/Documents/dev/attentional-foraging/scripts/m4_nb21_hybrid_rerun.py",
+    "upstream_lines": [
+      183,
+      213
+    ],
+    "upstream_git_sha": "b9084a4225f4985d8be64d125c153a4baa1e0f8e",
+    "upstream_sha256": "51eb7461817c29ac92999977124a73bfe337db51c5825ac5854651c428c0dcf6"
+  },
+  "rows": [
+    {
+      "rule": "committed",
+      "delta_ms": 0,
+      "n_sessions": 954,
+      "n_positive": 289,
+      "excluded_no_click": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 1,
+        "not_clicked": 5
+      },
+      "samples_removed": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "sessions_hit": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "mousemoves_removed": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "sessions_hit_approach": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 0.0,
+        "not_clicked": 0.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.7617,
+          "sd": 0.0249,
+          "per_split": [
+            0.7279,
+            0.7778,
+            0.742,
+            0.7979,
+            0.7629
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.7613,
+          "sd": 0.0234
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.6963,
+          "sd": 0.0306,
+          "per_split": [
+            0.7068,
+            0.7289,
+            0.6991,
+            0.7085,
+            0.6384
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6692,
+          "sd": 0.0297
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.0654,
+        "sd": 0.0369,
+        "per_split": [
+          0.0211,
+          0.0489,
+          0.0429,
+          0.0894,
+          0.1245
+        ]
+      }
+    },
+    {
+      "rule": "committed",
+      "delta_ms": 500,
+      "n_sessions": 902,
+      "n_positive": 251,
+      "excluded_no_click": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 39,
+        "not_clicked": 19
+      },
+      "samples_removed": {
+        "clicked": 1356,
+        "not_clicked": 2724
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 467,
+        "not_clicked": 688
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 179,
+        "not_clicked": 339
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 190,
+        "not_clicked": 382
+      },
+      "sessions_hit_approach": {
+        "clicked": 133,
+        "not_clicked": 274
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 4.0,
+        "not_clicked": 4.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.7648,
+          "sd": 0.0079,
+          "per_split": [
+            0.7537,
+            0.7744,
+            0.7732,
+            0.7619,
+            0.761
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.7446,
+          "sd": 0.0254
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.6528,
+          "sd": 0.0306,
+          "per_split": [
+            0.6581,
+            0.681,
+            0.6876,
+            0.6316,
+            0.606
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6358,
+          "sd": 0.0353
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.112,
+        "sd": 0.0264,
+        "per_split": [
+          0.0956,
+          0.0934,
+          0.0856,
+          0.1303,
+          0.155
+        ]
+      }
+    },
+    {
+      "rule": "committed",
+      "delta_ms": 1000,
+      "n_sessions": 842,
+      "n_positive": 213,
+      "excluded_no_click": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 77,
+        "not_clicked": 41
+      },
+      "samples_removed": {
+        "clicked": 1775,
+        "not_clicked": 3719
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 735,
+        "not_clicked": 1467
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 212,
+        "not_clicked": 484
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 458,
+        "not_clicked": 1161
+      },
+      "sessions_hit_approach": {
+        "clicked": 192,
+        "not_clicked": 452
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 6.0,
+        "not_clicked": 6.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.7057,
+          "sd": 0.0291,
+          "per_split": [
+            0.6873,
+            0.719,
+            0.6597,
+            0.7188,
+            0.7436
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.7082,
+          "sd": 0.0309
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.5734,
+          "sd": 0.0369,
+          "per_split": [
+            0.5599,
+            0.6118,
+            0.5155,
+            0.5646,
+            0.6151
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6036,
+          "sd": 0.0354
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.1323,
+        "sd": 0.016,
+        "per_split": [
+          0.1273,
+          0.1072,
+          0.1443,
+          0.1541,
+          0.1286
+        ]
+      }
+    },
+    {
+      "rule": "committed",
+      "delta_ms": 2000,
+      "n_sessions": 758,
+      "n_positive": 171,
+      "excluded_no_click": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 119,
+        "not_clicked": 83
+      },
+      "samples_removed": {
+        "clicked": 2303,
+        "not_clicked": 5333
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 1106,
+        "not_clicked": 2673
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 242,
+        "not_clicked": 557
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 829,
+        "not_clicked": 2367
+      },
+      "sessions_hit_approach": {
+        "clicked": 232,
+        "not_clicked": 543
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 7.0,
+        "not_clicked": 8.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.6578,
+          "sd": 0.0299,
+          "per_split": [
+            0.6461,
+            0.6872,
+            0.698,
+            0.6196,
+            0.6381
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6346,
+          "sd": 0.0324
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.5657,
+          "sd": 0.0304,
+          "per_split": [
+            0.5141,
+            0.5739,
+            0.5779,
+            0.5561,
+            0.6062
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.5522,
+          "sd": 0.0328
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.0921,
+        "sd": 0.0381,
+        "per_split": [
+          0.1319,
+          0.1132,
+          0.1201,
+          0.0635,
+          0.0319
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor",
+      "delta_ms": 0,
+      "n_sessions": 928,
+      "n_positive": 265,
+      "excluded_no_click": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 25,
+        "not_clicked": 7
+      },
+      "samples_removed": {
+        "clicked": 1160,
+        "not_clicked": 1158
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 293,
+        "not_clicked": 306
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 111,
+        "not_clicked": 142
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "sessions_hit_approach": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 3.0,
+        "not_clicked": 1.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.7716,
+          "sd": 0.0076,
+          "per_split": [
+            0.7673,
+            0.7587,
+            0.7799,
+            0.7766,
+            0.7754
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.7811,
+          "sd": 0.0245
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.6431,
+          "sd": 0.0266,
+          "per_split": [
+            0.6809,
+            0.6216,
+            0.6055,
+            0.6509,
+            0.6566
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6513,
+          "sd": 0.028
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.1285,
+        "sd": 0.0285,
+        "per_split": [
+          0.0864,
+          0.1371,
+          0.1744,
+          0.1257,
+          0.1188
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor",
+      "delta_ms": 500,
+      "n_sessions": 889,
+      "n_positive": 238,
+      "excluded_no_click": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 52,
+        "not_clicked": 19
+      },
+      "samples_removed": {
+        "clicked": 1516,
+        "not_clicked": 2724
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 560,
+        "not_clicked": 688
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 193,
+        "not_clicked": 339
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 267,
+        "not_clicked": 382
+      },
+      "sessions_hit_approach": {
+        "clicked": 158,
+        "not_clicked": 274
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 5.0,
+        "not_clicked": 4.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.7475,
+          "sd": 0.0111,
+          "per_split": [
+            0.7391,
+            0.7453,
+            0.769,
+            0.7391,
+            0.7453
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.7445,
+          "sd": 0.0251
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.6173,
+          "sd": 0.0161,
+          "per_split": [
+            0.5908,
+            0.6347,
+            0.6284,
+            0.607,
+            0.6255
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6295,
+          "sd": 0.0313
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.1302,
+        "sd": 0.0137,
+        "per_split": [
+          0.1482,
+          0.1105,
+          0.1406,
+          0.1321,
+          0.1198
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor",
+      "delta_ms": 1000,
+      "n_sessions": 828,
+      "n_positive": 199,
+      "excluded_no_click": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 91,
+        "not_clicked": 41
+      },
+      "samples_removed": {
+        "clicked": 1923,
+        "not_clicked": 3719
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 832,
+        "not_clicked": 1467
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 219,
+        "not_clicked": 484
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 539,
+        "not_clicked": 1161
+      },
+      "sessions_hit_approach": {
+        "clicked": 202,
+        "not_clicked": 452
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 6.0,
+        "not_clicked": 6.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.7133,
+          "sd": 0.0144,
+          "per_split": [
+            0.7033,
+            0.7029,
+            0.7033,
+            0.7401,
+            0.7168
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6938,
+          "sd": 0.0295
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.5892,
+          "sd": 0.0446,
+          "per_split": [
+            0.557,
+            0.5856,
+            0.5903,
+            0.5421,
+            0.6708
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.5956,
+          "sd": 0.0343
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.1241,
+        "sd": 0.0495,
+        "per_split": [
+          0.1463,
+          0.1173,
+          0.113,
+          0.1981,
+          0.0459
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor",
+      "delta_ms": 2000,
+      "n_sessions": 755,
+      "n_positive": 168,
+      "excluded_no_click": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 122,
+        "not_clicked": 83
+      },
+      "samples_removed": {
+        "clicked": 2376,
+        "not_clicked": 5333
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 1144,
+        "not_clicked": 2673
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 242,
+        "not_clicked": 557
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 851,
+        "not_clicked": 2367
+      },
+      "sessions_hit_approach": {
+        "clicked": 231,
+        "not_clicked": 543
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 8.0,
+        "not_clicked": 8.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.6482,
+          "sd": 0.0445,
+          "per_split": [
+            0.6123,
+            0.7131,
+            0.6907,
+            0.6148,
+            0.6098
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6358,
+          "sd": 0.0386
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.5563,
+          "sd": 0.0324,
+          "per_split": [
+            0.5539,
+            0.5448,
+            0.5174,
+            0.6158,
+            0.5496
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.5589,
+          "sd": 0.0346
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.0919,
+        "sd": 0.0682,
+        "per_split": [
+          0.0584,
+          0.1683,
+          0.1734,
+          -0.001,
+          0.0603
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor_drop_noclick_pos",
+      "delta_ms": 0,
+      "n_sessions": 895,
+      "n_positive": 232,
+      "excluded_no_click": {
+        "clicked": 34,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 24,
+        "not_clicked": 7
+      },
+      "samples_removed": {
+        "clicked": 1160,
+        "not_clicked": 1158
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 293,
+        "not_clicked": 306
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 111,
+        "not_clicked": 142
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "sessions_hit_approach": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 3.0,
+        "not_clicked": 1.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.7995,
+          "sd": 0.0212,
+          "per_split": [
+            0.7871,
+            0.7686,
+            0.8314,
+            0.8001,
+            0.8101
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.8017,
+          "sd": 0.0279
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.6778,
+          "sd": 0.0224,
+          "per_split": [
+            0.7012,
+            0.6434,
+            0.6595,
+            0.6897,
+            0.6953
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6642,
+          "sd": 0.0315
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.1217,
+        "sd": 0.0283,
+        "per_split": [
+          0.0859,
+          0.1252,
+          0.1719,
+          0.1105,
+          0.1148
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor_drop_noclick_pos",
+      "delta_ms": 500,
+      "n_sessions": 856,
+      "n_positive": 205,
+      "excluded_no_click": {
+        "clicked": 34,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 51,
+        "not_clicked": 19
+      },
+      "samples_removed": {
+        "clicked": 1516,
+        "not_clicked": 2724
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 560,
+        "not_clicked": 688
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 193,
+        "not_clicked": 339
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 267,
+        "not_clicked": 382
+      },
+      "sessions_hit_approach": {
+        "clicked": 158,
+        "not_clicked": 274
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 5.0,
+        "not_clicked": 4.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.7594,
+          "sd": 0.0281,
+          "per_split": [
+            0.7526,
+            0.7861,
+            0.7864,
+            0.762,
+            0.7098
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.765,
+          "sd": 0.0289
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.6486,
+          "sd": 0.0381,
+          "per_split": [
+            0.5984,
+            0.6642,
+            0.6892,
+            0.6831,
+            0.6079
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6511,
+          "sd": 0.0351
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.1108,
+        "sd": 0.0257,
+        "per_split": [
+          0.1542,
+          0.1219,
+          0.0973,
+          0.0788,
+          0.1019
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor_drop_noclick_pos",
+      "delta_ms": 1000,
+      "n_sessions": 795,
+      "n_positive": 166,
+      "excluded_no_click": {
+        "clicked": 34,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 90,
+        "not_clicked": 41
+      },
+      "samples_removed": {
+        "clicked": 1923,
+        "not_clicked": 3719
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 832,
+        "not_clicked": 1467
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 219,
+        "not_clicked": 484
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 539,
+        "not_clicked": 1161
+      },
+      "sessions_hit_approach": {
+        "clicked": 202,
+        "not_clicked": 452
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 7.0,
+        "not_clicked": 6.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.7283,
+          "sd": 0.0407,
+          "per_split": [
+            0.7363,
+            0.7459,
+            0.6499,
+            0.7403,
+            0.7688
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.7068,
+          "sd": 0.0337
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.6074,
+          "sd": 0.0349,
+          "per_split": [
+            0.5958,
+            0.585,
+            0.5691,
+            0.6174,
+            0.6697
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6133,
+          "sd": 0.0393
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.1209,
+        "sd": 0.0286,
+        "per_split": [
+          0.1405,
+          0.161,
+          0.0808,
+          0.123,
+          0.099
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor_drop_noclick_pos",
+      "delta_ms": 2000,
+      "n_sessions": 722,
+      "n_positive": 135,
+      "excluded_no_click": {
+        "clicked": 34,
+        "not_clicked": 0
+      },
+      "dropped_lt3_samples": {
+        "clicked": 121,
+        "not_clicked": 83
+      },
+      "samples_removed": {
+        "clicked": 2376,
+        "not_clicked": 5333
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 1144,
+        "not_clicked": 2673
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 242,
+        "not_clicked": 557
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 851,
+        "not_clicked": 2367
+      },
+      "sessions_hit_approach": {
+        "clicked": 231,
+        "not_clicked": 543
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 9.0,
+        "not_clicked": 8.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.6021,
+          "sd": 0.0373,
+          "per_split": [
+            0.6572,
+            0.5516,
+            0.5984,
+            0.6276,
+            0.5755
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6403,
+          "sd": 0.0396
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.5528,
+          "sd": 0.0182,
+          "per_split": [
+            0.5595,
+            0.5205,
+            0.5477,
+            0.5625,
+            0.574
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.5744,
+          "sd": 0.0422
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.0492,
+        "sd": 0.0323,
+        "per_split": [
+          0.0977,
+          0.031,
+          0.0507,
+          0.0651,
+          0.0015
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor_drop_noclick_both",
+      "delta_ms": 0,
+      "n_sessions": 840,
+      "n_positive": 232,
+      "excluded_no_click": {
+        "clicked": 34,
+        "not_clicked": 60
+      },
+      "dropped_lt3_samples": {
+        "clicked": 24,
+        "not_clicked": 2
+      },
+      "samples_removed": {
+        "clicked": 1160,
+        "not_clicked": 1158
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 293,
+        "not_clicked": 306
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 111,
+        "not_clicked": 142
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "sessions_hit_approach": {
+        "clicked": 0,
+        "not_clicked": 0
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 3.0,
+        "not_clicked": 1.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.8176,
+          "sd": 0.013,
+          "per_split": [
+            0.8112,
+            0.8262,
+            0.8214,
+            0.7959,
+            0.8334
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.8141,
+          "sd": 0.0247
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.6495,
+          "sd": 0.0172,
+          "per_split": [
+            0.6564,
+            0.6528,
+            0.6178,
+            0.6699,
+            0.6507
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6743,
+          "sd": 0.0355
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.1681,
+        "sd": 0.0263,
+        "per_split": [
+          0.1548,
+          0.1734,
+          0.2035,
+          0.126,
+          0.1827
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor_drop_noclick_both",
+      "delta_ms": 500,
+      "n_sessions": 801,
+      "n_positive": 205,
+      "excluded_no_click": {
+        "clicked": 34,
+        "not_clicked": 60
+      },
+      "dropped_lt3_samples": {
+        "clicked": 51,
+        "not_clicked": 14
+      },
+      "samples_removed": {
+        "clicked": 1516,
+        "not_clicked": 2724
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 560,
+        "not_clicked": 688
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 193,
+        "not_clicked": 339
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 267,
+        "not_clicked": 382
+      },
+      "sessions_hit_approach": {
+        "clicked": 158,
+        "not_clicked": 274
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 5.0,
+        "not_clicked": 4.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.7787,
+          "sd": 0.0163,
+          "per_split": [
+            0.7721,
+            0.758,
+            0.7847,
+            0.772,
+            0.8066
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.769,
+          "sd": 0.0269
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.6562,
+          "sd": 0.0214,
+          "per_split": [
+            0.6388,
+            0.6347,
+            0.6767,
+            0.6871,
+            0.6438
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6581,
+          "sd": 0.0348
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.1225,
+        "sd": 0.0259,
+        "per_split": [
+          0.1334,
+          0.1233,
+          0.108,
+          0.085,
+          0.1628
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor_drop_noclick_both",
+      "delta_ms": 1000,
+      "n_sessions": 740,
+      "n_positive": 166,
+      "excluded_no_click": {
+        "clicked": 34,
+        "not_clicked": 60
+      },
+      "dropped_lt3_samples": {
+        "clicked": 90,
+        "not_clicked": 36
+      },
+      "samples_removed": {
+        "clicked": 1923,
+        "not_clicked": 3719
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 832,
+        "not_clicked": 1467
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 219,
+        "not_clicked": 484
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 539,
+        "not_clicked": 1161
+      },
+      "sessions_hit_approach": {
+        "clicked": 202,
+        "not_clicked": 452
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 7.0,
+        "not_clicked": 6.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.725,
+          "sd": 0.019,
+          "per_split": [
+            0.7574,
+            0.7221,
+            0.6978,
+            0.7248,
+            0.723
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.7117,
+          "sd": 0.0338
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.6221,
+          "sd": 0.028,
+          "per_split": [
+            0.6436,
+            0.6256,
+            0.5917,
+            0.6602,
+            0.5892
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6251,
+          "sd": 0.0382
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.103,
+        "sd": 0.0228,
+        "per_split": [
+          0.1138,
+          0.0965,
+          0.106,
+          0.0645,
+          0.1338
+        ]
+      }
+    },
+    {
+      "rule": "ad_anchor_drop_noclick_both",
+      "delta_ms": 2000,
+      "n_sessions": 667,
+      "n_positive": 135,
+      "excluded_no_click": {
+        "clicked": 34,
+        "not_clicked": 60
+      },
+      "dropped_lt3_samples": {
+        "clicked": 121,
+        "not_clicked": 78
+      },
+      "samples_removed": {
+        "clicked": 2376,
+        "not_clicked": 5333
+      },
+      "sessions_hit": {
+        "clicked": 256,
+        "not_clicked": 610
+      },
+      "mousemoves_removed": {
+        "clicked": 1144,
+        "not_clicked": 2673
+      },
+      "sessions_hit_mousemove": {
+        "clicked": 242,
+        "not_clicked": 557
+      },
+      "approach_mousemoves_removed": {
+        "clicked": 851,
+        "not_clicked": 2367
+      },
+      "sessions_hit_approach": {
+        "clicked": 231,
+        "not_clicked": 543
+      },
+      "median_samples_removed_kept_sessions": {
+        "clicked": 9.0,
+        "not_clicked": 8.0
+      },
+      "m4_7_vertical": {
+        "auc": {
+          "mean": 0.6216,
+          "sd": 0.0282,
+          "per_split": [
+            0.6581,
+            0.6215,
+            0.572,
+            0.6349,
+            0.6218
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.6523,
+          "sd": 0.0408
+        }
+      },
+      "mouse_length": {
+        "auc": {
+          "mean": 0.5882,
+          "sd": 0.0487,
+          "per_split": [
+            0.6703,
+            0.5595,
+            0.5261,
+            0.6064,
+            0.5787
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.5828,
+          "sd": 0.0369
+        }
+      },
+      "paired_m4_7_minus_mouse": {
+        "mean": 0.0335,
+        "sd": 0.0252,
+        "per_split": [
+          -0.0122,
+          0.062,
+          0.0459,
+          0.0285,
+          0.0431
+        ]
+      }
+    }
+  ],
+  "provenance": {
+    "producer": "analysis/attcur-validation/m4_seven_buffer.py",
+    "approach_retreat_git_sha": "97bd942762075bc2c483f58fb31f2147eaa23c45"
+  }
+}
