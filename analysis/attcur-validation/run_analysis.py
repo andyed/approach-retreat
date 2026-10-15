@@ -73,6 +73,16 @@ def parse_log(log_path: Path):
     return rows
 
 
+def truncate_at_click(events, click_buffer_ms: int = 0):
+    """Drop events at or after last_click_t - click_buffer_ms (clicked sessions only)."""
+    if click_buffer_ms > 0:
+        click_ts = [e[0] for e in events if e[3] == 'click']
+        if click_ts:
+            cutoff = int(click_ts[-1]) - int(click_buffer_ms)
+            events = [e for e in events if e[0] < cutoff]
+    return events
+
+
 def compute_features(events, click_buffer_ms: int = 0):
     """Compute approach-retreat features from a session's mouse events.
 
@@ -82,11 +92,7 @@ def compute_features(events, click_buffer_ms: int = 0):
         and excludes the terminal-cursor lock-on window from feature
         aggregation. Non-click sessions are untouched.
     """
-    if click_buffer_ms > 0:
-        click_ts = [e[0] for e in events if e[3] == 'click']
-        if click_ts:
-            cutoff = int(click_ts[-1]) - int(click_buffer_ms)
-            events = [e for e in events if e[0] < cutoff]
+    events = truncate_at_click(events, click_buffer_ms)
     if len(events) < 3:
         return None
     ts = np.array([e[0] for e in events], dtype=np.int64)
@@ -178,6 +184,9 @@ def main():
                     help='Truncate clicked-session events at click_t - Δ ms before feature aggregation.')
     ap.add_argument('--drop-retreat-dist', action='store_true',
                     help='Drop retreat_dist from the feature vector (leakage-screened variant).')
+    ap.add_argument('--m4-seven', action='store_true',
+                    help='Refit the seven AdSERP M4 features on ACD (see m4_seven.py, M4_SEVEN.md). '
+                         'Use with --click-buffer-ms 500 --drop-retreat-dist; gated on reproducing §4.5.')
     args = ap.parse_args()
 
     gt = pl.read_csv(DATA / "groundtruth.tsv", separator="\t")
@@ -194,10 +203,12 @@ def main():
     print(f"Native-ad sessions: {len(native)}")
 
     rows = []
+    sessions = {}
     n_skipped = 0
     for row in native.iter_rows(named=True):
         log_path = DATA / "logs" / f"{row['log_id']}.csv"
         events = parse_log(log_path)
+        sessions[row["log_id"]] = truncate_at_click(events, args.click_buffer_ms)
         feats = compute_features(events, click_buffer_ms=args.click_buffer_ms)
         if feats is None:
             n_skipped += 1
@@ -213,6 +224,19 @@ def main():
         print("No feature rows -- aborting.")
         sys.exit(1)
 
+    feature_cols = [
+        "min_dist", "max_dist", "retreat_dist", "retreat_path",
+        "retreat_arc_ratio", "total_mouse_length", "dwell_in_target_ms",
+        "ever_in_target", "n_target_entries", "n_events", "session_ms",
+    ]
+    if args.drop_retreat_dist:
+        feature_cols = [c for c in feature_cols if c != "retreat_dist"]
+
+    if args.m4_seven:
+        from m4_seven import run as run_m4_seven
+        run_m4_seven(rows, sessions, DATA, args, feature_cols)
+        return
+
     df_feat = pl.DataFrame(rows)
     print("\nLabel distributions (native-ad subset, feature-extracted):")
     print(f"  noticed (attn>=3): {df_feat['noticed'].sum()}/{len(df_feat)} "
@@ -227,13 +251,7 @@ def main():
         "n_target_entries", "n_events"
     ]).describe())
 
-    feature_cols = [
-        "min_dist", "max_dist", "retreat_dist", "retreat_path",
-        "retreat_arc_ratio", "total_mouse_length", "dwell_in_target_ms",
-        "ever_in_target", "n_target_entries", "n_events", "session_ms",
-    ]
     if args.drop_retreat_dist:
-        feature_cols = [c for c in feature_cols if c != "retreat_dist"]
         print(f"[leakage-screened] dropped retreat_dist; {len(feature_cols)}-feature vector",
               file=sys.stderr)
     X_full = df_feat.select(feature_cols).to_numpy().astype(np.float64)
