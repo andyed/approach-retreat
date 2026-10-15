@@ -1,0 +1,432 @@
+{
+  "generated": "2026-10-15T12:50:33+00:00",
+  "regime": "WILD, ACD",
+  "config": {
+    "dataset": "Attentive Cursor Dataset (Leiva & Arapakis 2020), native-ad sessions",
+    "data_dir": "/Users/andyed/Downloads/attcur/the-attentive-cursor-dataset-master",
+    "target": "ad_clicked",
+    "click_buffer_ms": 500,
+    "drop_retreat_dist": true,
+    "n_sessions": 902,
+    "n_positive": 251,
+    "positive_rate": 0.2783,
+    "population_rule": "native-ad sessions; every session truncated at (last 'click' event of any kind) - buffer, whether or not the ad was clicked; sessions with <3 mouse events with a valid extras.middle after truncation dropped (run_analysis.compute_features)",
+    "one_session_per_participant": true,
+    "split_protocol": {
+      "kind": "repeated stratified holdout (sklearn train_test_split)",
+      "train_test": "70/30",
+      "stratify": "ad_clicked",
+      "unit": "session (= participant)",
+      "repeats": 5,
+      "random_state": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "sd": "population SD over the repeats (numpy ddof=0)",
+      "sensitivity_repeats": 100,
+      "model": "StandardScaler + LogisticRegression(max_iter=1000, class_weight='balanced')",
+      "note": "No validation split and no CV folds; run_analysis.py's docstring/README '60/10/30' describes Brueckner's protocol, not what the code runs."
+    },
+    "m4_seven_features": [
+      "min_dist",
+      "mean_dist",
+      "dwell_in_proximity_ms",
+      "mean_approach_velocity",
+      "max_approach_velocity",
+      "direction_changes",
+      "frac_decreasing"
+    ],
+    "accumulator_constants": {
+      "prox_threshold_px": 100,
+      "dwell_dt_window_ms": [
+        0,
+        2000
+      ],
+      "min_vel_dt_ms": 8.0,
+      "max_plausible_vel_px_s": 5000.0
+    },
+    "distance_variants": {
+      "middle": "d_t = extras.middle, Euclidean cursor-to-ad-center distance (EvTrack), events with a valid middle",
+      "vertical": "d_t = |y_t - ad_center_y|, ad box fit jointly to the four corner + center distances; all mouse events (AdSERP signal model)"
+    }
+  },
+  "repro_gate": {
+    "committed": {
+      "baseline_mouse_length": 0.653,
+      "m3_analog_10": 0.765,
+      "m4_analog_8": 0.763,
+      "n_sessions": 902
+    },
+    "recomputed": {
+      "baseline_mouse_length": 0.653,
+      "m3_analog_10": 0.765,
+      "m4_analog_8": 0.763,
+      "n_sessions": 902
+    },
+    "pass": true
+  },
+  "upstream_copy_check": {
+    "status": "identical",
+    "upstream_file": "/Users/andyed/Documents/dev/attentional-foraging/scripts/m4_nb21_hybrid_rerun.py",
+    "upstream_lines": [
+      183,
+      213
+    ],
+    "upstream_git_sha": "b9084a4225f4985d8be64d125c153a4baa1e0f8e",
+    "upstream_sha256": "51eb7461817c29ac92999977124a73bfe337db51c5825ac5854651c428c0dcf6"
+  },
+  "ad_box_fit": {
+    "method": "joint axis-aligned box fit (left, top, right, bottom): scipy least_squares, soft_l1, to all five extras distances (4 corners + middle) over every mouse event in the session",
+    "n_sessions": 902,
+    "n_failed": 0,
+    "flag_median_resid_px": 2.0,
+    "flagged_log_ids": [
+      20170212162917,
+      20170302004347,
+      20170314164843
+    ],
+    "median_resid_px": {
+      "p50": 0.23,
+      "p95": 0.27,
+      "max": 86.09
+    },
+    "ad_height_px": {
+      "p5": 84.9,
+      "p50": 184.0,
+      "p95": 394.1
+    },
+    "ad_width_px": {
+      "p50": 616.0
+    }
+  },
+  "results": {
+    "middle": {
+      "m4_7": {
+        "auc": {
+          "mean": 0.7361,
+          "sd": 0.0213,
+          "per_split": [
+            0.7289,
+            0.7546,
+            0.7644,
+            0.7286,
+            0.704
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.71,
+          "sd": 0.029
+        }
+      },
+      "m4_7_plus_mouse_length": {
+        "auc": {
+          "mean": 0.7361,
+          "sd": 0.0196,
+          "per_split": [
+            0.7303,
+            0.7505,
+            0.7659,
+            0.7231,
+            0.711
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.713,
+          "sd": 0.0288
+        }
+      },
+      "m4_7_plus_dwell_in_target_ms": {
+        "auc": {
+          "mean": 0.7469,
+          "sd": 0.0239,
+          "per_split": [
+            0.7399,
+            0.7686,
+            0.7809,
+            0.7217,
+            0.7235
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.7285,
+          "sd": 0.0271
+        }
+      },
+      "paired_m4_7_minus_mouse_length": {
+        "mean": 0.0832,
+        "sd": 0.0118,
+        "per_split": [
+          0.0708,
+          0.0736,
+          0.0768,
+          0.0969,
+          0.098
+        ]
+      },
+      "paired_m4_7_minus_m4_analog_8": {
+        "mean": -0.0274,
+        "sd": 0.0279,
+        "per_split": [
+          -0.0723,
+          0.0051,
+          -0.005,
+          -0.0208,
+          -0.0439
+        ]
+      },
+      "feature_means_by_class": {
+        "min_dist": {
+          "clicked": 99.04,
+          "not_clicked": 132.57
+        },
+        "mean_dist": {
+          "clicked": 255.82,
+          "not_clicked": 385.21
+        },
+        "dwell_in_proximity_ms": {
+          "clicked": 673.69,
+          "not_clicked": 559.56
+        },
+        "mean_approach_velocity": {
+          "clicked": 116.14,
+          "not_clicked": 33.3
+        },
+        "max_approach_velocity": {
+          "clicked": 1109.3,
+          "not_clicked": 1246.74
+        },
+        "direction_changes": {
+          "clicked": 5.38,
+          "not_clicked": 8.42
+        },
+        "frac_decreasing": {
+          "clicked": 0.56,
+          "not_clicked": 0.47
+        }
+      },
+      "sensitivity_drop_flagged_boxes": {
+        "n_sessions": 899,
+        "m4_7": {
+          "mean": 0.7247,
+          "sd": 0.0271,
+          "per_split": [
+            0.7233,
+            0.7268,
+            0.7699,
+            0.6851,
+            0.7183
+          ]
+        },
+        "baseline_mouse_length": {
+          "mean": 0.6461,
+          "sd": 0.0138,
+          "per_split": [
+            0.6499,
+            0.6444,
+            0.6639,
+            0.6217,
+            0.6506
+          ]
+        }
+      }
+    },
+    "vertical": {
+      "m4_7": {
+        "auc": {
+          "mean": 0.7648,
+          "sd": 0.0079,
+          "per_split": [
+            0.7537,
+            0.7744,
+            0.7732,
+            0.7619,
+            0.761
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.7446,
+          "sd": 0.0254
+        }
+      },
+      "m4_7_plus_mouse_length": {
+        "auc": {
+          "mean": 0.7629,
+          "sd": 0.0025,
+          "per_split": [
+            0.7586,
+            0.7659,
+            0.7627,
+            0.7649,
+            0.7625
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.7447,
+          "sd": 0.0252
+        }
+      },
+      "m4_7_plus_dwell_in_target_ms": {
+        "auc": {
+          "mean": 0.7751,
+          "sd": 0.0096,
+          "per_split": [
+            0.7731,
+            0.7873,
+            0.7839,
+            0.7607,
+            0.7703
+          ]
+        },
+        "auc_100_splits": {
+          "mean": 0.7596,
+          "sd": 0.0253
+        }
+      },
+      "paired_m4_7_minus_mouse_length": {
+        "mean": 0.112,
+        "sd": 0.0264,
+        "per_split": [
+          0.0956,
+          0.0934,
+          0.0856,
+          0.1303,
+          0.155
+        ]
+      },
+      "paired_m4_7_minus_m4_analog_8": {
+        "mean": 0.0014,
+        "sd": 0.0254,
+        "per_split": [
+          -0.0476,
+          0.0249,
+          0.0039,
+          0.0125,
+          0.0131
+        ]
+      },
+      "feature_means_by_class": {
+        "min_dist": {
+          "clicked": 34.92,
+          "not_clicked": 45.14
+        },
+        "mean_dist": {
+          "clicked": 138.09,
+          "not_clicked": 246.05
+        },
+        "dwell_in_proximity_ms": {
+          "clicked": 1999.51,
+          "not_clicked": 2039.07
+        },
+        "mean_approach_velocity": {
+          "clicked": 92.72,
+          "not_clicked": 8.28
+        },
+        "max_approach_velocity": {
+          "clicked": 832.4,
+          "not_clicked": 870.96
+        },
+        "direction_changes": {
+          "clicked": 5.85,
+          "not_clicked": 8.99
+        },
+        "frac_decreasing": {
+          "clicked": 0.55,
+          "not_clicked": 0.44
+        }
+      },
+      "sensitivity_drop_flagged_boxes": {
+        "n_sessions": 899,
+        "m4_7": {
+          "mean": 0.7552,
+          "sd": 0.0254,
+          "per_split": [
+            0.7599,
+            0.7625,
+            0.7926,
+            0.7143,
+            0.7467
+          ]
+        },
+        "baseline_mouse_length": {
+          "mean": 0.6461,
+          "sd": 0.0138,
+          "per_split": [
+            0.6499,
+            0.6444,
+            0.6639,
+            0.6217,
+            0.6506
+          ]
+        }
+      }
+    }
+  },
+  "reference": {
+    "baseline_mouse_length": {
+      "auc": {
+        "mean": 0.6528,
+        "sd": 0.0306,
+        "per_split": [
+          0.6581,
+          0.681,
+          0.6876,
+          0.6316,
+          0.606
+        ]
+      },
+      "auc_100_splits": {
+        "mean": 0.6358,
+        "sd": 0.0353
+      }
+    },
+    "m3_analog_10": {
+      "auc": {
+        "mean": 0.7649,
+        "sd": 0.0216,
+        "per_split": [
+          0.8036,
+          0.7484,
+          0.7739,
+          0.7474,
+          0.7514
+        ]
+      }
+    },
+    "m4_analog_8": {
+      "auc": {
+        "mean": 0.7635,
+        "sd": 0.0205,
+        "per_split": [
+          0.8012,
+          0.7495,
+          0.7693,
+          0.7494,
+          0.748
+        ]
+      },
+      "auc_100_splits": {
+        "mean": 0.7585,
+        "sd": 0.0284
+      },
+      "features": [
+        "min_dist",
+        "max_dist",
+        "retreat_path",
+        "retreat_arc_ratio",
+        "ever_in_target",
+        "n_target_entries",
+        "n_events",
+        "session_ms"
+      ]
+    }
+  },
+  "provenance": {
+    "producer": "analysis/attcur-validation/run_analysis.py --m4-seven (m4_seven.py)",
+    "approach_retreat_git_sha": "07b2f55c6c8474745cd0dde897363f23188e1849",
+    "working_tree_dirty": false,
+    "python_numpy": "2.4.4"
+  }
+}
